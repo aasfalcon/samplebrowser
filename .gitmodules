@@ -1,0 +1,6 @@
+[submodule "vendor/wav2png"]
+	path = vendor/wav2png
+	url = https://github.com/beschulz/wav2png
+[submodule "vendor/qtjack"]
+	path = vendor/qtjack
+	url = https://github.com/cybercatalyst/qtjack

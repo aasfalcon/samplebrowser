@@ -1,0 +1,3 @@
+QTableWidget {
+	background: transparent;
+}
