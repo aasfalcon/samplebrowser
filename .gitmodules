@@ -4,3 +4,12 @@
 [submodule "vendor/qtjack"]
 	path = vendor/qtjack
 	url = https://github.com/cybercatalyst/qtjack
+[submodule "vendor/WaveformWidget"]
+	path = vendor/WaveformWidget
+	url = https://github.com/nzaillian/WaveformWidget
+[submodule "vendor/radit-essential"]
+	path = vendor/radit-essential
+	url = https://github.com/jfperini/radit-essential
+[submodule "vendor/libsndfile"]
+	path = vendor/libsndfile
+	url = git://github.com/erikd/libsndfile.git
