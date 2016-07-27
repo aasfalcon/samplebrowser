@@ -36,13 +36,13 @@ protected:
     class plugin : public Plugin { \
     public: \
         inline plugin() \
-            : Plugin(#plugin, Version::encode(version)) \
+            : Plugin(#plugin, Version::encode(#version)) \
         { \
             IServerProvider::ProviderInfo pri;
 
 #define PLUGIN_REGISTER(interface, provider, version) \
             registerProvider(#interface, #provider, \
-                             Version::encode(version)); \
+                             Version::encode(#version)); \
             _constructors[#provider] = []() { return new provider; };
 
 #define PLUGIN_END_(plugin) \
@@ -53,5 +53,9 @@ protected:
 
 #define PLUGIN_BEGIN PLUGIN_BEGIN_(PLUGIN_NAME, PLUGIN_VERSION)
 #define PLUGIN_END PLUGIN_END_(PLUGIN_NAME)
+
+#ifndef PLUGIN_VERSION
+#define PLUGIN_VERSION 1.0.0
+#endif
 
 #endif // PLUGIN_H

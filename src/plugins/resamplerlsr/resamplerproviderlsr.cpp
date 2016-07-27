@@ -107,7 +107,7 @@ unsigned ResamplerProviderLSR::perform()
             (_frames - data.output_frames_gen) * _channels * sizeof(float);
 
     if (unused) {
-        memset(_output + data.output_frames_gen, unused, 0);
+        memset(_output + data.output_frames_gen, 0, unused);
     }
 
     return data.input_frames_used;

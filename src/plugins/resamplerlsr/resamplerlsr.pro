@@ -1,8 +1,7 @@
-QT =
 TARGET = ../resamplerlsr
-TEMPLATE = lib
-CONFIG += c++11
-DEFINES += SERVER_LIBRARY
+VERSION=1.0.0
+
+include(../plugins.pri)
 
 HEADERS += \
     ../common/resamplerprovider.h \
@@ -12,5 +11,3 @@ SOURCES += \
     ../common/resamplerprovider.cpp \
     resamplerproviderlsr.cpp \
     pluginresamplerlsr.cpp
-
-INCLUDEPATH += ../
