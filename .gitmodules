@@ -13,3 +13,6 @@
 [submodule "vendor/libsndfile"]
 	path = vendor/libsndfile
 	url = git://github.com/erikd/libsndfile.git
+[submodule "vendor/audiowaveform"]
+	path = vendor/audiowaveform
+	url = https://github.com/bbcrd/audiowaveform
