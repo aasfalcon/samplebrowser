@@ -1,21 +1,12 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2016-07-19T15:33:30
-#
-#-------------------------------------------------
-
-QT       += widgets
-
-QT       -= gui
+QT += widgets
 
 TARGET = widgets
 TEMPLATE = lib
 CONFIG += staticlib
+INCLUDEPATH += ../../bundle
 
-SOURCES += meter.cpp
+SOURCES += \
+    meter.cpp
 
-HEADERS += meter.h
-unix {
-    target.path = /usr/lib
-    INSTALLS += target
-}
+HEADERS += \
+    meter.h

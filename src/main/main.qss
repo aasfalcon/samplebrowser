@@ -1,0 +1,20 @@
+QTableWidget#details,
+QTableWidget#details QHeaderView,
+QTableWidget#details QHeaderView::section
+{
+    background: transparent;
+}
+
+QTableWidget#details QHeaderView::section
+{
+}
+
+QTableWidget#details
+{
+}
+
+QLabel#filename {
+    font-weight: bold;
+}
+
+QGroupBox { text-transform: uppercase; font-weight: bold; }

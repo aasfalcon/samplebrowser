@@ -2,24 +2,28 @@
 
 #include "config.h"
 #include "player.h"
+#include "sound/frame.h"
 
 Player::Player(Client &client)
     : QtJack::Processor(client)
     , _client(client)
+    , _file(0)
+    , _preparing(false)
+    , _processing(false)
+    , _position(0)
+    , _resampler(Sound::ResamplerPrivate::QualityMedium,
+                 client.bufferSize(), 2, client.sampleRate())
+    , _stopping(false)
 {
-    this->_preparing = false;
-    this->_stopping = false;
-    this->_processing = false;
-    this->_position = 0;
-    this->_buffer = 0;
-    this->_level = this->_config.value("player/level",
+    _peak[0] = _peak[1] = 0;
+    _level = _config.value("player/level",
                                        WEE_PLAYER_LEVEL_DEFAULT).toFloat();
-    this->_client.setMainProcessor(this);
+    _client.setMainProcessor(this);
 }
 
 Player::~Player() {
-    if (this->_buffer) {
-        delete this->_buffer;
+    if (_file) {
+        delete _file;
     }
 }
 
@@ -27,91 +31,122 @@ Client &Player::client() {
     return _client;
 }
 
+Sample *Player::peak() {
+    return _peak;
+}
+
 void Player::process(int frames) REALTIME_SAFE {
-    this->_processing = true;
-    QtJack::AudioBuffer lob = this->_client.left().buffer(frames);
-    QtJack::AudioBuffer rob = this->_client.right().buffer(frames);
+    _processing = true;
+    QtJack::AudioBuffer lob = _client.left().buffer(frames);
+    QtJack::AudioBuffer rob = _client.right().buffer(frames);
 
     lob.clear();
     rob.clear();
+    _peak[0] = _peak[1] = 0;
 
-    if (this->_preparing || this->_position >= this->_file.frames()) {
-        this->_processing = false;
+    if (_preparing || !_file || _position >= _file->frames()) {
+        _processing = false;
         return;
     }
 
     int max_frames = frames;
 
-    if (this->_position + frames >= this->_file.frames()) {
-        max_frames = this->_file.frames() - this->_position;
+    if (_position + frames >= _file->frames()) {
+        max_frames = _file->frames() - _position;
     }
 
-    int channels = this->_file.channels();
+    Sound::ReadFrame<Sample> frame;
+
+//    if (_file->sampleRate() != _client.sampleRate()) {
+//        int samplePosition = _position * _buffer.channels();
+//        _position += _resampler.resample(
+//                    _buffer.data() + samplePosition,
+//                    _buffer.length() - samplePosition,
+//                    _file->sampleRate());
+//        frame = _resampler.frame();
+//    } else {
+//        _position += max_frames;
+//        frame = _buffer.frame(_position);
+//    }
+
+    int samplePosition = _position * _buffer.channels();
+    _position += _resampler.resample(
+                _buffer.data() + samplePosition,
+                _buffer.length() - samplePosition,
+                _file->sampleRate());
+    frame = _resampler.frame();
 
     for (int i = 0; i < max_frames; i++) {
-        float left = this->_buffer[this->_position * channels];
-        lob.write(i, left);
+        float left = frame.get(0);
+        float right = frame.get(1);
 
-        if (channels > 1) {
-            float right = this->_buffer[this->_position * channels + 1];
-            rob.write(i, right);
+        lob.write(i, left);
+        rob.write(i, right);
+
+        if (_peak[0] < left) {
+            _peak[0] = left;
         }
 
-        this->_position ++;
+        if (_peak[1] < right) {
+            _peak[1] = right;
+        }
+
+        frame.next();
     }
 
-    lob.multiply(this->_level);
+    lob.multiply(_level);
+    rob.multiply(_level);
 
-    if (channels == 1) {
-        lob.copyTo(rob);
-    } else {
-        rob.multiply(this->_level);
-    }
-
-    this->_processing = false;
+    _peak[0] *= _level;
+    _peak[1] *= _level;
+    _processing = false;
 }
 
 float Player::level() const {
-    return this->_level;
+    return _level;
+}
+
+Sound::Format Player::format() const
+{
+    return _file->format();
 }
 
 void Player::setLevel(float value) {
-    this->_level = value;
-    this->_config.setValue("player/level", value);
+    _level = value;
+    _config.setValue("player/level", value);
 }
 
 void Player::run() {
-    while (!this->_stopping) {
-        if (!this->_filename.isEmpty() && !this->_processing) {
-            this->_preparing = true;
-            this->_file.read(this->_filename);
-            this->_file.resample(this->_client.sampleRate());
+    while (!_stopping) {
+        if (!_filename.isEmpty() && !_processing) {
+            _preparing = true;
 
-            int size = this->_file.frames() * this->_file.channels();
-
-            if (this->_buffer) {
-                delete this->_buffer;
+            if (_file) {
+                delete _file;
+                _file = NULL;
             }
 
-            this->_buffer = new SoundFile::Sample[size];
+            _file = new Sound::Input(_filename);
+            _file->read(_buffer, _file->frames());
 
-            memcpy(this->_buffer,
-                   this->_file.buffer().data(),
-                   size * sizeof(float));
+            if (_buffer.channels() != 2) {
+                _buffer = _buffer.stereo();
+            }
 
-            this->_position = 0;
-            this->_filename.clear();
-            this->_preparing = false;
+            _position = 0;
+            _filename.clear();
+            _resampler.reset();
+            _preparing = false;
         } else {
-            this->usleep(10);
+            usleep(25);
         }
     }
 }
 
 void Player::play(const QString &filename) {
-    this->_filename = filename;
+    _filename = filename;
 }
 
 void Player::stop() {
-    this->_stopping = true;
+    _stopping = true;
 }

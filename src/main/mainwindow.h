@@ -5,7 +5,10 @@
 #include <QMainWindow>
 #include <QModelIndex>
 
-#include <engine/player.h>
+#include "engine/helper.h"
+#include "engine/player.h"
+#include "engine/scanner.h"
+#include "widgets/meter.h"
 
 namespace Ui {
 class MainWindow;
@@ -19,16 +22,29 @@ public:
     explicit MainWindow(QWidget *parent, Player &player);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *);
+
 private:
     Ui::MainWindow *ui;
     QModelIndex _last_expanded;
     Player &_player;
+    Scanner *_scanner;
+    friend class PeaksUpdater;
+    //class PeaksUpdater *_peaks_updater;
+    Helper *_meterUpdater;
+    Helper *_peaksUpdater;
+
+    Meter *_meter;
+    void updatePeaks(const QString &path);
 
 private slots:
     void filesSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void on_treeView_expanded(const QModelIndex &index);
     void on_treeView_activated(const QModelIndex &index);
     void on_treeView_clicked(const QModelIndex &index);
+    void on_level_valueChanged(int value);
+    void updateMeter();
 };
 
 #endif // MAINWINDOW_H

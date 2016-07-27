@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>257</width>
+    <height>283</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>VPiano-0.9 Test Window</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0" colspan="2">
+     <widget class="PianoKeybd" name="pianokeybd">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="renderHints">
+       <set>QPainter::Antialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+      </property>
+      <property name="baseOctave">
+       <number>2</number>
+      </property>
+      <property name="numOctaves">
+       <number>2</number>
+      </property>
+      <property name="rotation">
+       <number>-29</number>
+      </property>
+      <property name="showLabels">
+       <bool>true</bool>
+      </property>
+      <property name="useFlats">
+       <bool>false</bool>
+      </property>
+      <property name="transpose">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="KLed" name="kled">
+      <property name="state">
+       <enum>KLed::Off</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>257</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PianoKeybd</class>
+   <extends></extends>
+   <header>pianokeybd.h</header>
+  </customwidget>
+  <customwidget>
+   <class>KLed</class>
+   <extends></extends>
+   <header>kled.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pianokeybd</sender>
+   <signal>noteOn(int)</signal>
+   <receiver>label</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>63</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>37</x>
+     <y>150</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pianokeybd</sender>
+   <signal>noteOff(int)</signal>
+   <receiver>label</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>63</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>37</x>
+     <y>150</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pianokeybd</sender>
+   <signal>noteOn(int)</signal>
+   <receiver>kled</receiver>
+   <slot>on()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>187</x>
+     <y>150</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pianokeybd</sender>
+   <signal>noteOff(int)</signal>
+   <receiver>kled</receiver>
+   <slot>off()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>187</x>
+     <y>150</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

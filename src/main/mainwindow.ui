@@ -25,177 +25,64 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QTabWidget" name="tabWidget">
+        <widget class="QTreeView" name="treeView">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>2</horstretch>
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="tabPosition">
-          <enum>QTabWidget::South</enum>
+         <property name="minimumSize">
+          <size>
+           <width>250</width>
+           <height>0</height>
+          </size>
          </property>
-         <property name="tabShape">
-          <enum>QTabWidget::Rounded</enum>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
          </property>
-         <property name="currentIndex">
-          <number>1</number>
-         </property>
-         <property name="usesScrollButtons">
+         <property name="showDropIndicator" stdset="0">
           <bool>false</bool>
          </property>
-         <property name="movable">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="autoExpandDelay">
+          <number>100</number>
+         </property>
+         <property name="rootIsDecorated">
+          <bool>false</bool>
+         </property>
+         <property name="uniformRowHeights">
           <bool>true</bool>
          </property>
-         <widget class="QWidget" name="placesTab">
-          <attribute name="title">
-           <string>Places</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QTreeWidget" name="places">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::NoFrame</enum>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
-             </property>
-             <property name="lineWidth">
-              <number>0</number>
-             </property>
-             <property name="rootIsDecorated">
-              <bool>false</bool>
-             </property>
-             <property name="headerHidden">
-              <bool>true</bool>
-             </property>
-             <column>
-              <property name="text">
-               <string>1</string>
-              </property>
-             </column>
-             <item>
-              <property name="text">
-               <string>Local drives</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Library</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Favorites</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Trash</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="treeTab">
-          <attribute name="title">
-           <string>Filesystem</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QTreeView" name="treeView">
-             <property name="autoScrollMargin">
-              <number>12</number>
-             </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
-             </property>
-             <property name="showDropIndicator" stdset="0">
-              <bool>false</bool>
-             </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>24</width>
-               <height>24</height>
-              </size>
-             </property>
-             <property name="autoExpandDelay">
-              <number>100</number>
-             </property>
-             <property name="rootIsDecorated">
-              <bool>false</bool>
-             </property>
-             <property name="uniformRowHeights">
-              <bool>true</bool>
-             </property>
-             <property name="animated">
-              <bool>true</bool>
-             </property>
-             <property name="allColumnsShowFocus">
-              <bool>true</bool>
-             </property>
-             <property name="headerHidden">
-              <bool>true</bool>
-             </property>
-             <property name="expandsOnDoubleClick">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+         <property name="animated">
+          <bool>true</bool>
+         </property>
+         <property name="allColumnsShowFocus">
+          <bool>true</bool>
+         </property>
+         <property name="headerHidden">
+          <bool>true</bool>
+         </property>
+         <property name="expandsOnDoubleClick">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
         <widget class="QTreeView" name="files">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>3</horstretch>
+           <horstretch>2</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
-         </property>
-         <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOn</enum>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
@@ -224,17 +111,57 @@
         <widget class="QWidget" name="infoArea" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>2</horstretch>
+           <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>250</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>300</width>
+           <height>16777215</height>
+          </size>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <widget class="QGroupBox" name="groupBox">
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
             <property name="title">
              <string>File details</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_5">
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>12</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="filename">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+               <property name="margin">
+                <number>4</number>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QTableWidget" name="details">
                <property name="frameShape">
@@ -267,9 +194,6 @@
                <property name="showGrid">
                 <bool>false</bool>
                </property>
-               <property name="wordWrap">
-                <bool>false</bool>
-               </property>
                <property name="cornerButtonEnabled">
                 <bool>false</bool>
                </property>
@@ -284,32 +208,50 @@
                </attribute>
                <row>
                 <property name="text">
-                 <string>Filename</string>
+                 <string>Format:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <row>
                 <property name="text">
-                 <string>Format</string>
+                 <string>Codec:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <row>
                 <property name="text">
-                 <string>Sample rate</string>
+                 <string>Channels:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <row>
                 <property name="text">
-                 <string>Resolution</string>
+                 <string>Sample rate:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <row>
                 <property name="text">
-                 <string>Channels</string>
+                 <string>Duration:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <row>
                 <property name="text">
-                 <string>Codec</string>
+                 <string>Size:</string>
+                </property>
+                <property name="textAlignment">
+                 <set>AlignTrailing|AlignVCenter</set>
                 </property>
                </row>
                <column>
@@ -325,7 +267,7 @@
           <item>
            <widget class="QGroupBox" name="groupBox_2">
             <property name="title">
-             <string>Metadata</string>
+             <string>Library data</string>
             </property>
            </widget>
           </item>
@@ -367,13 +309,38 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="pitchArea" native="true">
+        <widget class="QWidget" name="meterArea" native="true">
          <property name="maximumSize">
           <size>
-           <width>150</width>
+           <width>100</width>
            <height>16777215</height>
           </size>
          </property>
+         <widget class="QSlider" name="level">
+          <property name="geometry">
+           <rect>
+            <x>37</x>
+            <y>0</y>
+            <width>25</width>
+            <height>84</height>
+           </rect>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+          <property name="invertedControls">
+           <bool>false</bool>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
         </widget>
        </item>
       </layout>

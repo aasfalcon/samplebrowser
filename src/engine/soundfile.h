@@ -4,6 +4,8 @@
 #include <QString>
 #include <QVector>
 
+#include "buffer.h"
+
 /**
  * @brief Simple in-memory soundfile
  */
@@ -13,9 +15,6 @@ public:
     SoundFile();
     SoundFile(const QString &filename);
     ~SoundFile();
-
-    typedef double Sample;
-    typedef QVector<Sample> Buffer;
 
     inline Buffer &buffer() { return this->_data; }
 
@@ -28,10 +27,26 @@ public:
     int channels() const;
     int frames() const;
 
+    struct TextInfo {
+        QString name;
+        QString format;
+        QString channels;
+        QString codec;
+        QString duration;
+        QString rate;
+        QString size;
+    };
+
+    TextInfo info() const;
+    static TextInfo readInfo(const QString &filename);
+
 private:
     Buffer _data;
     QString _filename;
     struct SF_INFO *_info;
+
+    static QMap<int, QString> _Map;
+    static QString _GetFormatString(int index);
 };
 
 #endif // SOUNDFILE_H

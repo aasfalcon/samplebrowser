@@ -1,12 +1,13 @@
 #ifndef METER_H
 #define METER_H
 
+#include <qvumeter/qvumeter.h>
 
-class Meter
+class Meter : public QVUMeter
 {
 
 public:
-    Meter();
+    Meter(QWidget *parent);
 };
 
 #endif // METER_H

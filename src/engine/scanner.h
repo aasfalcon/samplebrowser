@@ -1,29 +1,30 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <QString>
-#include <QtGui/qcolor.h>
+#include <QColor>
 
-class Scanner
+#include "helper.h"
+
+class Scanner : public Helper
 {
+    Q_OBJECT
 public:
-    Scanner();
-    typedef bool (*Progress)(int percent);
+    Scanner(QObject *parent);
 
     void clearCache() const;
-    void scanDir(const QString &in_dir) const;
     QString scanFile(const QString &in_file) const;
 
 private:
     QColor _color;
-    QString _cache_path;
+    QString _cachePath;
     int _height;
-    bool _line_only;
+    bool _lineOnly;
     int _width;
 
-    QByteArray _getHashData() const;
-    QString _getCacheFilename(QString const &in_file) const;
-    bool _scan(const QString &in_file, const QString &out_file) const;
+    QByteArray getHashData() const;
+    QString getCacheFilename(QString const &in_file) const;
+    bool scan(const QString &in_file, const QString &out_file) const;
+    void scanDir(const QString &path);
 };
 
 #endif // SCANNER_H

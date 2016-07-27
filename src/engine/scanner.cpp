@@ -9,46 +9,50 @@
 #include "config.h"
 #include "scanner.h"
 
-// the whole vendor wav2png source
-#include "../vendor/wav2png/src/wav2png.cpp"
+#include <wav2png/src/wav2png.hpp>
+#include <wav2png/src/wav2png.cpp>
 
-Scanner::Scanner()
-    : _color(WEE_SCANNER_FOREGROUND_DEFAULT)
+Scanner::Scanner(QObject *parent)
+    : Helper(parent)
+    , _color(WEE_SCANNER_FOREGROUND_DEFAULT)
     , _height(WEE_SCANNER_HEIGHT)
-    , _line_only(WEE_SCANNER_LINE_ONLY_DEFAULT)
+    , _lineOnly(WEE_SCANNER_LINE_ONLY_DEFAULT)
     , _width(WEE_SCANNER_WIDTH)
 {
-    this->_cache_path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-    QDir dir(this->_cache_path);
+    _cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    QDir dir(_cachePath);
 
     if (!dir.exists()) {
         dir.mkpath(dir.absolutePath());
     }
+
+    connect(this, &Scanner::performing,
+            this, &Scanner::scanDir);
 }
 
-QByteArray Scanner::_getHashData() const {
+QByteArray Scanner::getHashData() const {
     QByteArray result;
     QDataStream stream(&result, QIODevice::WriteOnly);
     stream
-            << this->_color
-            << this->_line_only
-            << this->_width
-            << this->_height
+            << _color
+            << _lineOnly
+            << _width
+            << _height
                ;
     return result;
 }
 
-QString Scanner::_getCacheFilename(QString const &in_file) const {
+QString Scanner::getCacheFilename(QString const &in_file) const {
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(this->_getHashData());
+    hash.addData(getHashData());
     hash.addData(in_file.toUtf8());
-    return this->_cache_path + QString(hash.result().toHex()) + ".png";
+    return _cachePath + QDir::separator() + QString(hash.result().toHex()) + ".png";
 }
 
-bool Scanner::_scan(const QString &in_file, const QString &out_file) const {
+bool Scanner::scan(const QString &in_file, const QString &out_file) const {
     QFileInfo in_info(in_file), out_info(out_file);
 
-    if (!in_info.exists() || !in_info.isFile() || (out_info.exists() &&
+    if (!out_info.exists() || !out_info.isFile() || (out_info.exists() &&
             in_info.lastModified() > out_info.lastModified()))
     {
         SndfileHandle sample(in_file.toStdString(), SFM_READ);
@@ -57,14 +61,14 @@ bool Scanner::_scan(const QString &in_file, const QString &out_file) const {
             return false;
         }
 
-        png::image<png::rgba_pixel> image(this->_width, this->_height);
+        png::image<png::rgba_pixel> image(_width, _height);
         int r, g, b;
-        this->_color.getRgb(&r, &g, &b);
+        _color.getRgb(&r, &g, &b);
 
         compute_waveform(sample, image,
                          png::rgba_pixel(0, 0, 0),
                          png::rgba_pixel(r, g, b),
-                         false, 0, 0, this->_line_only, 0);
+                         false, 0, 0, _lineOnly, 0);
         image.write(out_file.toUtf8());
     }
 
@@ -72,7 +76,7 @@ bool Scanner::_scan(const QString &in_file, const QString &out_file) const {
 }
 
 void Scanner::clearCache() const {
-    QDir dir(this->_cache_path);
+    QDir dir(_cachePath);
     dir.setFilter(QDir::NoDotAndDotDot | QDir::Files);
 
     foreach (QString item, dir.entryList()) {
@@ -80,21 +84,32 @@ void Scanner::clearCache() const {
     }
 }
 
-void Scanner::scanDir(const QString &in_dir) const {
-    QDir dir(in_dir);
-    dir.setFilter(QDir::NoDotAndDotDot | QDir::Files);
+void Scanner::scanDir(const QString &path) {
+    QFileInfo info(path);
 
-    foreach (QString in_file, dir.entryList()) {
-        QString out_file = this->_getCacheFilename(in_file);
-        this->_scan(in_file, out_file);
+    if (info.exists() && info.isDir()) {
+        QDir dir(path);
+        dir.setFilter(QDir::NoDotAndDotDot | QDir::Files);
+
+        foreach (QString in_file, dir.entryList()) {
+            QString in_path = path + QDir::separator() + in_file;
+            QString out_path = getCacheFilename(in_path);
+            scan(in_path, out_path);
+
+            if (_job != path || _isFinishing) {
+                return;
+            }
+        }
+
+        _job.clear();
     }
 }
 
 
 QString Scanner::scanFile(const QString &in_file) const {
-    QString out_file = this->_getCacheFilename(in_file);
+    QString out_file = getCacheFilename(in_file);
 
-    if (this->_scan(in_file, out_file)) {
+    if (scan(in_file, out_file)) {
         return out_file;
     }
 

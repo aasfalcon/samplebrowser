@@ -25,7 +25,7 @@ protected:
     void run();
 
 signals:
-    void performing(QString &job);
+    void performing(QString job);
     void repeating();
 };
 

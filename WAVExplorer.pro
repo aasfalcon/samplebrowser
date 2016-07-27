@@ -3,10 +3,14 @@ TEMPLATE = subdirs
 SUBDIRS = \
     main \
     engine \
-    qtjack
+    widgets \
+    bundle \
+    plugins
 
-engine.subdir   = src/engine
-main.subdir     = src/main
-qtjack.subdir   = vendor/qtjack
+engine.subdir = src/engine
+widgets.subdir = src/widgets
+main.subdir = src/main
+bundle.subdir = bundle
+plugins.subdir = src/plugins
 
-main.depends    = engine qtjack
+main.depends = engine widgets bundle plugins

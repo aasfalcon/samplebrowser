@@ -1,8 +1,22 @@
+#include <QString>
+
+#include <sndfile.h>
+
 #include "format.h"
 
-namespace Sound {
+using namespace Sound;
 
 Format::InfoMap Format::_Maps[Format::KindCount];
+
+Format::Format()
+    : _code(0)
+{
+}
+
+Format::Format(int code)
+    : _code(code)
+{
+}
 
 const int Format::_CountCommands[Format::KindCount] = {
     SFC_GET_SIMPLE_FORMAT_COUNT, SFC_GET_FORMAT_MAJOR_COUNT,
@@ -12,11 +26,6 @@ const int Format::_CountCommands[Format::KindCount] = {
 const int Format::_Commands[Format::KindCount] = {
     SFC_GET_SIMPLE_FORMAT, SFC_GET_FORMAT_MAJOR, SFC_GET_FORMAT_SUBTYPE,
 };
-
-Format::Format(int code)
-    : _code(code)
-{
-}
 
 int Format::typeCode() const { return _code && SF_FORMAT_TYPEMASK; }
 int Format::subtypeCode() const { return _code && SF_FORMAT_SUBMASK; }
@@ -29,15 +38,15 @@ QString Format::subtype() const { return Subtype(_code).name; }
 Format::operator int() const { return _code; }
 int Format::operator=(int value) { return _code = value; }
 
-Format::InfoMap Format::Simples() { return _Map(KindSimple); }
-Format::InfoMap Format::Subtypes() { return _Map(kindSubtypes); }
-Format::InfoMap Format::Types() { return _Map(KindTypes); }
+Format::InfoMap Format::Simples() { return map(KindSimple); }
+Format::InfoMap Format::Subtypes() { return map(kindSubtypes); }
+Format::InfoMap Format::Types() { return map(KindTypes); }
 
 Format::Info Format::Simple(int code) { return Simples()[code]; }
 Format::Info Format::Subtype(int code) { return Subtypes()[code]; }
 Format::Info Format::Type(int code) { return Types()[code]; }
 
-const Format::InfoMap& Format::_Map(Format::InfoKind kind)
+const Format::InfoMap& Format::map(Format::InfoKind kind)
 {
     InfoMap& map = _Maps[kind];
 
@@ -55,5 +64,4 @@ const Format::InfoMap& Format::_Map(Format::InfoKind kind)
     }
 
     return map;
-}
 }

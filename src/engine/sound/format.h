@@ -2,8 +2,8 @@
 #define FORMAT_H
 
 #include <QMap>
-#include <QString>
-#include <sndfile.hh>
+
+class QString;
 
 namespace Sound {
 
@@ -17,6 +17,7 @@ public:
 
     typedef QMap<int, Info> InfoMap;
 
+    Format();
     Format(int code);
 
     int typeCode() const;
@@ -50,7 +51,8 @@ private:
     static const int _CountCommands[KindCount];
     static const int _Commands[KindCount];
     static InfoMap _Maps[KindCount];
-    static const InfoMap &_Map(InfoKind kind);
+
+    static const InfoMap &map(InfoKind kind);
 };
 
 } // namespace Sound
