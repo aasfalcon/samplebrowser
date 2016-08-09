@@ -4,13 +4,16 @@
 #include <QFileSystemModel>
 #include <QDirModel>
 #include <QDebug>
+#include <QMenuBar>
 #include <QTime>
+#include <QSettings>
 #include <QCloseEvent>
 
-MainWindow::MainWindow(QWidget *parent, Player &player)
+#include "driverdialog.h"
+
+MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , _player(player)
     , _scanner(new Scanner(this))
 {
     ui->setupUi(this);
@@ -89,7 +92,7 @@ void MainWindow::filesSelectionChanged(const QItemSelection &selected, const QIt
     if (selectedIndexes.count()) {
         QModelIndex index = selected.indexes().at(0);
         QString path = filesModel->filePath(index.sibling(index.row(), 0));
-        _player.play(path);
+        //_player.play(path);
 
         // show file info
 //        SoundFile::TextInfo info = SoundFile::readInfo(path);
@@ -171,12 +174,12 @@ void MainWindow::on_level_valueChanged(int value)
         level *= linear * 10;
     }
 
-    _player.setLevel(level);
+    //_player.setLevel(level);
 }
 
 void MainWindow::updateMeter()
 {
-    //SoundFile::Sample *peaks = _player.peak();
+    //Sample *peaks = _player.peak();
     //_meter->setLeftValue(peaks[0]);
     //_meter->setRightValue(peaks[1]);
 }
@@ -186,4 +189,10 @@ void MainWindow::updatePeaks(const QString &path)
     QString imagePath = _scanner->scanFile(path);
     QPixmap pixmap = QPixmap(imagePath).scaled(ui->peaks->size());
     ui->peaks->setPixmap(pixmap);
+}
+
+void MainWindow::on_actionSound_settings_triggered()
+{
+    DriverDialog *dialog = new DriverDialog(this);
+    dialog->show();
 }

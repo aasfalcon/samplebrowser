@@ -3,29 +3,44 @@
 
 #include <list>
 #include <map>
+#include <memory>
+#include <string>
 
-#include "iserverprovider.h"
+#include "shared/iserver.h"
 
-class ServerProvider : public IServerProvider
+struct lt__handle;
+struct IPlugin;
+
+class ServerProvider: public IServer
 {
 public:
     ServerProvider();
     ~ServerProvider();
 
-    virtual std::list<ProviderInfo> find(
-            const std::string &name, unsigned version,
-            VersionCompare compare = VersionEqual) const;
-    virtual std::list<ProviderInfo> find(
-            const std::string &interface) const;
-    virtual void initialize(const std::string &path);
-    virtual IProvider *newProvider(const ProviderInfo &providerInfo);
-    virtual void deleteProvider(IProvider *provider);
-
+    virtual Interface *create(const char *interfaceName,
+                              const Preference *preference = 0);
+    virtual void destroy(Interface *object);
+    virtual void poll(const char *pluginsPath);
+    virtual void prefer(const char *interfaceName, const char *pluginName,
+                        const char *version = "0.0.0",
+                        Version::Compare compare = Version::CompareGreaterOrEqual,
+                        bool strict = false);
 private:
-    std::list<IServerProvider::PluginInfo> _plugins;
-    std::map<const IProvider *, IPlugin *> _providerPlugin;
+    struct InternalPreference {
+        Version::Compare compare;
+        std::string pluginName;
+        Version version;
+    };
 
-    static int initPlugin(const char *path, void *data);
+    std::list<std::shared_ptr<lt__handle>> _modules;
+    std::map<Interface *, IPlugin *> _objectToPlugin;
+    std::list<std::shared_ptr<IPlugin>> _plugins;
+    std::string _pluginsPath;
+    std::map<std::string, InternalPreference> _preferences;
+
+    IPlugin *findPlugin(const char *interfaceName,
+                        const InternalPreference *preference);
+
 };
 
 #endif // SERVERPROVIDER_H

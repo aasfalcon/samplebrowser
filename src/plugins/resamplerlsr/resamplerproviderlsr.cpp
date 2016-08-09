@@ -1,63 +1,101 @@
 #include <cstring>
+#include <stdexcept>
+#include <samplerate.h>
 
 #include "resamplerproviderlsr.h"
 
-#include <samplerate.h>
+int ResamplerProviderLSR::_types[Sound::QualityCount] = {
+    SRC_SINC_FASTEST,           // QualityFast
+    SRC_SINC_MEDIUM_QUALITY,    // QualityMedium
+    SRC_SINC_BEST_QUALITY,      // QualityBest
+};
 
-void ResamplerProviderLSR::fromFloat(void *output,
-                                     IResamplerProvider::Type outputType,
-                                     const float *input,
-                                     unsigned count) const
+ResamplerProviderLSR::ResamplerProviderLSR()
+    : IResampler()
+    , _channels(0)
+    , _frames(0)
+    , _input(NULL)
+    , _inputFramesMax(0)
+    , _inputRate(0)
+    , _output(NULL)
+    , _outputRate(0)
+    , _state(NULL)
 {
-    switch (outputType) {
-    case TypeInt:
-        src_float_to_int_array(input, (int *)output, count);
-        break;
+}
 
-    case TypeShort:
-        src_float_to_short_array(input, (short *)output, count);
-        break;
+ResamplerProviderLSR::~ResamplerProviderLSR()
+{
+    if (_output) {
+        delete _output;
+    }
 
-    default:
-        ResamplerProvider::fromFloat(output, outputType, input, count);
+    if (_state) {
+        src_delete(_state);
     }
 }
 
-void ResamplerProviderLSR::initialize(IResamplerProvider::Quality quality,
-                                      unsigned channels, unsigned frames,
-                                      double rate)
+void ResamplerProviderLSR::init(Sound::Quality quality, unsigned channels,
+                                unsigned frames, double rate)
 {
-    ResamplerProvider::initialize(quality, channels, frames, rate);
-    int error = 0;
-    int types[] = {
-        SRC_SINC_FASTEST,           // QualityFast
-        SRC_SINC_MEDIUM_QUALITY,    // QualityMedium
-        SRC_SINC_BEST_QUALITY,      // QualityBest
-    };
+    _channels = channels;
+    _frames = frames;
 
-    _state = src_new(types[quality], channels, &error);
+    if (_output) {
+        delete _output;
+    }
+
+    _output = new float[frames * channels];
+    _outputRate = rate;
+
+    int error = 0;
+
+    if (_state) {
+        src_delete(_state);
+    }
+
+    _state = src_new(_types[quality], channels, &error);
 
     if (error) {
-        throw src_strerror(error);
+        throw std::runtime_error(src_strerror(error));
     }
+
+    setInputRate(rate);
 }
 
-void ResamplerProviderLSR::toFloat(float *output, const void *input,
-                                   IResamplerProvider::Type inputType,
-                                   unsigned count) const
+float *ResamplerProviderLSR::output()
 {
-    switch (inputType) {
-    case TypeInt:
-        src_int_to_float_array((const int *)input, output, count);
-        break;
+    return _output;
+}
 
-    case TypeShort:
-        src_short_to_float_array((const short *)input, output, count);
-        break;
+unsigned ResamplerProviderLSR::perform()
+{
+    double ratio = _outputRate / _inputRate;
+    SRC_DATA data = { (float *)_input, _output, (int)_inputFramesMax,
+                      (int)_frames, 0, 0, 0, ratio };
 
-    default:
-        ResamplerProvider::toFloat(output, input, inputType, count);
+    int error = src_process((SRC_STATE *)_state, &data);
+
+    if (error) {
+        throw std::runtime_error(src_strerror(error));
     }
+
+    if (data.output_frames > data.output_frames_gen) {
+        memset(data.data_out + data.output_frames_gen * _channels, 0,
+               (data.output_frames - data.output_frames_gen) * _channels * sizeof(float));
+    }
+
+    return data.input_frames_used;
+}
+unsigned ResamplerProviderLSR::process(const float *input, unsigned inputFramesMax)
+{
+    _input = input;
+    _inputFramesMax = inputFramesMax;
+    return perform();
+}
+
+void ResamplerProviderLSR::setInputRate(double rate)
+{
+    _inputRate = rate;
 }
 
 void ResamplerProviderLSR::reset()
@@ -66,49 +104,29 @@ void ResamplerProviderLSR::reset()
         int error = src_reset(_state);
 
         if (error) {
-            throw src_strerror(error);
+            throw std::runtime_error(src_strerror(error));
         }
     }
 }
 
-void ResamplerProviderLSR::finalize()
+unsigned ResamplerProviderLSR::simple(float *dest, unsigned dframes,
+                                      const float *source, unsigned sframes,
+                                      unsigned channels,
+                                      double ratio, Sound::Quality quality)
 {
-    if (_isInitialized) {
-        if (_state) {
-            _state = src_delete(_state);
-        }
-
-        ResamplerProvider::finalize();
-    }
-}
-
-unsigned ResamplerProviderLSR::perform()
-{
-    double ratio = _outputRate / _inputRate;
-    int inputFrames = (_frames + 1.0) / _outputRate * _inputRate;
-
     SRC_DATA data = {
-        (float *)_input,
-        _output,
-        inputFrames,
-        (int)_frames,
+        (float *)source, dest,
+        (long)sframes, (long)dframes,
         0, 0,
-        0,
-        ratio,
+        1,
+        ratio
     };
 
-    int error = src_process((SRC_STATE *)_state, &data);
+    int error = src_simple(&data, _types[quality], channels);
 
     if (error) {
-        throw src_strerror(error);
+        throw std::runtime_error(src_strerror(error));
     }
 
-    unsigned unused =
-            (_frames - data.output_frames_gen) * _channels * sizeof(float);
-
-    if (unused) {
-        memset(_output + data.output_frames_gen, 0, unused);
-    }
-
-    return data.input_frames_used;
+    return data.output_frames_gen;
 }

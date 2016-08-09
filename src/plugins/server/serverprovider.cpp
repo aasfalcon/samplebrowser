@@ -1,9 +1,13 @@
-#include <string>
-
+#include <cstring>
+#include <sstream>
 #include <ltdl.h>
 
-#include "common/plugin.h"
+#include "shared/iplugin.h"
 #include "serverprovider.h"
+
+#define PLUGIN_NAME
+#define PLUGIN_DESCRIPTION
+#include "shared/plugin.h"
 
 ServerProvider::ServerProvider()
 {
@@ -12,106 +16,129 @@ ServerProvider::ServerProvider()
 
 ServerProvider::~ServerProvider()
 {
-    std::map<const IProvider *, IPlugin *>::iterator it;
-
-    for (it = _providerPlugin.begin(); it != _providerPlugin.end(); ++it) {
-        IPlugin *plugin = it->second;
-        plugin->destroy();
-    }
-
     lt_dlexit();
 }
 
-std::list<IServerProvider::ProviderInfo> ServerProvider::find(
-        const std::string &name,
-        unsigned version,
-        IServerProvider::VersionCompare compare) const
+Interface *ServerProvider::create(const char *interfaceName,
+                                  const IServer::Preference *preference)
 {
-    std::list<IServerProvider::ProviderInfo> result;
-    std::list<IServerProvider::PluginInfo>::const_iterator plit;
+    InternalPreference ip;
+    InternalPreference *ipp = NULL;
 
-    for (plit = _plugins.begin(); plit != _plugins.end(); ++plit) {
-        std::list<IServerProvider::ProviderInfo>::const_iterator prit;
+    if (preference) {
+        ip = {
+            preference->compare,
+            preference->pluginName,
+            preference->version,
+        };
 
-        for (prit = plit->plugin->providers().begin();
-             prit != plit->plugin->providers().end(); ++prit)
-        {
-            if (prit->name == name && (
-                (compare == VersionEqual && prit->version == version)
-                || (compare == VersionGreaterThan && prit->version > version)
-                || (compare == VersionGreaterThanOrEqual && prit->version >= version)
-                || (compare == VersionLowerThan && prit->version < version)
-                || (compare == VersionLowerThanOrEqual && prit->version <= version)
-                )
-            ) {
-                result.push_back(*prit);
+        ipp = &ip;
+    } else {
+        auto it = _preferences.find(interfaceName);
+
+        if (it != _preferences.end()) {
+            ipp = &it->second;
+        }
+    }
+
+    IPlugin *plugin = this->findPlugin(interfaceName, ipp);
+    Interface *object = plugin->create(interfaceName);
+    _objectToPlugin[object] = plugin;
+    return object;
+}
+
+void ServerProvider::destroy(Interface *object)
+{
+    IPlugin *plugin = _objectToPlugin.at(object);
+    _objectToPlugin.erase(_objectToPlugin.find(object));
+    plugin->destroy(object);
+}
+
+IPlugin *ServerProvider::findPlugin(const char *interfaceName,
+                                    const InternalPreference *preference)
+{
+    for (auto it = _plugins.begin(); it != _plugins.end(); ++it) {
+        IPlugin *plugin = it->get();
+
+        if (plugin->provides(interfaceName)) {
+            if (!preference) {
+                return plugin;
+            }
+
+            const IPlugin::Info *info = (*it)->info();
+
+            if (preference->pluginName == info->name) {
+                Version ver(info->version);
+
+                if (ver.pass(preference->compare, preference->version)) {
+                    return plugin;
+                }
             }
         }
     }
 
-    return result;
-}
+    std::ostringstream message;
+    message << "Can't find plugin";
 
-std::list<IServerProvider::ProviderInfo> ServerProvider::find(const std::string &interface) const
-{
-    std::list<IServerProvider::ProviderInfo> result;
-    std::list<IServerProvider::PluginInfo>::const_iterator it;
-
-    for (it = _plugins.begin(); it != _plugins.end(); ++it) {
-        std::list<IServerProvider::ProviderInfo>::const_iterator pit;
-
-        for (pit = it->plugin->providers().begin();
-             pit != it->plugin->providers().end(); ++pit)
-        {
-            if (pit->interface == interface) {
-                result.push_back(*pit);
-            }
-        }
+    if (preference) {
+        message << " [" << preference->pluginName
+                << Version::sign(preference->compare)
+                << preference->version.str() << ']';
     }
 
-    return result;
+    message << " providing interface "
+            << '[' << interfaceName << ']'
+            << " in path: " << _pluginsPath;
+    throw std::runtime_error(message.str());
 }
 
-int ServerProvider::initPlugin(const char *path, void *data) {
-    ServerProvider *server = static_cast<ServerProvider *>(data);
-    lt_dlhandle handle = lt_dlopen(path);
+void ServerProvider::poll(const char *pluginsPath)
+{
+    _plugins.clear();
 
-    if (handle) {
-        IPlugin *(*create)() = (IPlugin *(*)())
-                lt_dlsym(handle, "plugin_create");
+    auto pollPlugin = [](const char *path, void *pthis) -> int
+    {
+        std::shared_ptr<lt__handle> handle(
+                    lt_dlopenext(path),
+                    lt_dlclose);
 
-        if (create) {
-            IPlugin *plugin = (*create)();
+        if (handle) {
+            auto plugin_create = (IPlugin *(*)())
+                    lt_dlsym(handle.get(), STRINGIFY(PLUGIN_CREATE));
+            auto plugin_destroy = (void (*)(IPlugin *))
+                    lt_dlsym(handle.get(), STRINGIFY(PLUGIN_DESTROY));
 
-            if (plugin) {
-                PluginInfo pli;
-                pli.path = path;
-                pli.plugin = plugin;
-                server->_plugins.push_back(pli);
+            if (plugin_create && plugin_destroy) {
+                IPlugin *plugin = (*plugin_create)();
+                ServerProvider *server = (ServerProvider *)pthis;
+                server->_plugins.push_back(
+                            std::shared_ptr<IPlugin>(plugin, plugin_destroy));
+                server->_modules.push_back(handle);
             }
         }
+
+        return 0;
+    };
+
+    lt_dlsetsearchpath(pluginsPath);
+    lt_dlforeachfile(pluginsPath, pollPlugin, this);
+    _pluginsPath = pluginsPath;
+}
+
+void ServerProvider::prefer(const char *interfaceName, const char *pluginName,
+                            const char *version, Version::Compare compare, bool strict)
+{
+    InternalPreference preference = { compare, pluginName, Version(version) };
+
+    try {
+        findPlugin(interfaceName, &preference);
+    } catch(...) {
+        if (strict) {
+            throw;
+        }
+
+        return;
     }
 
-    return 0;
-}
-
-void ServerProvider::initialize(const std::string &path)
-{
-    lt_dlforeachfile(path.c_str(), &ServerProvider::initPlugin, this);
-}
-
-IProvider *ServerProvider::newProvider(const ProviderInfo &providerInfo)
-{
-    IPlugin *plugin = (IPlugin *)providerInfo.plugin;
-    IProvider *provider = plugin->newProvider(providerInfo.name,
-                                              providerInfo.version);
-    _providerPlugin[provider] = plugin;
-    return provider;
-}
-
-void ServerProvider::deleteProvider(IProvider *provider)
-{
-    IPlugin *plugin = _providerPlugin[provider];
-    _providerPlugin.erase(_providerPlugin.find(provider));
-    plugin->deleteProvider(provider);
+    _preferences[interfaceName] = preference;
 }

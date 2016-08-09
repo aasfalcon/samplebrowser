@@ -9,9 +9,8 @@
 #define WEE_SCANNER_FOREGROUND_DEFAULT QColor("#2d89ef")
 
 #define WEE_HELPER_SLEEP_TIME 100
-#define WEE_RESAMPLE_TAIL 256
 
-typedef double Sample;
+typedef float Sample;
 
 #include <QDebug>
 

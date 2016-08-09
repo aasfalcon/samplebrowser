@@ -1,8 +1,10 @@
 #define PLUGIN_NAME PluginServer
+#define PLUGIN_DESCRIPTION \
+    "Server to manage dynamic linking plugins"
 
-#include "common/plugin.h"
+#include "shared/plugin.h"
 #include "serverprovider.h"
 
 PLUGIN_BEGIN
-PLUGIN_REGISTER(IServerProvider, ServerProvider, 1.0.0)
+PLUGIN_PROVIDES(IServer, ServerProvider)
 PLUGIN_END

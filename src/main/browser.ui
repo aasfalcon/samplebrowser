@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Browser</class>
+ <widget class="QMainWindow" name="Browser">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDevelop">
+    <property name="title">
+     <string>Develop</string>
+    </property>
+    <addaction name="actionCommand_1"/>
+    <addaction name="actionCommand_2"/>
+    <addaction name="separator"/>
+    <addaction name="actionSound_device"/>
+   </widget>
+   <addaction name="menuDevelop"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionCommand_1">
+   <property name="text">
+    <string>Command 1</string>
+   </property>
+  </action>
+  <action name="actionCommand_2">
+   <property name="text">
+    <string>Command 2</string>
+   </property>
+  </action>
+  <action name="actionSound_device">
+   <property name="text">
+    <string>Sound device...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

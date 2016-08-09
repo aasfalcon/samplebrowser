@@ -1,8 +1,9 @@
+# External code bundle (vendors)
+
 TEMPLATE = subdirs
 
 SUBDIRS = \
 	WaveformWidget \
 	audiowaveform \
-	qtjack \
 	qvumeter \
 	vpiano

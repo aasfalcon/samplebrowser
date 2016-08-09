@@ -34,7 +34,6 @@ void Helper::repeat() {
 }
 
 void Helper::run() {
-    return;
     while (!_isFinishing) {
         if (_isRepeating) {
             emit repeating();

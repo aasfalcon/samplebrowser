@@ -6,7 +6,6 @@
 #include <QModelIndex>
 
 #include "engine/helper.h"
-#include "engine/player.h"
 #include "engine/scanner.h"
 #include "widgets/meter.h"
 
@@ -19,7 +18,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent, Player &player);
+    explicit MainWindow(QWidget *parent);
     ~MainWindow();
 
 protected:
@@ -28,7 +27,6 @@ protected:
 private:
     Ui::MainWindow *ui;
     QModelIndex _last_expanded;
-    Player &_player;
     Scanner *_scanner;
     friend class PeaksUpdater;
     //class PeaksUpdater *_peaks_updater;
@@ -45,6 +43,7 @@ private slots:
     void on_treeView_clicked(const QModelIndex &index);
     void on_level_valueChanged(int value);
     void updateMeter();
+    void on_actionSound_settings_triggered();
 };
 
 #endif // MAINWINDOW_H

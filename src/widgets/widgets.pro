@@ -1,3 +1,5 @@
+# Custom widgets
+
 QT += widgets
 
 TARGET = widgets

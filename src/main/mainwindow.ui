@@ -348,6 +348,40 @@
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDevelop">
+    <property name="title">
+     <string>Develop</string>
+    </property>
+    <addaction name="actionSound_settings"/>
+    <addaction name="actionTest"/>
+   </widget>
+   <addaction name="menuDevelop"/>
+  </widget>
+  <action name="actionSound_settings">
+   <property name="icon">
+    <iconset theme="edit-cut"/>
+   </property>
+   <property name="text">
+    <string>Sound settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Sound settings dialog</string>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>Test</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

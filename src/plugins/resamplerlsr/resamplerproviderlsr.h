@@ -1,24 +1,38 @@
 #ifndef RESAMPLERPROVIDERLSR_H
 #define RESAMPLERPROVIDERLSR_H
 
-#include "common/resamplerprovider.h"
+#include "shared/iresampler.h"
+#include "../sound/sound.h"
 
 struct SRC_STATE_tag;
 
-class ResamplerProviderLSR : public ResamplerProvider
+class ResamplerProviderLSR: public IResampler
 {
 public:
-    virtual void fromFloat(void *output, Type outputType,
-                           const float *input, unsigned count) const;
-    virtual void initialize(Quality quality, unsigned channels, unsigned frames, double rate);
-    virtual void toFloat(float *output, const void *input, Type inputType,
-                         unsigned count) const;
+    ResamplerProviderLSR();
+    virtual ~ResamplerProviderLSR();
+    virtual void init(Sound::Quality quality, unsigned channels,
+                      unsigned frames, double rate);
+    float *output();
+    unsigned process(const float *input, unsigned inputFramesMax);
     void reset();
+    void setInputRate(double rate);
+    virtual unsigned simple(float *dest, unsigned dframes,
+                            const float *source, unsigned sframes,
+                            unsigned channels, double ratio,
+                            Sound::Quality quality);
 
 private:
+    unsigned _channels;
+    unsigned _frames;
+    const float *_input;
+    unsigned _inputFramesMax;
+    double _inputRate;
+    float *_output;
+    double _outputRate;
     SRC_STATE_tag *_state;
+    static int _types[Sound::QualityCount];
 
-    void finalize();
     unsigned perform();
 };
 

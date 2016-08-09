@@ -86,7 +86,7 @@ void Scanner::clearCache() const {
 
 void Scanner::scanDir(const QString &path) {
     QFileInfo info(path);
-
+return;
     if (info.exists() && info.isDir()) {
         QDir dir(path);
         dir.setFilter(QDir::NoDotAndDotDot | QDir::Files);

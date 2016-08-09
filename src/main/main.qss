@@ -18,3 +18,7 @@ QLabel#filename {
 }
 
 QGroupBox { text-transform: uppercase; font-weight: bold; }
+
+QStatusBar::item {
+    border: 0px;
+}
