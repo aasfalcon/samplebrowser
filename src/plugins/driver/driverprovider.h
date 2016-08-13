@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <map>
 #include <memory>
 
 #include <RtAudio.h>
@@ -15,6 +16,7 @@ public:
     DriverProvider();
     virtual ~DriverProvider();
 
+    const Api *apiInfo(ApiType type);
     unsigned connect(const ConnectOptions &options);
     void control(Control command);
     void disconnect();
@@ -24,6 +26,7 @@ public:
     double time() const;
 
 private:
+    std::map<ApiType, std::shared_ptr<Api>> _apiInfos;
     static std::string _names[ApiCount];
     std::shared_ptr<DriverInfo> _driverInfo;
     std::string _name;

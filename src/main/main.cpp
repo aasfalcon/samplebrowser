@@ -1,6 +1,7 @@
 #include <stdexcept>
 
 #include <QApplication>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QStandardPaths>
@@ -24,7 +25,7 @@ int main(int argc, char *argv[]) {
     server->startup("/tmp/wexplorer.build/src/plugins");
     int result = 1;
 
-    server->prefer("IResampler", "PluginResamplerSoXR");
+    server->prefer("IResampler", "PluginResamplerLSR");
 
     try {
         WExplorer app(argc, argv);

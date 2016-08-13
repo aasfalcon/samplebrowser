@@ -2,6 +2,7 @@
 #define IDRIVER_H
 
 #include "interface.h"
+#include "../sound/sound.h"
 
 struct IDriver: Interface {
     enum SampleFormat {
@@ -28,6 +29,19 @@ struct IDriver: Interface {
         ApiCount
     };
 
+    enum Status {
+        StatusOk                = 0x00,
+        StatusInputOverflow     = 0x01,
+        StatusOutputUnderflow   = 0x02,
+    };
+
+    enum Control {
+        ControlContinue = 0,
+        ControlStart = ControlContinue,
+        ControlAbort,
+        ControlStop,
+    };
+
     struct Device {
         char *name;
         unsigned channelsDuplex;
@@ -49,7 +63,8 @@ struct IDriver: Interface {
 
     struct DriverInfo {
         unsigned apiCount;
-        Api *apis;
+        ApiType *apis;
+        const char **names;
         ApiType defaultApi;
     };
 
@@ -58,19 +73,6 @@ struct IDriver: Interface {
         unsigned channelFirst;
         unsigned channels;
         unsigned sampleRate;
-    };
-
-    enum Status {
-        StatusOk                = 0x00,
-        StatusInputOverflow     = 0x01,
-        StatusOutputUnderflow   = 0x02,
-    };
-
-    enum Control {
-        ControlContinue = 0,
-        ControlStart = ControlContinue,
-        ControlAbort,
-        ControlStop,
     };
 
     struct ProcessParams {
@@ -101,18 +103,22 @@ struct IDriver: Interface {
         unsigned bufferSize;
         unsigned inputChannels;
         unsigned inputDeviceId;
-        IDriver::ApiType apiType;
+        bool isDuplex;
+        bool isRealtime;
+        bool isTested;
+        ApiType apiType;
         const char *name;
         unsigned outputChannels;
         unsigned outputDeviceId;
         int priority;
         SampleFormat sampleFormat;
         unsigned sampleRate;
-        bool xrunStop;
+        bool isStoppingOnXrun;
     };
 
     typedef Control (*Process)(const ProcessParams &data);
 
+    virtual const Api *apiInfo(ApiType type) = 0;
     virtual unsigned connect(const ConnectOptions &options) = 0;
     virtual void control(Control task) = 0;
     virtual void disconnect() = 0;

@@ -18,15 +18,20 @@ void Driver::abort()
     _provider->control(IDriver::ControlAbort);
 }
 
+const IDriver::Api &Driver::apiInfo(IDriver::ApiType type) const
+{
+    return *_provider->apiInfo(type);
+}
+
 unsigned Driver::bufferFrames() const
 {
     return _bufferFrames;
 }
 
-void Driver::connect(std::shared_ptr<IDriver::ConnectOptions> options)
+void Driver::connect(const IDriver::ConnectOptions &options)
 {
     _provider = PLUGIN_FACTORY(IDriver);
-    _bufferFrames = _provider->connect(*options);
+    _bufferFrames = _provider->connect(options);
 
     unsigned formats[Sound::TypeCount] = {
         IDriver::SampleFloat32,
@@ -40,7 +45,7 @@ void Driver::connect(std::shared_ptr<IDriver::ConnectOptions> options)
     _sampleType = Sound::TypeCount;
 
     for (unsigned st = 0; st < Sound::TypeCount; st++) {
-        if (formats[st] == options->sampleFormat) {
+        if (formats[st] == options.sampleFormat) {
             _sampleType = Sound::Type(st);
             break;
         }
@@ -49,6 +54,11 @@ void Driver::connect(std::shared_ptr<IDriver::ConnectOptions> options)
     if (_sampleType == Sound::TypeCount) {
         throw std::runtime_error("Unknown sample format");
     }
+}
+
+void Driver::disconnect()
+{
+    _provider->disconnect();
 }
 
 const IDriver::DriverInfo &Driver::info() const

@@ -10,8 +10,4 @@
 
 #define WEE_HELPER_SLEEP_TIME 100
 
-typedef float Sample;
-
-#include <QDebug>
-
 #endif // CONFIG_H

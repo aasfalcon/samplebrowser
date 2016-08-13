@@ -2,9 +2,12 @@
 #define DRIVERDIALOG_H
 
 #include <memory>
+
 #include <QAbstractButton>
 #include <QDialog>
 #include <QStatusBar>
+#include <QLabel>
+#include <QMap>
 
 #include "shared/idriver.h"
 #include "sound/sound.h"
@@ -26,69 +29,56 @@ public:
 
 private slots:
     void on_DriverDialog_accepted();
-    void on_bufferCount_valueChanged(int value);
-    void on_bufferSize_currentIndexChanged(int index);
-    void on_driverType_currentIndexChanged(int index);
-    void on_duplexMode_toggled(bool checked);
-    void on_inChannels_valueChanged(int value);
-    void on_inputDevice_currentIndexChanged(int index);
-    void on_outChannels_valueChanged(int value);
-    void on_outputDevice_currentIndexChanged(int index);
-    void on_sampleFormat_currentIndexChanged(int index);
-    void on_sampleRate_currentIndexChanged(int index);
-    void on_xrunStop_toggled(bool checked);
     void on_buttonBox_clicked(QAbstractButton *button);
-    void on_watcher_finished();
+
+    void on_driverType_currentIndexChanged(int index);
 
 private:
-    struct ApiSettings {
-        unsigned inputChannels;
-        unsigned inputDeviceId;
-        bool isActive;
-        bool isBreakOnXrun;
-        bool isDuplex;
-        unsigned outputChannels;
-        unsigned outputDeviceId;
-        Sound::Type sampleFormat;
-        unsigned sampleRate;
-        unsigned bufferSize;
-        unsigned bufferCount;
-    };
-
     static const int DEFAULT_CHANNEL_COUNT = 2;
     static const int DEFAULT_SAMPLE_RATE = 44100;
-    static const Sound::Type DEFAULT_SAMPLE_FORMAT = Sound::TypeFloat32;
+    static const IDriver::SampleFormat DEFAULT_SAMPLE_FORMAT = IDriver::SampleFloat32;
     static const bool DEFAULT_IS_DUPLEX = false;
     static const bool DEFAULT_IS_BREAK_ON_XRUN = false;
+    static const bool DEFAULT_IS_REALTIME = true;
+    static const unsigned DEFAULT_REALTIME_PRIORITY = 60;
     static const int DEFAULT_BUFFER_SIZE = 256;
     static const unsigned DEFAULT_BUFFER_COUNT = 3;
 
     Ui::DriverDialog *ui;
-    IDriver::ApiType _apiCurrent;
-    unsigned _apiIndex;
     std::shared_ptr<Driver> _driver;
-    ApiSettings _models[IDriver::ApiCount];
-    ApiSettings *_model;
+    static QMap<IDriver::SampleFormat, QString> _formatMap;
+    IDriver::ConnectOptions _model;
     bool _isUpdateLocked;
-    QStatusBar *_status;
+    unsigned _latency;
+    QLabel *_latencyText;
+    QStatusBar *_statusBar;
+    QLabel *_statusIcon;
+    QLabel *_statusText;
 
-    void setApiType(IDriver::ApiType value);
-    void settingsApply();
-    void settingsLoad();
-    void settingsSave();
+    void modelApply();
+    void modelBound();
+    void modelInitialize(IDriver::ApiType apiType);
+    void modelUpdate();
+    void modelLoad();
+    void modelSave();
+
+    void controlsUpdate();
     void populateBufferSizes();
     void populateDriverTypes();
-    void populateInputs();
-    void populateOutputs();
-    void populateSampleRates();
-    void populateSampleFormat();
+    void populateInputs(IDriver::ApiType type);
+    void populateOutputs(IDriver::ApiType type);
+    void populateSampleRates(IDriver::ApiType type);
+    void populateSampleFormats(IDriver::ApiType type);
+
     void selectByValue(QComboBox *target, unsigned value);
-    void updateDisabled();
-    Sound::Type selectFormat(unsigned outFlags, unsigned inFlags,
-                             bool isDuplex, Sound::Type defaultFormat = DEFAULT_SAMPLE_FORMAT);
+    void setStatus(const QString &themeIcon, const QString &message);
+    IDriver::SampleFormat selectFormat(
+            unsigned outFlags, unsigned inFlags, bool isDuplex,
+            IDriver::SampleFormat defaultFormat = DEFAULT_SAMPLE_FORMAT);
     unsigned selectSampleRate(const unsigned *outRates, unsigned outRateCount,
                               const unsigned *inRates, unsigned inRateCount,
                               bool isDuplex, unsigned defaultRate = DEFAULT_SAMPLE_RATE);
+    void updateStatus();
 };
 
 #endif // DRIVERDIALOG_H

@@ -12,8 +12,10 @@ public:
     virtual ~Driver();
 
     void abort();
+    const IDriver::Api &apiInfo(IDriver::ApiType type) const;
     unsigned bufferFrames() const;
-    void connect(std::shared_ptr<IDriver::ConnectOptions> options);
+    void connect(const IDriver::ConnectOptions &options);
+    void disconnect();
     const IDriver::DriverInfo &info() const;
     int latency() const;
     std::shared_ptr<IDriver::ConnectOptions> options() const;

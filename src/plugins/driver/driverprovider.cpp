@@ -30,6 +30,67 @@ DriverProvider::~DriverProvider()
     disconnect();
 }
 
+const IDriver::Api *DriverProvider::apiInfo(IDriver::ApiType type)
+{
+    std::shared_ptr<Api> api = _apiInfos[type];
+
+    if (!api) {
+        auto deleteApi = [](Api *api) {
+            for (unsigned i = 0; i < api->deviceCount; i++) {
+                Device &device = api->devices[i];
+                delete[] device.name;
+
+                if (device.sampleRates) {
+                    delete[] device.sampleRates;
+                }
+            }
+
+            if (api->devices) {
+                delete[] api->devices;
+            }
+
+            delete api;
+        };
+
+        api = std::shared_ptr<Api>(new Api(), deleteApi);
+
+        api->type = type;
+
+        RtAudio rt(RtAudio::Api(api->type));
+        api->defaultInput = rt.getDefaultInputDevice();
+        api->defaultOutput = rt.getDefaultOutputDevice();
+        api->deviceCount = rt.getDeviceCount();
+
+        if (api->deviceCount) {
+            api->devices = new Device[api->deviceCount];
+        }
+
+        api->name = _names[api->type].c_str();
+
+        for (unsigned i = 0; i < api->deviceCount; i++) {
+            Device &device = api->devices[i];
+            RtAudio::DeviceInfo info = rt.getDeviceInfo(i);
+
+            device.channelsOutput = info.outputChannels;
+            device.channelsInput = info.inputChannels;
+            device.channelsDuplex = info.duplexChannels;
+
+            device.name = new char[info.name.length() + 1];
+            strcpy(device.name, info.name.c_str());
+
+            device.sampleFormats = info.nativeFormats;
+            device.sampleRateCount = info.sampleRates.size();
+            device.sampleRates = new unsigned[device.sampleRateCount];
+            memcpy(device.sampleRates, info.sampleRates.data(),
+                   int(info.sampleRates.size() * sizeof(unsigned)));
+        }
+
+        _apiInfos[type] = api;
+    }
+
+    return _apiInfos.at(type).get();
+}
+
 unsigned DriverProvider::connect(const IDriver::ConnectOptions &options)
 {
     if (_rtaudio) {
@@ -41,13 +102,13 @@ unsigned DriverProvider::connect(const IDriver::ConnectOptions &options)
 
     std::unique_ptr<RtAudio::StreamParameters> iparams, oparams;
 
-    if (options.outputChannels && options.outputDeviceId) {
+    if (options.outputChannels) {
         oparams.reset(new RtAudio::StreamParameters());
         oparams->deviceId = options.outputDeviceId;
         oparams->nChannels = options.outputChannels;
     }
 
-    if (options.inputChannels && options.inputDeviceId) {
+    if (options.inputChannels && options.isDuplex) {
         iparams.reset(new RtAudio::StreamParameters());
         iparams->deviceId = options.inputDeviceId;
         iparams->nChannels = options.inputChannels;
@@ -113,59 +174,22 @@ const IDriver::DriverInfo *DriverProvider::driverInfo()
     std::vector<RtAudio::Api> apis;
     RtAudio::getCompiledApi(apis);
 
-    _driverInfo = std::shared_ptr<DriverInfo>(new DriverInfo(), [](DriverInfo *di)
-    {
-        for (unsigned i = 0; i < di->apiCount; i++) {
-            Api &api = di->apis[i];
-
-            for (unsigned j = 0; j < api.deviceCount; j++) {
-                Device &device = api.devices[j];
-                delete[] device.name;
-
-                if (device.sampleRates) {
-                    delete[] device.sampleRates;
-                }
-            }
-
-            delete api.devices;
-        }
-
+    auto deleteDI = [](DriverInfo *di) {
         delete[] di->apis;
+        delete[] di->names;
         delete di;
-    });
+    };
 
+    _driverInfo = std::shared_ptr<DriverInfo>(new DriverInfo(), deleteDI);
     _driverInfo->apiCount = apis.size();
-    _driverInfo->apis = new Api[_driverInfo->apiCount];
+    _driverInfo->apis = new ApiType[_driverInfo->apiCount];
+    _driverInfo->names = new const char *[_driverInfo->apiCount];
 
     for (unsigned i = 0; i < _driverInfo->apiCount; i++) {
-        Api &api = _driverInfo->apis[i];
-        api.type = ApiType(apis[i]);
-
-        RtAudio rt(apis[i]);
-        api.defaultInput = rt.getDefaultInputDevice();
-        api.defaultOutput = rt.getDefaultOutputDevice();
-        api.deviceCount = rt.getDeviceCount();
-        api.devices = new Device[api.deviceCount];
-        api.name = _names[api.type].c_str();
-
-        for (unsigned j = 0; j < api.deviceCount; j++) {
-            Device &device = api.devices[j];
-            RtAudio::DeviceInfo info = rt.getDeviceInfo(j);
-
-            device.channelsOutput = info.outputChannels;
-            device.channelsInput = info.inputChannels;
-            device.channelsDuplex = info.duplexChannels;
-
-            device.name = new char[info.name.length() + 1];
-            strcpy(device.name, info.name.c_str());
-
-            device.sampleFormats = info.nativeFormats;
-            device.sampleRateCount = info.sampleRates.size();
-            device.sampleRates = new unsigned[device.sampleRateCount];
-            memcpy(device.sampleRates, info.sampleRates.data(),
-                   int(info.sampleRates.size() * sizeof(unsigned)));
-        }
+        _driverInfo->apis[i] = ApiType(apis.at(i));
+        _driverInfo->names[i] = _names[apis[i]].c_str();
     }
+    memcpy(_driverInfo->apis, apis.data(), int(apis.size() * sizeof(ApiType)));
 
     RtAudio rt(RtAudio::UNSPECIFIED);
     _driverInfo->defaultApi = ApiType(rt.getCurrentApi());
