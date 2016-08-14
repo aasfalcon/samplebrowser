@@ -3,8 +3,8 @@
     "Audio file I/O plugin"
 
 #include "shared/plugin.h"
-#include "audiofileprovidermpg123.h"
+#include "audiofileprovider.h"
 
 PLUGIN_BEGIN
-PLUGIN_PROVIDES(IAudioFile, AudioFileProviderMpg123)
+PLUGIN_PROVIDES(IAudioFile, AudioFileProvider)
 PLUGIN_END

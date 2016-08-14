@@ -3,17 +3,19 @@
 
 #include <memory>
 
-#include <QAbstractButton>
 #include <QDialog>
-#include <QStatusBar>
-#include <QLabel>
 #include <QMap>
 
 #include "shared/idriver.h"
 #include "sound/sound.h"
 
-class Driver;
+class QAbstractButton;
 class QComboBox;
+class QLabel;
+class QStatusBar;
+class QString;
+
+class Driver;
 
 namespace Ui {
 class DriverDialog;
@@ -49,7 +51,7 @@ private:
     static QMap<IDriver::SampleFormat, QString> _formatMap;
     IDriver::ConnectOptions _model;
     bool _isUpdateLocked;
-    unsigned _latency;
+    double _latency;
     QLabel *_latencyText;
     QStatusBar *_statusBar;
     QLabel *_statusIcon;
@@ -78,6 +80,7 @@ private:
     unsigned selectSampleRate(const unsigned *outRates, unsigned outRateCount,
                               const unsigned *inRates, unsigned inRateCount,
                               bool isDuplex, unsigned defaultRate = DEFAULT_SAMPLE_RATE);
+    QString testFilePath();
     void updateStatus();
 };
 

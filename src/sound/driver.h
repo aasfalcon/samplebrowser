@@ -17,7 +17,7 @@ public:
     void connect(const IDriver::ConnectOptions &options);
     void disconnect();
     const IDriver::DriverInfo &info() const;
-    int latency() const;
+    unsigned latency() const;
     std::shared_ptr<IDriver::ConnectOptions> options() const;
 
     template<typename T>
@@ -37,11 +37,17 @@ private:
     template<typename T>
     class Runtime {
     public:
-        Runtime();
+        Runtime(std::shared_ptr<Processor<T> > &rootProcessor,
+                unsigned channels, unsigned frames,
+                unsigned latency, unsigned sampleRate);
         ~Runtime();
-        std::shared_ptr<Buffer<T>> inputBuffer;
-        std::shared_ptr<Buffer<T>> outputBuffer;
-        std::shared_ptr<Processor<T>> rootProcessor;
+
+        std::shared_ptr<Processor<T>> rootProcessor();
+
+    private:
+        std::shared_ptr<Buffer<T>> _inputBuffer;
+        std::shared_ptr<Buffer<T>> _outputBuffer;
+        std::shared_ptr<Processor<T>> _rootProcessor;
     };
 
     unsigned _bufferFrames;
@@ -50,5 +56,7 @@ private:
     std::shared_ptr<void> _runtime;
     Sound::Type _sampleType;
 };
+
+SOUND_INSTANTIATE_DECLARATION(Driver::Runtime)
 
 #endif // DRIVER_H

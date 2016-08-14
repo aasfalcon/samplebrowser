@@ -5,6 +5,8 @@
 #include <RtAudio.h>
 #include <QDebug>
 #include <QSettings>
+#include <QStandardPaths>
+#include <QStatusBar>
 #include <QPushButton>
 #include <QWidgetList>
 #include <QMessageBox>
@@ -13,6 +15,7 @@
 #include "ui_driverdialog.h"
 
 #include "sound/driver.h"
+#include "sound/player.h"
 #include "engine/config.h"
 
 QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
@@ -142,13 +145,38 @@ void DriverDialog::controlsUpdate()
     }
 }
 
+QString DriverDialog::testFilePath()
+{
+    QString filename = "testfile.ogg";
+    QString result = QStandardPaths::locate(
+                QStandardPaths::DataLocation, filename);
+
+    if (result.isEmpty()) {
+        QMessageBox *messageBox = new QMessageBox(this);
+        messageBox->setIcon(QMessageBox::Critical);
+        messageBox->setText(tr("Unable to find test sound file "
+                               "\"%1\"").arg(filename));
+        messageBox->setWindowTitle(tr("Settings test error"));
+        messageBox->setStandardButtons(QMessageBox::Ok);
+        messageBox->exec();
+        delete messageBox;
+        qDebug() << messageBox->text();
+    }
+
+    return result;
+}
+
 void DriverDialog::modelApply()
 {
     setStatus("audio-headphones", tr("Checking current settings..."));
     try {
         _driver->connect(_model);
-        _latency = unsigned(_driver->latency() * 1000.0 / _model.sampleRate);
-        _driver->disconnect();
+        _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
+        std::shared_ptr<Player<float>> player;
+        auto processor = std::static_pointer_cast<Processor<Sound::Float32>>(player);
+        _driver->setRoot(processor);
+        player->play(testFilePath().toStdString());
+        //_driver->disconnect();
         _model.isTested = true;
         updateStatus();
     } catch(std::runtime_error e) {

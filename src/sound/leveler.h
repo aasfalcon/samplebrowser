@@ -20,4 +20,6 @@ private:
     double _level;
 };
 
+SOUND_INSTANTIATE_DECLARATION(Leveler)
+
 #endif // LEVELER_H

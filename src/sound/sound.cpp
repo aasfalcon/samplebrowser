@@ -6,10 +6,11 @@ Object<T>::~Object()
 
 }
 
-#define SAMPLE_TYPE(__type) \
+#define __OBJECT_TYPE(__type) \
     template<> Sound::Type Object<Sound::__type>::type() \
     { \
         return Sound::Type##__type; \
     }
 
-SOUND_SPECIALIZE(SAMPLE_TYPE)
+SOUND_INSTANTIATE(Object)
+SOUND_SPECIALIZE(__OBJECT_TYPE)

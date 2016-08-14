@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
     int result = 1;
 
     server->prefer("IResampler", "PluginResamplerLSR");
+    server->prefer("IAudioFile", "PluginAudiofileMPG123");
 
     try {
         WExplorer app(argc, argv);

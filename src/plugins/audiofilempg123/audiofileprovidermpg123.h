@@ -1,15 +1,15 @@
 #ifndef AUDIOFILEPROVIDERMPG123_H
 #define AUDIOFILEPROVIDERMPG123_H
 
-#include "audiofileprovider.h"
+#include "../audiofile/audiofileprovider.h"
 
 struct mpg123_handle_struct;
 
-class AudioFileProviderMpg123 : public AudioFileProvider
+class AudioFileProviderMPG123 : public AudioFileProvider
 {
 public:
-    AudioFileProviderMpg123();
-    ~AudioFileProviderMpg123();
+    AudioFileProviderMPG123();
+    ~AudioFileProviderMPG123();
 
     void close();
     void open(const char *filename, Mode mode);

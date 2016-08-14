@@ -19,13 +19,14 @@ void Processor<T>::init()
 }
 
 template<typename T>
-Buffer<T> &Processor<T>::in()
+std::shared_ptr<Buffer<T> > &Processor<T>::in()
 {
-    return *_in;
+    return _in;
 }
 
 template<typename T>
-void Processor<T>::kickIn(Buffer<T> *out, Buffer<T> *in,
+void Processor<T>::kickIn(std::shared_ptr<Buffer<T>> out,
+                          std::shared_ptr<Buffer<T>> in,
                           unsigned latency, unsigned sampleRate)
 {
     _out = out;
@@ -42,9 +43,9 @@ unsigned Processor<T>::latency() const
 }
 
 template<typename T>
-Buffer<T> &Processor<T>::out()
+std::shared_ptr<Buffer<T> > &Processor<T>::out()
 {
-    return *_out;
+    return _out;
 }
 
 template<typename T>

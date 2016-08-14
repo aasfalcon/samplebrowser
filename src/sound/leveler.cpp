@@ -26,14 +26,14 @@ double Leveler<T>::level() const
 template<typename T>
 void Leveler<T>::process()
 {
-    auto out = this->out();
+    auto &out = *this->out();
     unsigned channels = out.channels();
 
     for (auto frame = out.begin(); frame != out.end(); ++frame) {
         for (unsigned i = 0; i < channels; i++) {
             double level = _level;
 
-            if (_balance != 0 && channels == 2) {
+            if (_balance != 0. && channels == 2) {
                 if (_balance > 0 && i == 0) {
                     level *= 1 - _balance;
                 } else if (_balance < 0 && i == 1) {
@@ -41,8 +41,7 @@ void Leveler<T>::process()
                 }
             }
 
-            T sample = frame.at(i);
-            sample *= level;
+            T sample = T(level * double(frame.at(i)));
             frame.put(i, sample);
         }
     }

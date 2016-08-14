@@ -31,4 +31,6 @@ private:
     const Sample<T> *_data;
 };
 
+SOUND_INSTANTIATE_DECLARATION(ConstFrame)
+
 #endif // CONSTFRAME_H

@@ -13,7 +13,8 @@ SOURCES +=\
     version.cpp \
     server.cpp \
     plugin.cpp \
-    allocator.cpp
+    allocator.cpp \
+    interface.cpp
 
 HEADERS +=\
     version.h \

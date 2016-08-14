@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "libsndfile/src/sndfile.h"
-
 #include "shared/iaudiofile.h"
 
 class AudioFileProvider: public IAudioFile

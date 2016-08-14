@@ -94,38 +94,65 @@ void Buffer<T>::fromArray(const void *array, Sound::Type type,
                           unsigned channels, unsigned frames)
 {
     reallocate(channels, frames);
-    Converter::convert(data(), Sample<T>::type(), array, type, size());
+    Converter::instance().convert(
+                data(), Sample<T>::type(), array, type, size());
+}
+
+template<typename T>
+bool Buffer<T>::isEmpty() const
+{
+    return _frames == 0;
 }
 
 template<typename T>
 template<typename S>
-void Buffer<T>::fromBuffer(const Buffer<S> &source)
+void Buffer<T>::fromBuffer(const Buffer<S> &source,
+                           unsigned offset, unsigned count)
 {
-    fromArray(source.data(), source.channels(), source.frames());
+    unsigned channels = source.channels();
+    unsigned frames = source.frames() - offset;
+
+    if (count && count < frames) {
+        frames = count;
+    }
+
+    fromArray(source.data() + offset * channels * frames,
+              channels, frames);
 }
 
 template<typename T>
 T *Buffer<T>::ptr()
 {
-    return (T *)_samples.data();
+    return reinterpret_cast<T *>(_samples.data());
 }
 
 template<typename T>
 const T *Buffer<T>::ptr() const
 {
-    return (const T *)_samples.data();
+    return reinterpret_cast<const T *>(_samples.data());
 }
 
 template<typename T>
 void Buffer<T>::reallocate(unsigned channels, unsigned frames)
 {
-    if (_channels < channels || _frames < frames) {
-        _samples.clear();
-    }
+    if (_channels != _channels && _frames != frames) {
+        if (_channels * _frames < channels * frames) {
+            _samples.clear();
+        }
 
-    _samples.resize(channels * frames);
-    _channels = channels;
-    _frames = frames;
+        _samples.resize(channels * frames);
+        _channels = channels;
+        _frames = frames;
+    }
+}
+
+template<typename T>
+void Buffer<T>::resize(unsigned frames)
+{
+    if (_frames != frames) {
+        _samples.resize(_channels * frames);
+        _frames = frames;
+    }
 }
 
 template<typename T>
@@ -144,13 +171,12 @@ void Buffer<T>::resample(const Buffer<T> &source, unsigned destRate, unsigned so
     double ratio = static_cast<double>(destRate) / static_cast<double>(sourceRate);
     unsigned sourceFrames = source.frames();
     unsigned channels = source.channels();
-    unsigned destFrames = static_cast<double>(sourceFrames) * ratio;
+    unsigned destFrames = unsigned(double(sourceFrames) * ratio);
 
     reallocate(channels, destFrames);
-    Converter::resample(data(), destFrames,
-                              source.data(), sourceFrames,
-                              channels, ratio, Sample<T>::type(),
-                        quality);
+    Converter::instance().resample(
+                data(), destFrames, source.data(), sourceFrames,
+                channels, ratio, Sample<T>::type(), quality);
 }
 
 template<typename T>

@@ -2,7 +2,7 @@
 #define INTERFACE_H
 
 struct Interface {
-    virtual ~Interface() {}
+    virtual ~Interface() = 0;
 };
 
 #endif // INTERFACE_H

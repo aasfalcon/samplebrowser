@@ -8,4 +8,5 @@ SUBDIRS += \
     server \
     resamplerlsr \
     resamplersoxr \
-    audiofile
+    audiofile \
+    audiofilempg123

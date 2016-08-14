@@ -80,7 +80,7 @@ struct IDriver: Interface {
         unsigned channelsOutput;
         unsigned frames;
         void *input;
-        int latency;
+        unsigned latency;
         void *output;
         unsigned sampleRate;
         unsigned status; // StausXXX flags
@@ -93,7 +93,7 @@ struct IDriver: Interface {
         bool isRunning;
         double time;
         unsigned sampleRate;
-        int latency;
+        unsigned latency;
         Stream input;
         Stream output;
     };

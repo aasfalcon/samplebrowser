@@ -32,4 +32,6 @@ private:
     Sample<T> *_data;
 };
 
+SOUND_INSTANTIATE_DECLARATION(Frame)
+
 #endif // FRAME_H

@@ -33,14 +33,17 @@ public:
                    unsigned channels, unsigned frames);
 
     template<typename S>
-    void fromBuffer(const Buffer<S> &buffer);
+    void fromBuffer(const Buffer<S> &buffer,
+                    unsigned offset = 0, unsigned count = 0);
 
+    bool isEmpty() const;
     void mono(const Buffer<T> &source, bool mixdown = true);
     T *ptr();
     const T *ptr() const;
     void reallocate(unsigned channels, unsigned frames);
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
                        Sound::Quality quality = Sound::QualityBest);
+    void resize(unsigned frames);
     void resample(const Buffer<T> &source,
                   unsigned destRate, unsigned sourceRate,
                   Sound::Quality quality = Sound::QualityBest);
@@ -56,5 +59,7 @@ private:
     unsigned _frames;
     std::vector<Sample<T>> _samples;
 };
+
+SOUND_INSTANTIATE_DECLARATION(Buffer)
 
 #endif // BUFFER_H

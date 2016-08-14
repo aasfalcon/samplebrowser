@@ -21,4 +21,6 @@ private:
     Buffer<T> _peaksBuffer;
 };
 
+SOUND_INSTANTIATE_DECLARATION(Meter)
+
 #endif // METER_H

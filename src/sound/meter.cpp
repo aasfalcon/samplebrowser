@@ -20,7 +20,7 @@ Meter<T>::~Meter()
 template<typename T>
 void Meter<T>::init()
 {
-    _peaksBuffer.reallocate(this->out().channels(), 1);
+    _peaksBuffer.reallocate(this->out()->channels(), 1);
 }
 
 template<typename T>
@@ -32,7 +32,7 @@ const ConstFrame<T> Meter<T>::peaks() const
 template<typename T>
 void Meter<T>::process()
 {
-    auto out = this->out();
+    auto &out = *this->out();
     unsigned channels = out.channels();
     Frame<T> peak = _peaksBuffer.begin();
 

@@ -3,30 +3,28 @@
 
 #include <list>
 #include <memory>
-#include "processor.h"
 
+#include "processor.h"
 
 template<typename T>
 class Chain: public Processor<T>
 {
 public:
-    typedef std::shared_ptr<Processor<T>> PProcessor;
-
     Chain();
     ~Chain();
 
-    void add(unsigned id, PProcessor processor);
-    bool has(unsigned id);
-    void remove(unsigned id);
-    void swap(unsigned first, unsigned second);
+    void addProcessor(unsigned id, std::shared_ptr<Processor<T>> processor);
+    bool hasProcessor(unsigned id);
+    void removeProcessor(unsigned id);
+    void swapProcessors(unsigned first, unsigned second);
     virtual void process();
-    std::list<unsigned> own() const;
+    std::list<unsigned> processors() const;
 
 protected:
     virtual void init();
 
 private:
-    typedef std::pair<unsigned, PProcessor> Tagged;
+    typedef std::pair<unsigned, std::shared_ptr<Processor<T>>> Tagged;
     typedef std::list<Tagged> TaggedList;
 
     bool _active;
@@ -34,5 +32,7 @@ private:
 
     typename TaggedList::iterator find(unsigned id);
 };
+
+SOUND_INSTANTIATE_DECLARATION(Chain)
 
 #endif // CHAIN_H

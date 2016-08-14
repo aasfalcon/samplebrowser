@@ -18,4 +18,6 @@ private:
     T _value;
 };
 
+SOUND_INSTANTIATE_DECLARATION(Sample)
+
 #endif // SAMPLE_H

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <mutex>
+
 #include "processor.h"
 
 struct IResampler;
@@ -23,20 +24,23 @@ public:
     virtual void process();
 
 protected:
+    unsigned _bufferFrames;
+    unsigned _position;
+    unsigned _sourceFrames;
+
     virtual void init();
 
 private:
     Buffer<Sound::Float32> _buffer;
-    unsigned _bufferFrames;
     Buffer<Sound::Float32> _channelBuffer;
-    unsigned _position;
     std::shared_ptr<IResampler> _resampler;
-    std::shared_ptr<void *> _source;
+    std::shared_ptr<char> _source;
     unsigned _sourceChannels;
-    unsigned _sourceFrames;
     std::mutex _sourceMutex;
     unsigned _sourceRate;
     Sound::Type _sourceType;
 };
+
+SOUND_INSTANTIATE_DECLARATION(Resampler)
 
 #endif // RESAMPLER_H

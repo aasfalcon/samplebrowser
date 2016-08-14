@@ -17,16 +17,7 @@ public:
     static std::shared_ptr<Server> instance();
 
     template<typename T>
-    inline std::shared_ptr<T> factory(const std::string &interfaceName) {
-        Interface *provider = _provider->create(interfaceName.c_str());
-        return std::shared_ptr<T>(
-                    dynamic_cast<T *>(provider),
-                    [this](Interface *object) {
-                        this->_provider->destroy(object);
-                    }
-                );
-    }
-
+    std::shared_ptr<T> factory(const std::string &interfaceName);
     std::string pluginsPath();
     void prefer(const std::string &interfaceName, const std::string &pluginName,
                 Version pluginVersion = Version(),
@@ -47,6 +38,17 @@ private:
     Server();
 
 };
+
+template<typename T>
+std::shared_ptr<T> Server::factory(const std::string &interfaceName) {
+    Interface *provider = _provider->create(interfaceName.c_str());
+    return std::shared_ptr<T>(
+                static_cast<T *>(provider),
+                [this](Interface *object) {
+                    this->_provider->destroy(object);
+                }
+            );
+}
 
 #define PLUGIN_FACTORY(__interface) \
     Server::instance()->factory<__interface>(#__interface)

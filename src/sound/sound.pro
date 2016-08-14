@@ -16,11 +16,13 @@ SOURCES += \
     sound.cpp \
     chain.cpp \
     driver.cpp \
-    meter.cpp
+    meter.cpp \
+    player.cpp \
+    inputstream.cpp \
+    chunk.cpp
 
 HEADERS += \
     sample.h \
-    int24.h \
     buffer.h \
     frame.h \
     sound.h \
@@ -32,6 +34,9 @@ HEADERS += \
     config.h \
     chain.h \
     driver.h \
-    meter.h
+    meter.h \
+    player.h \
+    inputstream.h \
+    chunk.h
 
 INCLUDEPATH += ../plugins

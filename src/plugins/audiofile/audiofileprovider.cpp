@@ -291,8 +291,10 @@ unsigned AudioFileProvider::read(void *buffer, unsigned frames)
     case Sound::TypeInt24: {
         auto temp = std::vector<Sound::Float32>(frames * _info.channels);
         count = sf_readf_float(_handle, temp.data(), frames);
-        Converter::convert(buffer, Sound::TypeInt24, temp.data(), Sound::TypeFloat32,
-                           frames * _info.channels);
+        Converter::instance().convert(
+                    buffer, Sound::TypeInt24,
+                    temp.data(), Sound::TypeFloat32,
+                    frames * _info.channels);
         break;
     }
     case Sound::TypeInt32:
@@ -366,8 +368,10 @@ void AudioFileProvider::write(const void *buffer, unsigned frames)
         break;
     case Sound::TypeInt24: {
         auto temp = std::vector<Sound::Float32>(frames * _info.channels);
-        Converter::convert(temp.data(), Sound::TypeFloat32, buffer, Sound::TypeInt24,
-                           frames * _info.channels);
+        Converter::instance().convert(
+                    temp.data(), Sound::TypeFloat32,
+                    buffer, Sound::TypeInt24,
+                    frames * _info.channels);
         count = sf_writef_float(_handle, temp.data(), frames);
         break;
     }

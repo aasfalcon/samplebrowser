@@ -14,12 +14,11 @@ Chain<T>::~Chain()
 }
 
 template<typename T>
-void Chain<T>::add(unsigned id,
-                   Chain<T>::PProcessor processor)
+void Chain<T>::addProcessor(unsigned id,
+                   std::shared_ptr<Processor<T> > processor)
 {
     if (_active) {
-
-        processor->kickIn(&this->out(), &this->in(),
+        processor->kickIn(this->out(), this->in(),
                           this->latency(), this->sampleRate());
     }
 
@@ -38,7 +37,7 @@ Chain<T>::find(unsigned id)
 }
 
 template<typename T>
-bool Chain<T>::has(unsigned id)
+bool Chain<T>::hasProcessor(unsigned id)
 {
     return find(id) != _processors.end();
 }
@@ -50,19 +49,19 @@ void Chain<T>::init()
 
 
     for (auto it = _processors.begin(); it != _processors.end(); ++it) {
-        it->second->kickIn(&this->out(), &this->in(),
+        it->second->kickIn(this->out(), this->in(),
                            this->latency(), this->sampleRate());
     }
 }
 
 template<typename T>
-void Chain<T>::remove(unsigned id)
+void Chain<T>::removeProcessor(unsigned id)
 {
     _processors.erase(find(id));
 }
 
 template<typename T>
-void Chain<T>::swap(unsigned first,
+void Chain<T>::swapProcessors(unsigned first,
                     unsigned second)
 {
     find(first)->swap(*find(second));
@@ -77,7 +76,7 @@ void Chain<T>::process()
 }
 
 template<typename T>
-std::list<unsigned> Chain<T>::own() const
+std::list<unsigned> Chain<T>::processors() const
 {
     std::list<unsigned> result;
 

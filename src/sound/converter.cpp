@@ -60,32 +60,78 @@
     MATRIX_ROW(INT, 24) \
     MATRIX_ROW(INT, 32)
 
-const Converter::Convert
-Converter::matrix[Sound::TypeCount][Sound::TypeCount] =
+std::unique_ptr<Converter> Converter::_instance;
+
+Converter::Converter()
+    : _matrix{ THE_MATRIX }
+    , _resampler(PLUGIN_FACTORY(IResampler))
+    , _sizeMap{
+        sizeof(Sound::Float32),
+        sizeof(Sound::Float64),
+        sizeof(Sound::Int8),
+        sizeof(Sound::Int16),
+        sizeof(Sound::Int24),
+        sizeof(Sound::Int32),
+    }
 {
-    THE_MATRIX
-};
 
-std::shared_ptr<IResampler> *resampler;
+}
 
-const unsigned
-Converter::sizeMap[Sound::TypeCount] = {
-    sizeof(Sound::Float32),
-    sizeof(Sound::Float64),
-    sizeof(Sound::Int8),
-    sizeof(Sound::Int16),
-    sizeof(Sound::Int24),
-    sizeof(Sound::Int32),
-};
+Converter::~Converter()
+{
+
+}
 
 void Converter::convert(void *dest, Sound::Type dtype,
                               const void *source, Sound::Type stype,
                               unsigned count)
 {
     if (dtype == stype) {
-        memcpy(dest, source, count * sizeMap[dtype]);
+        memcpy(dest, source, int(count * _sizeMap[dtype]));
     } else {
-        (*matrix[dtype][stype])(dest, source, count);
+        (*_matrix[dtype][stype])(dest, source, count);
+    }
+}
+
+Converter &Converter::instance()
+{
+    if (!_instance) {
+        _instance.reset(new Converter());
+    }
+
+    return *_instance;
+}
+
+void Converter::real24bit(void *dest, const Buffer<Sound::Int24> &source)
+{
+    typedef std::uint8_t Int24Bytes[3];
+    union Int32Bytes {
+        std::int32_t i32;
+        std::uint8_t i8[4];
+    };
+
+    const Int32Bytes endiannessCheck = { 0x01020304 };
+    const bool isBigEndian = 0x01 == endiannessCheck.i8[3];
+
+    auto int24dest = reinterpret_cast<Int24Bytes *>(dest);
+    auto ptr = source.ptr();
+
+    if (isBigEndian) {
+        for (unsigned i = 0; i < source.size(); i++) {
+            Int32Bytes s = { ptr[i] };
+            Int24Bytes &d = int24dest[i];
+            d[0] = s.i8[0];
+            d[1] = s.i8[1];
+            d[2] = s.i8[2];
+        }
+    } else {
+        for (unsigned i = 0; i < source.size(); i++) {
+            Int32Bytes s = { ptr[i] };
+            Int24Bytes &d = int24dest[i];
+            d[0] = s.i8[1];
+            d[1] = s.i8[2];
+            d[2] = s.i8[3];
+        }
     }
 }
 
@@ -94,12 +140,8 @@ void Converter::resample(void *dest, unsigned dframes,
                                unsigned channels, double ratio,
                                Sound::Type type, Sound::Quality quality)
 {
-    if (!resampler) {
-        resampler = PLUGIN_FACTORY(IResampler);
-    }
-
     if (type == Sound::TypeFloat32) {
-        resampler->simple(static_cast<Sound::Float32 *>(dest), dframes,
+        _resampler->simple(static_cast<Sound::Float32 *>(dest), dframes,
                           static_cast<const Sound::Float32 *>(source), sframes,
                           channels, ratio, quality);
     } else {
@@ -107,7 +149,7 @@ void Converter::resample(void *dest, unsigned dframes,
         Buffer<Sound::Float32> stemp;
 
         stemp.fromArray(source, type, channels, sframes);
-        resampler->simple(dtemp.ptr(), dframes, stemp.ptr(), sframes,
+        _resampler->simple(dtemp.ptr(), dframes, stemp.ptr(), sframes,
                           channels, ratio, quality);
         convert(dest, type, dtemp.ptr(), Sound::TypeFloat32, dtemp.size());
     }

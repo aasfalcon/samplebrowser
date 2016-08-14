@@ -4,17 +4,17 @@
 
 #include "audiofileprovidermpg123.h"
 
-AudioFileProviderMpg123::AudioFileProviderMpg123()
+AudioFileProviderMPG123::AudioFileProviderMPG123()
 {
     mpg123_init();
 }
 
-AudioFileProviderMpg123::~AudioFileProviderMpg123()
+AudioFileProviderMPG123::~AudioFileProviderMPG123()
 {
     mpg123_exit();
 }
 
-void AudioFileProviderMpg123::close()
+void AudioFileProviderMPG123::close()
 {
     if (_mpghandle) {
         mpg123_delete(_mpghandle);
@@ -24,7 +24,7 @@ void AudioFileProviderMpg123::close()
     AudioFileProvider::close();
 }
 
-void AudioFileProviderMpg123::open(const char *filename, IAudioFile::Mode mode)
+void AudioFileProviderMPG123::open(const char *filename, IAudioFile::Mode mode)
 {
     _path = filename;
     std::string ext;
@@ -109,7 +109,7 @@ void AudioFileProviderMpg123::open(const char *filename, IAudioFile::Mode mode)
     _info.sampleType = Sound::TypeFloat32;
 }
 
-unsigned AudioFileProviderMpg123::read(void *buffer, unsigned frames)
+unsigned AudioFileProviderMPG123::read(void *buffer, unsigned frames)
 {
     if (!_mpgmode) {
         return AudioFileProvider::read(buffer, frames);
@@ -127,7 +127,7 @@ unsigned AudioFileProviderMpg123::read(void *buffer, unsigned frames)
     return unsigned(sizeRead);
 }
 
-unsigned AudioFileProviderMpg123::seek(int offset, IAudioFile::SeekWhence sw, IAudioFile::SeekType st)
+unsigned AudioFileProviderMPG123::seek(int offset, IAudioFile::SeekWhence sw, IAudioFile::SeekType st)
 {
     if (!_mpgmode) {
         return AudioFileProvider::seek(offset, sw, st);
@@ -148,7 +148,7 @@ unsigned AudioFileProviderMpg123::seek(int offset, IAudioFile::SeekWhence sw, IA
     return unsigned(result);
 }
 
-std::string AudioFileProviderMpg123::mpgError(const std::string &userMessage,
+std::string AudioFileProviderMPG123::mpgError(const std::string &userMessage,
                                               int errorNumber)
 {
     std::ostringstream message;
