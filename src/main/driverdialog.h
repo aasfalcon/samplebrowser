@@ -65,6 +65,8 @@ private:
     void modelSave();
 
     void controlsUpdate();
+    void critical(const QString &caption, const QString &message,
+                  const QString &source = QString());
     void populateBufferSizes();
     void populateDriverTypes();
     void populateInputs(IDriver::ApiType type);

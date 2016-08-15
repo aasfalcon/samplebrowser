@@ -14,7 +14,7 @@ struct IResampler: Interface
     virtual unsigned simple(float *dest, unsigned dframes,
                             const float *source, unsigned sframes,
                             unsigned channels, double ratio,
-                            Sound::Quality quality);
+                            Sound::Quality quality) = 0;
 
 protected:
     virtual unsigned perform() = 0;

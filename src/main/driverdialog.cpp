@@ -145,6 +145,27 @@ void DriverDialog::controlsUpdate()
     }
 }
 
+void DriverDialog::critical(const QString &caption,
+                            const QString &message,
+                            const QString &source)
+{
+    QMessageBox *messageBox = new QMessageBox(this);
+    messageBox->setIcon(QMessageBox::Critical);
+
+    QString text = message;
+
+    if (!source.isEmpty()) {
+        text = QString("<b>%1</b>: %2").arg(source).arg(text);
+    }
+
+    messageBox->setText(text);
+    messageBox->setWindowTitle(caption);
+    messageBox->setStandardButtons(QMessageBox::Ok);
+    messageBox->exec();
+    delete messageBox;
+    qDebug() << message;
+}
+
 QString DriverDialog::testFilePath()
 {
     QString filename = "testfile.ogg";
@@ -152,15 +173,8 @@ QString DriverDialog::testFilePath()
                 QStandardPaths::DataLocation, filename);
 
     if (result.isEmpty()) {
-        QMessageBox *messageBox = new QMessageBox(this);
-        messageBox->setIcon(QMessageBox::Critical);
-        messageBox->setText(tr("Unable to find test sound file "
-                               "\"%1\"").arg(filename));
-        messageBox->setWindowTitle(tr("Settings test error"));
-        messageBox->setStandardButtons(QMessageBox::Ok);
-        messageBox->exec();
-        delete messageBox;
-        qDebug() << messageBox->text();
+        critical(tr("Settings test error"),
+                 tr("Unable to find test sound file \"%1\"").arg(filename));
     }
 
     return result;
@@ -182,26 +196,11 @@ void DriverDialog::modelApply()
         _model.isTested = true;
         updateStatus();
     } catch(std::runtime_error e) {
-        setStatus("dialog-error", tr("Driver internal error"));
-        qDebug() << e.what();
+        setStatus("dialog-error", tr("Internal error"));
+        critical(tr("Internal error"), e.what());
     } catch(RtAudioError e) {
         setStatus("dialog-error", tr("Connection error"));
-
-        QMessageBox *messageBox = new QMessageBox(this);
-        std::string message(e.what());
-        std::string::size_type spacePos = message.find(' ');
-
-        if (spacePos != std::string::npos) {
-            message = "<b>Driver</b>:" + message.substr(spacePos);
-        }
-
-        messageBox->setIcon(QMessageBox::Critical);
-        messageBox->setText(message.c_str());
-        messageBox->setWindowTitle(tr("Settings test failed"));
-        messageBox->setStandardButtons(QMessageBox::Ok);
-        messageBox->exec();
-        delete messageBox;
-        qDebug() << e.what();
+        critical(tr("Connection error"), e.what(), tr("Driver"));
     }
 }
 
@@ -292,8 +291,7 @@ void DriverDialog::modelLoad()
     const IDriver::Api &api = _driver->apiInfo(apiType);
     const QString inputName = settings.value("inputDevice").toString();
     const QString outputName = settings.value("outputDevice").toString();
-    const QString formatName =
-            settings.value("sampleFormat").toString();
+    const QString formatName = settings.value("sampleFormat").toString();
 
     modelInitialize(apiType);
 

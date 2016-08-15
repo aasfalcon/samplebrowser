@@ -11,6 +11,7 @@ class ResamplerLSR: public IResampler
 public:
     ResamplerLSR();
     ~ResamplerLSR();
+
     void init(Sound::Quality quality, unsigned channels,
                       unsigned frames, double rate);
     float *output();
@@ -21,6 +22,8 @@ public:
                     const float *source, unsigned sframes,
                     unsigned channels, double ratio,
                     Sound::Quality quality);
+protected:
+    unsigned perform();
 
 private:
     unsigned _channels;
@@ -32,8 +35,6 @@ private:
     double _outputRate;
     SRC_STATE_tag *_state;
     static int _types[Sound::QualityCount];
-
-    unsigned perform();
 };
 
 #endif // RESAMPLERPROVIDERLSR_H
