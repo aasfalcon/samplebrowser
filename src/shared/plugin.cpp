@@ -3,7 +3,6 @@
 #define PLUGIN_VERSION
 
 #include <cstring>
-#include <sstream>
 #include "plugin.h"
 
 
@@ -28,7 +27,7 @@ const IPlugin::Info *Plugin::info()
         if (_info.interfaceCount) {
             _info.interfaces = new const char *[_info.interfaceCount];
             memcpy(_info.interfaces, names.data(),
-                   _info.interfaceCount * sizeof(const char *));
+                   int(_info.interfaceCount * sizeof(const char *)));
         }
     }
 

@@ -3,9 +3,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    driver \
-    shared \
-    server \
+    driverrtaudio \
     resamplerlsr \
     resamplersoxr \
     audiofile \

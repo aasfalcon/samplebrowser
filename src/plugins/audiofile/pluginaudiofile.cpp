@@ -2,7 +2,7 @@
 #define PLUGIN_DESCRIPTION \
     "Audio file I/O plugin"
 
-#include "shared/plugin.h"
+#include "shared/pluginmacros.h"
 #include "audiofileprovider.h"
 
 PLUGIN_BEGIN

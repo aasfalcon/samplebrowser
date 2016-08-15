@@ -172,10 +172,12 @@ void DriverDialog::modelApply()
     try {
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
-        std::shared_ptr<Player<float>> player;
-        auto processor = std::static_pointer_cast<Processor<Sound::Float32>>(player);
+
+        auto player = new Player<Sound::Float32>();
+        auto processor = dynamic_cast<Processor<Sound::Float32> *>(player);
         _driver->setRoot(processor);
         player->play(testFilePath().toStdString());
+
         //_driver->disconnect();
         _model.isTested = true;
         updateStatus();
@@ -183,7 +185,7 @@ void DriverDialog::modelApply()
         setStatus("dialog-error", tr("Driver internal error"));
         qDebug() << e.what();
     } catch(RtAudioError e) {
-        setStatus("dialog-error", tr("Driver error"));
+        setStatus("dialog-error", tr("Connection error"));
 
         QMessageBox *messageBox = new QMessageBox(this);
         std::string message(e.what());

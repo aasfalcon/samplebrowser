@@ -39,4 +39,4 @@ HEADERS += \
     inputstream.h \
     chunk.h
 
-INCLUDEPATH += ../plugins
+INCLUDEPATH += ..

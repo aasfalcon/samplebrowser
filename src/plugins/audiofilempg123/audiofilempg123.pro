@@ -13,9 +13,7 @@ SOURCES += \
     audiofileprovidermpg123.cpp
 
 LIBS += \
-    -L../../vendor/libsndfile -lsndfile \
-    -L../audiofile -laudiofile \
-    -lmpg123
+    -L../../vendor/libsndfile -lsndfile
 
 INCLUDEPATH += \
     ../../../vendor

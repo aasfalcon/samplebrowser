@@ -2,7 +2,7 @@
 #define RESAMPLERPROVIDERLSR_H
 
 #include "shared/iresampler.h"
-#include "../sound/sound.h"
+#include "sound/sound.h"
 
 struct SRC_STATE_tag;
 
@@ -10,17 +10,17 @@ class ResamplerProviderLSR: public IResampler
 {
 public:
     ResamplerProviderLSR();
-    virtual ~ResamplerProviderLSR();
-    virtual void init(Sound::Quality quality, unsigned channels,
+    ~ResamplerProviderLSR();
+    void init(Sound::Quality quality, unsigned channels,
                       unsigned frames, double rate);
     float *output();
     unsigned process(const float *input, unsigned inputFramesMax);
     void reset();
     void setInputRate(double rate);
-    virtual unsigned simple(float *dest, unsigned dframes,
-                            const float *source, unsigned sframes,
-                            unsigned channels, double ratio,
-                            Sound::Quality quality);
+    unsigned simple(float *dest, unsigned dframes,
+                    const float *source, unsigned sframes,
+                    unsigned channels, double ratio,
+                    Sound::Quality quality);
 
 private:
     unsigned _channels;

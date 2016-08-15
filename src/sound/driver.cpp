@@ -80,14 +80,14 @@ std::shared_ptr<IDriver::ConnectOptions> Driver::options() const
 }
 
 template<typename T>
-std::shared_ptr<Processor<T>> Driver::root() const
+Processor<T> *Driver::root() const
 {
     if (sampleType() != Object<T>::type()) {
         throw std::runtime_error("Attempt to get root processor with wrong sample format");
     }
 
     auto runtime = reinterpret_cast<Runtime<T> *>(_runtime.get());
-    return runtime->rootProcessor();
+    return runtime->root().get();
 }
 
 unsigned Driver::sampleRate() const
@@ -116,14 +116,14 @@ double Driver::time() const
 }
 
 template<typename T>
-void Driver::setRoot(std::shared_ptr<Processor<T>> processor)
+void Driver::setRoot(Processor<T> *processor)
 {
     if (sampleType() != Object<T>::type()) {
         throw std::runtime_error("Wrong root processor sample format");
     }
 
     Runtime<T> *pruntime = new Runtime<T>(
-                processor,
+                std::shared_ptr<Processor<T>>(processor),
                 _options->outputChannels,
                 _bufferFrames,
                 latency(),
@@ -137,14 +137,14 @@ void Driver::setRoot(std::shared_ptr<Processor<T>> processor)
 
 template<typename T>
 Driver::Runtime<T>::Runtime(
-        std::shared_ptr<Processor<T> > &rootProcessor,
+        std::shared_ptr<Processor<T>> rootProcessor,
         unsigned channels, unsigned frames,
         unsigned latency, unsigned sampleRate)
-    : _inputBuffer(new Buffer<T>(channels, frames))
-    , _outputBuffer(new Buffer<T>(channels, frames))
+    : _inputBuffer(channels, frames)
+    , _outputBuffer(channels, frames)
     , _rootProcessor(rootProcessor)
 {
-    _rootProcessor->kickIn(_outputBuffer, _inputBuffer,
+    _rootProcessor->kickIn(&_outputBuffer, &_inputBuffer,
                            latency, sampleRate);
 }
 
@@ -155,16 +155,16 @@ Driver::Runtime<T>::~Runtime()
 }
 
 template<typename T>
-std::shared_ptr<Processor<T>> Driver::Runtime<T>::rootProcessor()
+std::shared_ptr<Processor<T>> Driver::Runtime<T>::root()
 {
     return _rootProcessor;
 }
 
 #define ROOT_PROPERTY(__type) \
-    template std::shared_ptr<Processor<Sound::__type>> \
+    template Processor<Sound::__type> *\
     Driver::root() const; \
     template void \
-    Driver::setRoot(std::shared_ptr<Processor<Sound::__type>> value);
+    Driver::setRoot(Processor<Sound::__type> *value);
 
 SOUND_SPECIALIZE(ROOT_PROPERTY)
 SOUND_INSTANTIATE(Driver::Runtime)

@@ -4,7 +4,6 @@ TARGET = weplsh
 VERSION = 1.0.0
 
 QT =
-TARGET = ../$$TARGET
 TEMPLATE = lib
 CONFIG += staticlib c++11
 INCLUDEPATH += ../
@@ -28,3 +27,4 @@ HEADERS +=\
     iplugin.h \
     iresampler.h \
     iserver.h \
+    pluginmacros.h

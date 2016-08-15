@@ -5,6 +5,7 @@ TEMPLATE = subdirs
 SUBDIRS = \
     main \
     engine \
+    shared \
     sound \
     widgets \
     bundle \
@@ -13,8 +14,8 @@ SUBDIRS = \
 engine.subdir = src/engine
 widgets.subdir = src/widgets
 main.subdir = src/main
-bundle.subdir = bundle
 plugins.subdir = src/plugins
+shared.subdir = src/shared
 sound.subdir = src/sound
 
-main.depends = engine widgets bundle plugins sound
+main.depends = shared engine widgets bundle plugins sound

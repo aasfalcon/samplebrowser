@@ -2,7 +2,8 @@
 #include <cstddef>
 #include <stdexcept>
 #include <sstream>
-#include "../sound/converter.h"
+
+#include "sound/converter.h"
 #include "audiofileprovider.h"
 
 const unsigned LOGINFO_MAX_SIZE = 2048;

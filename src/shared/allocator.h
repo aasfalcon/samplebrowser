@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <list>
 #include <vector>
 
 #include "shared/iplugin.h"
@@ -14,7 +15,7 @@ public:
     typedef void (*Destroy)(Interface *);
 
     Allocator();
-    virtual ~Allocator();
+    ~Allocator();
 
     Interface *create(const char *tag);
     void destroy(Interface *object);
@@ -22,7 +23,7 @@ public:
     bool isOwner(Interface *object) const;
 
 protected:
-    void addTag(const char *tag, Create create, Destroy destroy);
+    void addTag(const std::string &tag, Create create, Destroy destroy);
     std::vector<const char *> tags() const;
 
 private:
@@ -31,7 +32,7 @@ private:
         Destroy destroy;
     };
 
-    std::map<Interface *, std::shared_ptr<Interface>> _map;
+    std::map<Interface *, std::shared_ptr<Interface>> _allocated;
     std::map<std::string, Record> _records;
 };
 

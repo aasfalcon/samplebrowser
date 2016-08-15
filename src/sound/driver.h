@@ -21,13 +21,13 @@ public:
     std::shared_ptr<IDriver::ConnectOptions> options() const;
 
     template<typename T>
-    std::shared_ptr<Processor<T>> root() const;
+    Processor<T> *root() const;
 
     unsigned sampleRate() const;
     Sound::Type sampleType() const;
 
     template<typename T>
-    void setRoot(std::shared_ptr<Processor<T>> processor);
+    void setRoot(Processor<T> *processor);
 
     void start();
     void stop();
@@ -37,16 +37,16 @@ private:
     template<typename T>
     class Runtime {
     public:
-        Runtime(std::shared_ptr<Processor<T> > &rootProcessor,
+        Runtime(std::shared_ptr<Processor<T>> root,
                 unsigned channels, unsigned frames,
                 unsigned latency, unsigned sampleRate);
         ~Runtime();
 
-        std::shared_ptr<Processor<T>> rootProcessor();
+        std::shared_ptr<Processor<T>> root();
 
     private:
-        std::shared_ptr<Buffer<T>> _inputBuffer;
-        std::shared_ptr<Buffer<T>> _outputBuffer;
+        Buffer<T> _inputBuffer;
+        Buffer<T> _outputBuffer;
         std::shared_ptr<Processor<T>> _rootProcessor;
     };
 

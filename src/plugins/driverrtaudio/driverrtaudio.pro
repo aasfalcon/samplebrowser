@@ -6,11 +6,11 @@ VERSION = 4.1.1
 include(../plugins.pri)
 
 HEADERS += \
-    driverprovider.h
+    driverproviderrtaudio.h
 
 SOURCES += \
-    driverprovider.cpp \
-    plugindriver.cpp
+    driverproviderrtaudio.cpp \
+    plugindriverrtaudio.cpp
 
 LIBS += \
     -lrtaudio

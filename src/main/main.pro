@@ -1,20 +1,22 @@
-QT += core gui
+QT += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-
-TARGET = ../wexplorer
+TARGET = wexplorer
 TEMPLATE = app
+CONFIG += c++11
 
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
     driverdialog.cpp \
-    browser.cpp
+    browser.cpp \
+    application.cpp
 
 HEADERS += \
     mainwindow.h \
     driverdialog.h \
-    browser.h
+    browser.h \
+    application.h \
+    config.h
 
 FORMS += \
     mainwindow.ui \
@@ -24,7 +26,7 @@ FORMS += \
 LIBS += \
     -L../engine -lengine \
     -L../widgets -lwidgets \
-    -L../plugins -lweplsh \
+    -L../shared -lweplsh \
     -L../sound -lsound \
     \
     -L../../bundle/qvumeter -lqvumeter \
@@ -37,11 +39,11 @@ LIBS += \
     -lpng12 \
     -lltdl
 
+RESOURCES += \
+    assets/config.qrc \
+    assets/icons.qrc \
+    assets/themes.qrc
+
 INCLUDEPATH += ../ ../../bundle ../../vendor ../plugins
 
-CONFIG += c++11
-
-PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../plugins
-
-RESOURCES += \
-    resources.qrc
+PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../shared

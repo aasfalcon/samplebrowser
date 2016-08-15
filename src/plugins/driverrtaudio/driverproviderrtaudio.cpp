@@ -5,9 +5,9 @@
 
 #include <RtAudio.h>
 
-#include "driverprovider.h"
+#include "driverproviderrtaudio.h"
 
-std::string DriverProvider::_names[] = {
+std::string DriverProviderRtAudio::_names[] = {
     "<auto>",
     "ALSA",
     "PulseAudio",
@@ -20,17 +20,17 @@ std::string DriverProvider::_names[] = {
     "Dummy I/O"
 };
 
-DriverProvider::DriverProvider()
+DriverProviderRtAudio::DriverProviderRtAudio()
     : _process(NULL)
 {
 }
 
-DriverProvider::~DriverProvider()
+DriverProviderRtAudio::~DriverProviderRtAudio()
 {
     disconnect();
 }
 
-const IDriver::Api *DriverProvider::apiInfo(IDriver::ApiType type)
+const IDriver::Api *DriverProviderRtAudio::apiInfo(IDriver::ApiType type)
 {
     std::shared_ptr<Api> api = _apiInfos[type];
 
@@ -91,7 +91,7 @@ const IDriver::Api *DriverProvider::apiInfo(IDriver::ApiType type)
     return _apiInfos.at(type).get();
 }
 
-unsigned DriverProvider::connect(const IDriver::ConnectOptions &options)
+unsigned DriverProviderRtAudio::connect(const IDriver::ConnectOptions &options)
 {
     if (_rtaudio) {
         throw std::runtime_error("Already connected");
@@ -123,12 +123,12 @@ unsigned DriverProvider::connect(const IDriver::ConnectOptions &options)
     unsigned bufferSize;
     _rtaudio->openStream(oparams.get(), iparams.get(),
                          options.sampleFormat, options.sampleRate,
-                         &bufferSize, &DriverProvider::process,
-                         this, &so, &DriverProvider::error);
+                         &bufferSize, &DriverProviderRtAudio::process,
+                         this, &so, &DriverProviderRtAudio::error);
     return bufferSize;
 }
 
-void DriverProvider::control(IDriver::Control command)
+void DriverProviderRtAudio::control(IDriver::Control command)
 {
     if (!_rtaudio || !_rtaudio->isStreamOpen()) {
         throw std::runtime_error("Attempt to control stream which is not opened");
@@ -149,7 +149,7 @@ void DriverProvider::control(IDriver::Control command)
     }
 }
 
-void DriverProvider::disconnect()
+void DriverProviderRtAudio::disconnect()
 {
     if (_rtaudio) {
         if (_rtaudio->isStreamRunning()) {
@@ -165,7 +165,7 @@ void DriverProvider::disconnect()
     _streamInfo.reset();
 }
 
-const IDriver::DriverInfo *DriverProvider::driverInfo()
+const IDriver::DriverInfo *DriverProviderRtAudio::driverInfo()
 {
     if (_driverInfo) {
         return _driverInfo.get();
@@ -196,12 +196,12 @@ const IDriver::DriverInfo *DriverProvider::driverInfo()
     return _driverInfo.get();
 }
 
-void DriverProvider::setProcess(IDriver::Process callback)
+void DriverProviderRtAudio::setProcess(IDriver::Process callback)
 {
     _process = callback;
 }
 
-const IDriver::StreamInfo *DriverProvider::streamInfo()
+const IDriver::StreamInfo *DriverProviderRtAudio::streamInfo()
 {
     if (!_rtaudio) {
         throw new std::runtime_error("Attempt to get stream info while not initialized");
@@ -219,7 +219,7 @@ const IDriver::StreamInfo *DriverProvider::streamInfo()
     return _streamInfo.get();
 }
 
-double DriverProvider::time() const
+double DriverProviderRtAudio::time() const
 {
     if (!_rtaudio) {
         return 0;
@@ -228,7 +228,7 @@ double DriverProvider::time() const
     return _rtaudio->getStreamTime();
 }
 
-void DriverProvider::error(RtAudioError::Type type, const std::string &errorText)
+void DriverProviderRtAudio::error(RtAudioError::Type type, const std::string &errorText)
 {
     if (type == RtAudioError::DEBUG_WARNING || type == RtAudioError::WARNING) {
         std::cerr << errorText.c_str() << "\n";
@@ -237,11 +237,11 @@ void DriverProvider::error(RtAudioError::Type type, const std::string &errorText
     }
 }
 
-int DriverProvider::process(void *output, void *input, unsigned frames,
+int DriverProviderRtAudio::process(void *output, void *input, unsigned frames,
                             double time, RtAudioStreamStatus status,
                             void *data)
 {
-    auto pthis = reinterpret_cast<DriverProvider *>(data);
+    auto pthis = reinterpret_cast<DriverProviderRtAudio *>(data);
 
     if (pthis->_process) {
         const StreamInfo *info = pthis->streamInfo();

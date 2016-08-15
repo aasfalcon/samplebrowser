@@ -2,8 +2,8 @@
 #define PLUGIN_DESCRIPTION \
     "Resampler plugin builld against soxr-lsr"
 
-#include "shared/plugin.h"
-#include "resamplerlsr/resamplerproviderlsr.h"
+#include "shared/pluginmacros.h"
+#include "plugins/resamplerlsr/resamplerproviderlsr.h"
 
 class ResamplerProviderSoXR: public ResamplerProviderLSR {};
 

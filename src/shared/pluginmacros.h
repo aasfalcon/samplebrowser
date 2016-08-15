@@ -1,21 +1,7 @@
-#ifndef PLUGIN_H
-#define PLUGIN_H
+#ifndef PLUGINMACROS_H
+#define PLUGINMACROS_H
 
-#include <map>
-
-#include "allocator.h"
-
-class Plugin: public Allocator
-{
-    Info _info;
-
-public:
-    Plugin(const char *name, const char *version, const char *description);
-    ~Plugin();
-
-    virtual const Info *info();
-    virtual bool provides(const char *interfaceName);
-};
+#include "plugin.h"
 
 #define STRINGIFY_(__x) #__x
 #define STRINGIFY(__x) STRINGIFY_(__x)
@@ -51,7 +37,11 @@ public:
                 PLUGIN_DEBUG("providing interface [" << #__interface << "] with [" << #__provider << ']'); \
                 return new __provider; \
             }; \
-            destroy = [](Interface *object) { delete object; }; \
+            destroy = [](Interface *ptr) { \
+                PLUGIN_DEBUG("deleting object provided for interface [" << #__interface << "]"); \
+                auto object = dynamic_cast<__provider *>(ptr); \
+                delete object; \
+            }; \
             addTag(#__interface, create, destroy);
 
 #define PLUGIN_END \
@@ -72,4 +62,4 @@ public:
 #error PLUGIN_VERSION not defined, check your compiler flags
 #endif
 
-#endif // PLUGIN_H
+#endif // PLUGINMACROS_H

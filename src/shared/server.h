@@ -1,11 +1,12 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#define PLUGIN_SERVER_MODULE "libserver"
-#define PLUGIN_SERVER_INTERFACE "IServer"
-
+#include <list>
+#include <map>
 #include <memory>
-#include "shared/iserver.h"
+#include <string>
+
+#include "version.h"
 
 struct Interface;
 struct IPlugin;
@@ -13,7 +14,7 @@ struct lt__handle;
 
 class Server {
 public:
-    ~Server();
+    virtual ~Server();
     static std::shared_ptr<Server> instance();
 
     template<typename T>
@@ -23,31 +24,30 @@ public:
                 Version pluginVersion = Version(),
                 Version::Compare compare = Version::CompareGreaterOrEqual);
     void shutdown();
-    void startup(const std::string &pluginsPath,
-                 const std::string &moduleName = PLUGIN_SERVER_MODULE,
-                 const std::string &moduleInterface = PLUGIN_SERVER_INTERFACE,
-                 const std::string &modulePath = "");
+    void startup(const std::string &pluginsPath);
 
 private:
+    struct Preference {
+        Version::Compare compare;
+        std::string pluginName;
+        Version version;
+    };
+
     static std::shared_ptr<Server> _instance;
-    std::shared_ptr<lt__handle> _handle;
-    std::shared_ptr<IPlugin> _plugin;
+    std::map<std::shared_ptr<lt__handle>, std::shared_ptr<IPlugin>> _modules;
     std::string _pluginsPath;
-    std::shared_ptr<IServer> _provider;
+    std::map<std::string, Preference> _preferences;
 
     Server();
-
+    std::shared_ptr<Interface> create(const std::string &interfaceName,
+                                      const Preference *preference = 0);
+    IPlugin *findPlugin(const std::string &interfaceName,
+                        const Preference *preference);
 };
 
 template<typename T>
 std::shared_ptr<T> Server::factory(const std::string &interfaceName) {
-    Interface *provider = _provider->create(interfaceName.c_str());
-    return std::shared_ptr<T>(
-                static_cast<T *>(provider),
-                [this](Interface *object) {
-                    this->_provider->destroy(object);
-                }
-            );
+    return std::static_pointer_cast<T>(create(interfaceName));
 }
 
 #define PLUGIN_FACTORY(__interface) \

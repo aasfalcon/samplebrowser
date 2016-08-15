@@ -1,4 +1,5 @@
 #include <cstring>
+
 #include "sample.h"
 #include "buffer.h"
 #include "converter.h"

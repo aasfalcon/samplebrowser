@@ -12,23 +12,23 @@ public:
     Processor();
     ~Processor();
 
-    void kickIn(std::shared_ptr<Buffer<T> > out,
-                std::shared_ptr<Buffer<T> > in,
+    void kickIn(Buffer<T> *out,
+                Buffer<T> *in,
                 unsigned latency, unsigned sampleRate);
     virtual void process() = 0;
 
 protected:
-    std::shared_ptr<Buffer<T> > &in();
+    Buffer<T> *in();
     virtual void init();
     unsigned latency() const;
-    std::shared_ptr<Buffer<T> > &out();
+    Buffer<T> *out();
     Sound::Type sampleFormat() const;
     unsigned sampleRate() const;
 
 private:
-    std::shared_ptr<Buffer<T>> _in;
+    Buffer<T> *_in;
     unsigned _latency;
-    std::shared_ptr<Buffer<T>> _out;
+    Buffer<T> *_out;
     unsigned _sampleRate;
 };
 

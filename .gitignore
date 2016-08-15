@@ -3,4 +3,8 @@ build/
 Makefile
 *.o
 *.a
+*.autosave
+moc_*.*
+qrc_*.*
+ui_*.*
 
