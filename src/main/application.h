@@ -23,10 +23,11 @@ private:
     std::unique_ptr<Browser> _window;
 
     void initResources();
-    void makeConfigPath();
+    void initConfig();
     QString pluginPath();
     void prefer(const QMap<QString, QString> &providers);
-    void configurePluginServer();
+    void preparePluginServer();
+    void selectTheme(const QString &theme);
 };
 
 #endif // APPLICATION_H

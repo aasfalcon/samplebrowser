@@ -14,9 +14,12 @@ Application::Application(int argc, char *argv[])
     , _window(new Browser())
 {
     _server->startup(pluginPath().toStdString());
-    configurePluginServer();
-    makeConfigPath();
+    preparePluginServer();
     initResources();
+    initConfig();
+
+    QSettings settings;
+    selectTheme(settings.value("main/theme").toString());
 }
 
 Application::~Application()
@@ -38,29 +41,33 @@ int Application::run()
     return result;
 }
 
-void Application::initResources()
-{
-    Q_INIT_RESOURCE(config);
-    Q_INIT_RESOURCE(icons);
-    Q_INIT_RESOURCE(themes);
-    QFile qss(":/themes/default/main.qss");
-    qss.open(QFile::ReadOnly);
-    setStyleSheet(qss.readAll());
-}
-
-void Application::makeConfigPath()
+void Application::initConfig()
 {
     QCoreApplication::setOrganizationName(APPLICATION_TEAM);
     QCoreApplication::setOrganizationDomain(APPLICATION_TEAM_DOMAIN);
     QCoreApplication::setApplicationName(APPLICATION_NAME);
 
-    QStringList configPaths = QStandardPaths::standardLocations(
-                QStandardPaths::AppConfigLocation);
-    QDir configDir(configPaths[0]);
+    QSettings defaults(":/config/default.conf", QSettings::IniFormat);
+    QSettings settings;
 
-    if (!configDir.exists()) {
-        configDir.mkpath(configDir.path());
+    auto keys = defaults.allKeys();
+
+    for (auto it = keys.begin(); it != keys.end(); ++it) {
+        QString key = *it;
+
+        if (!settings.contains(key)) {
+            settings.setValue(key, defaults.value(key));
+        }
     }
+
+    settings.sync();
+}
+
+void Application::initResources()
+{
+    Q_INIT_RESOURCE(config);
+    Q_INIT_RESOURCE(icons);
+    Q_INIT_RESOURCE(themes);
 }
 
 QString Application::pluginPath()
@@ -68,24 +75,22 @@ QString Application::pluginPath()
     return APPLICATION_PLUGIN_PATH;
 }
 
-void Application::configurePluginServer()
+void Application::preparePluginServer()
 {
-    QMap<QString, QString> providers;
-    providers["IResampler"] = "PluginResamplerLSR";
-    providers["IAudioFile"] = "PluginAudiofile";
-
     QSettings settings;
     settings.beginGroup("plugins");
     auto keys = settings.childKeys();
 
     for (auto it = keys.begin(); it != keys.end(); ++it) {
-        QString key = *it;
-        providers[key] = settings.value(key).toString();
-    }
-
-    for (auto it = providers.begin(); it != providers.end(); ++it) {
-        std::string interface = it.key().toStdString();
-        std::string plugin = it.value().toStdString();
+        std::string interface = it->toStdString();
+        std::string plugin = settings.value(*it).toString().toStdString();
         _server->prefer(interface, plugin);
     }
+}
+
+void Application::selectTheme(const QString &theme)
+{
+    QFile qss(QString(":/themes/%1/main.qss").arg(theme));
+    qss.open(QFile::ReadOnly);
+    setStyleSheet(qss.readAll());
 }

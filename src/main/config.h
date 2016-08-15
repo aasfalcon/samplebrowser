@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define APPLICATION_NAME "WExplorer"
+#define APPLICATION_NAME "wexplorer"
 #define APPLICATION_TEAM "wexplorer"
 #define APPLICATION_TEAM_DOMAIN "wexplorer.org"
 
