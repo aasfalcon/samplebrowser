@@ -1,5 +1,5 @@
-#ifndef DRIVERPROVIDERRTAUDIO_H
-#define DRIVERPROVIDERRTAUDIO_H
+#ifndef DRIVERRTAUDIO_H
+#define DRIVERRTAUDIO_H
 
 #include <string>
 #include <list>
@@ -10,11 +10,11 @@
 
 #include "shared/idriver.h"
 
-class DriverProviderRtAudio: public IDriver
+class DriverRtAudio: public IDriver
 {
 public:
-    DriverProviderRtAudio();
-    virtual ~DriverProviderRtAudio();
+    DriverRtAudio();
+    virtual ~DriverRtAudio();
 
     const Api *apiInfo(ApiType type);
     unsigned connect(const ConnectOptions &options);
@@ -39,4 +39,4 @@ private:
                        double time, RtAudioStreamStatus status, void *data);
 };
 
-#endif // DRIVERPROVIDERRTAUDIO_H
+#endif // DRIVERRTAUDIO_H

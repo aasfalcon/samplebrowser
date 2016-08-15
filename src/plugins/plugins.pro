@@ -6,5 +6,5 @@ SUBDIRS += \
     driverrtaudio \
     resamplerlsr \
     resamplersoxr \
-    audiofile \
+    audiofilesndfile \
     audiofilempg123

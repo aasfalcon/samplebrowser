@@ -2,15 +2,15 @@
 #include <stdexcept>
 #include <samplerate.h>
 
-#include "resamplerproviderlsr.h"
+#include "resamplerlsr.h"
 
-int ResamplerProviderLSR::_types[Sound::QualityCount] = {
+int ResamplerLSR::_types[Sound::QualityCount] = {
     SRC_SINC_FASTEST,           // QualityFast
     SRC_SINC_MEDIUM_QUALITY,    // QualityMedium
     SRC_SINC_BEST_QUALITY,      // QualityBest
 };
 
-ResamplerProviderLSR::ResamplerProviderLSR()
+ResamplerLSR::ResamplerLSR()
     : IResampler()
     , _channels(0)
     , _frames(0)
@@ -23,7 +23,7 @@ ResamplerProviderLSR::ResamplerProviderLSR()
 {
 }
 
-ResamplerProviderLSR::~ResamplerProviderLSR()
+ResamplerLSR::~ResamplerLSR()
 {
     if (_output) {
         delete _output;
@@ -34,7 +34,7 @@ ResamplerProviderLSR::~ResamplerProviderLSR()
     }
 }
 
-void ResamplerProviderLSR::init(Sound::Quality quality, unsigned channels,
+void ResamplerLSR::init(Sound::Quality quality, unsigned channels,
                                 unsigned frames, double rate)
 {
     _channels = channels;
@@ -62,12 +62,12 @@ void ResamplerProviderLSR::init(Sound::Quality quality, unsigned channels,
     setInputRate(rate);
 }
 
-float *ResamplerProviderLSR::output()
+float *ResamplerLSR::output()
 {
     return _output;
 }
 
-unsigned ResamplerProviderLSR::perform()
+unsigned ResamplerLSR::perform()
 {
     double ratio = _outputRate / _inputRate;
     SRC_DATA data = { (float *)_input, _output, (int)_inputFramesMax,
@@ -86,19 +86,19 @@ unsigned ResamplerProviderLSR::perform()
 
     return data.input_frames_used;
 }
-unsigned ResamplerProviderLSR::process(const float *input, unsigned inputFramesMax)
+unsigned ResamplerLSR::process(const float *input, unsigned inputFramesMax)
 {
     _input = input;
     _inputFramesMax = inputFramesMax;
     return perform();
 }
 
-void ResamplerProviderLSR::setInputRate(double rate)
+void ResamplerLSR::setInputRate(double rate)
 {
     _inputRate = rate;
 }
 
-void ResamplerProviderLSR::reset()
+void ResamplerLSR::reset()
 {
     if (_state) {
         int error = src_reset(_state);
@@ -109,7 +109,7 @@ void ResamplerProviderLSR::reset()
     }
 }
 
-unsigned ResamplerProviderLSR::simple(float *dest, unsigned dframes,
+unsigned ResamplerLSR::simple(float *dest, unsigned dframes,
                                       const float *source, unsigned sframes,
                                       unsigned channels,
                                       double ratio, Sound::Quality quality)

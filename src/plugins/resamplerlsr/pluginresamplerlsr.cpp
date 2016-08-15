@@ -3,8 +3,8 @@
     "Resampler plugin builld ageinst libsamplerate library"
 
 #include "shared/pluginmacros.h"
-#include "resamplerproviderlsr.h"
+#include "resamplerlsr.h"
 
 PLUGIN_BEGIN
-PLUGIN_PROVIDES(IResampler, ResamplerProviderLSR)
+PLUGIN_PROVIDES(IResampler, ResamplerLSR)
 PLUGIN_END

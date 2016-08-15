@@ -1,15 +1,15 @@
-#ifndef AUDIOFILEPROVIDERMPG123_H
-#define AUDIOFILEPROVIDERMPG123_H
+#ifndef AUDIOFILEMPG123_H
+#define AUDIOFILEMPG123_H
 
-#include "../audiofile/audiofileprovider.h"
+#include "../audiofilesndfile/audiofilesndfile.h"
 
 struct mpg123_handle_struct;
 
-class AudioFileProviderMPG123 : public AudioFileProvider
+class AudioFileMPG123 : public AudioFileSndfile
 {
 public:
-    AudioFileProviderMPG123();
-    ~AudioFileProviderMPG123();
+    AudioFileMPG123();
+    ~AudioFileMPG123();
 
     void close();
     void open(const char *filename, Mode mode);
@@ -24,4 +24,4 @@ private:
     std::string mpgError(const std::string &userMessage, int errorNumber = 0);
 };
 
-#endif // AUDIOFILEPROVIDERMPG123_H
+#endif // AUDIOFILEMPG123_H

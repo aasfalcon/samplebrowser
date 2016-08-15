@@ -4,21 +4,21 @@
 #include <sstream>
 
 #include "sound/converter.h"
-#include "audiofileprovider.h"
+#include "audiofilesndfile.h"
 
 const unsigned LOGINFO_MAX_SIZE = 2048;
 
-AudioFileProvider::AudioFileProvider()
+AudioFileSndfile::AudioFileSndfile()
     : IAudioFile()
 {
 }
 
-AudioFileProvider::~AudioFileProvider()
+AudioFileSndfile::~AudioFileSndfile()
 {
     close();
 }
 
-void AudioFileProvider::close()
+void AudioFileSndfile::close()
 {
     if (_handle) {
         if ((_mode == ModeWrite || _mode == ModeReadWrite) && !_flushed) {
@@ -35,7 +35,7 @@ void AudioFileProvider::close()
     }
 }
 
-void AudioFileProvider::flush()
+void AudioFileSndfile::flush()
 {
     if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
         throw std::runtime_error("Attempt to write file not opened for writing.");
@@ -44,7 +44,7 @@ void AudioFileProvider::flush()
     sf_write_sync(_handle);
 }
 
-void AudioFileProvider::open(const char *filename, IAudioFile::Mode mode)
+void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 {
     if (_handle) {
         close();
@@ -217,21 +217,21 @@ void AudioFileProvider::open(const char *filename, IAudioFile::Mode mode)
     _path = filename;
 }
 
-const IAudioFile::ChunkData *AudioFileProvider::chunk(const char *id, unsigned *size)
+const IAudioFile::ChunkData *AudioFileSndfile::chunk(const char *id, unsigned *size)
 {
     const std::vector<ChunkData> &result = _chunksRaw.at(id);
     *size = result.size();
     return result.data();
 }
 
-const IAudioFile::ChunkData *AudioFileProvider::chunk(IAudioFile::ChunkType type, unsigned *size)
+const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type, unsigned *size)
 {
     const std::vector<ChunkData> &result = _chunks.at(type);
     *size = result.size();
     return result.data();
 }
 
-void AudioFileProvider::setChunk(const char *id, unsigned size, const IAudioFile::ChunkData *data)
+void AudioFileSndfile::setChunk(const char *id, unsigned size, const IAudioFile::ChunkData *data)
 {
     if (_chunksFlushed) {
         throw std::runtime_error("Attempt to set chunk after data write");
@@ -242,7 +242,7 @@ void AudioFileProvider::setChunk(const char *id, unsigned size, const IAudioFile
     _chunksRaw[id] = buffer;
 }
 
-void AudioFileProvider::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData *data)
+void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData *data)
 {
     if (_chunksFlushed) {
         throw std::runtime_error("Attempt to set chunk after data write");
@@ -253,22 +253,22 @@ void AudioFileProvider::setChunk(IAudioFile::ChunkType type, unsigned size, cons
     _chunks[type] = buffer;
 }
 
-const IAudioFile::FileInfo *AudioFileProvider::fileInfo() const
+const IAudioFile::FileInfo *AudioFileSndfile::fileInfo() const
 {
     return &_info;
 }
 
-void AudioFileProvider::setFileInfo(const IAudioFile::FileInfo *value)
+void AudioFileSndfile::setFileInfo(const IAudioFile::FileInfo *value)
 {
     _info = *value;
 }
 
-void AudioFileProvider::setProgressCallback(IAudioFile::ProgressCallback callback)
+void AudioFileSndfile::setProgressCallback(IAudioFile::ProgressCallback callback)
 {
     _progress = callback;
 }
 
-unsigned AudioFileProvider::read(void *buffer, unsigned frames)
+unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
 {
     if (!_handle || _mode != ModeRead || _mode != ModeReadWrite) {
         throw std::runtime_error("Attempt to read file not opened for reading.");
@@ -314,7 +314,7 @@ unsigned AudioFileProvider::read(void *buffer, unsigned frames)
     return unsigned(count);
 }
 
-unsigned AudioFileProvider::seek(int offset, IAudioFile::SeekWhence sw,
+unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
                                  IAudioFile::SeekType st)
 {
     if (!_info.seekable || !_handle) {
@@ -345,7 +345,7 @@ unsigned AudioFileProvider::seek(int offset, IAudioFile::SeekWhence sw,
     return unsigned(result);
 }
 
-void AudioFileProvider::write(const void *buffer, unsigned frames)
+void AudioFileSndfile::write(const void *buffer, unsigned frames)
 {
     if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
         throw std::runtime_error("Attempt to write file not opened for writing.");
@@ -384,7 +384,7 @@ void AudioFileProvider::write(const void *buffer, unsigned frames)
     }
 }
 
-std::string AudioFileProvider::sndfileError(int errorNumber,
+std::string AudioFileSndfile::sndfileError(int errorNumber,
                                             const std::string &userMessage)
 {
     char logInfo[LOGINFO_MAX_SIZE];
@@ -400,7 +400,7 @@ std::string AudioFileProvider::sndfileError(int errorNumber,
     return message.str();
 }
 
-void AudioFileProvider::flushChunks()
+void AudioFileSndfile::flushChunks()
 {
     if (_chunksFlushed) {
         return;

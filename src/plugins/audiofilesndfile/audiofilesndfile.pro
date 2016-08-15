@@ -1,16 +1,16 @@
-# Audio file I/O
+# Audio file I/O (libsndfile wrapper)
 
-TARGET = audiofile
+TARGET = audiofilesndfile
 VERSION = 1.0.0
 
 include(../plugins.pri)
 
 HEADERS += \
-    audiofileprovider.h
+    audiofilesndfile.h
 
 SOURCES += \
-    audiofileprovider.cpp \
-    pluginaudiofile.cpp
+    pluginaudiofilesndfile.cpp \
+    audiofilesndfile.cpp
 
 LIBS += \
     -L../../vendor/libsndfile -lsndfile

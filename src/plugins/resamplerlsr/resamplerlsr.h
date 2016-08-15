@@ -6,11 +6,11 @@
 
 struct SRC_STATE_tag;
 
-class ResamplerProviderLSR: public IResampler
+class ResamplerLSR: public IResampler
 {
 public:
-    ResamplerProviderLSR();
-    ~ResamplerProviderLSR();
+    ResamplerLSR();
+    ~ResamplerLSR();
     void init(Sound::Quality quality, unsigned channels,
                       unsigned frames, double rate);
     float *output();

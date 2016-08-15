@@ -3,8 +3,8 @@
     "RtAudio realtime audio driver support plugin"
 
 #include "shared/pluginmacros.h"
-#include "driverproviderrtaudio.h"
+#include "driverrtaudio.h"
 
 PLUGIN_BEGIN
-PLUGIN_PROVIDES(IDriver, DriverProviderRtAudio)
+PLUGIN_PROVIDES(IDriver, DriverRtAudio)
 PLUGIN_END

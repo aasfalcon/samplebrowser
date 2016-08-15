@@ -6,11 +6,11 @@ VERSION = 0.1.8
 include(../plugins.pri)
 
 HEADERS += \
-    resamplerproviderlsr.h
+    resamplerlsr.h
 
 SOURCES += \
-    resamplerproviderlsr.cpp \
-    pluginresamplerlsr.cpp
+    pluginresamplerlsr.cpp \
+    resamplerlsr.cpp
 
 LIBS += \
     -lsamplerate

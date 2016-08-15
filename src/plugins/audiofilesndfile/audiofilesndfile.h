@@ -1,5 +1,5 @@
-#ifndef AUDIOFILEPROVIDER_H
-#define AUDIOFILEPROVIDER_H
+#ifndef AUDIOFILESNDFILE_H
+#define AUDIOFILESNDFILE_H
 
 #include <map>
 #include <string>
@@ -8,11 +8,11 @@
 #include "libsndfile/src/sndfile.h"
 #include "shared/iaudiofile.h"
 
-class AudioFileProvider: public IAudioFile
+class AudioFileSndfile: public IAudioFile
 {
 public:
-    AudioFileProvider();
-    ~AudioFileProvider();
+    AudioFileSndfile();
+    ~AudioFileSndfile();
 
     void close();
     void flush();
@@ -49,4 +49,4 @@ private:
     void flushChunks();
 };
 
-#endif // AUDIOFILEPROVIDER_H
+#endif // AUDIOFILESNDFILE_H

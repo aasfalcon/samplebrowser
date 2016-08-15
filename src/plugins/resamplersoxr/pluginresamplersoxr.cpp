@@ -3,11 +3,10 @@
     "Resampler plugin builld against soxr-lsr"
 
 #include "shared/pluginmacros.h"
-#include "plugins/resamplerlsr/resamplerproviderlsr.h"
+#include "plugins/resamplerlsr/resamplerlsr.h"
 
-class ResamplerProviderSoXR: public ResamplerProviderLSR {};
+class ResamplerSoXR: public ResamplerLSR {};
 
 PLUGIN_BEGIN
-PLUGIN_PROVIDES(IResampler, ResamplerProviderSoXR)
-PLUGIN_PROVIDES(IConverter, ResamplerProviderSoXR)
+PLUGIN_PROVIDES(IResampler, ResamplerSoXR)
 PLUGIN_END
