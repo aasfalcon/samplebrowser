@@ -41,7 +41,7 @@ void Player<T>::play(const std::string &path)
     this->stop();
 
     _stream = PStream(new InputStream<T>(path));
-    *_stream >> _playerBuffer >> _info;
+    *_stream >> _info >> _playerBuffer;
 
     if (!_playerBuffer.isEmpty()) {
         this->feed(_playerBuffer, _info.sampleRate);

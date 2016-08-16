@@ -2,10 +2,11 @@
 #define AUDIOFILESNDFILE_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "libsndfile/src/sndfile.h"
+#include "includes/libsndfile/sndfile.h"
 #include "shared/iaudiofile.h"
 
 class AudioFileSndfile: public IAudioFile
@@ -41,7 +42,7 @@ private:
     bool _chunksFlushed;
     std::map<std::string, std::vector<ChunkData>> _chunksRaw;
     bool _flushed;
-    SNDFILE *_handle;
+    std::shared_ptr<SNDFILE> _handle;
     Mode _mode;
     ProgressCallback _progress;
 

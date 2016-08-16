@@ -6,7 +6,7 @@ VERSION = 1.0.0
 QT =
 TEMPLATE = lib
 CONFIG += staticlib c++11
-INCLUDEPATH += ../
+INCLUDEPATH += .. ../../vendor
 
 SOURCES +=\
     version.cpp \
@@ -27,4 +27,5 @@ HEADERS +=\
     iplugin.h \
     iresampler.h \
     iserver.h \
-    pluginmacros.h
+    pluginmacros.h \
+    log.h

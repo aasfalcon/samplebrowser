@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "../../vendor/libsndfile/src/sndfile.h"
+#include "libsndfile/build/src/sndfile.h"
 #include "chunk.h"
 
 #define CART_DATE_FORMAT "Y-m-d"

@@ -1,5 +1,6 @@
 #include "sample.h"
 #include "inputstream.h"
+#include "shared/log.h"
 #include "shared/server.h"
 
 template<typename T>
@@ -123,7 +124,9 @@ template<typename T>
 void InputStream<T>::preload()
 {
     if (_isPreloaded) {
-        throw std::runtime_error("Stream buffer already preloaded");
+        std::string message = "Stream buffer already preloaded";
+        LOG(ERROR, message);
+        throw std::runtime_error(message);
     }
 
     const IAudioFile::FileInfo &info = *_provider->fileInfo();
@@ -149,7 +152,9 @@ template<typename T>
 void InputStream<T>::swap()
 {
     if (!_isPreloaded) {
-        throw std::runtime_error("Attempt to swap non-preloaded buffer");
+        std::string message = "Attempt to swap non-preloaded buffer";
+        LOG(ERROR, message);
+        throw std::runtime_error(message);
     }
 
     _current = _next;

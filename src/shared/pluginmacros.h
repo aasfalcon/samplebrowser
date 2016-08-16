@@ -1,6 +1,7 @@
 #ifndef PLUGINMACROS_H
 #define PLUGINMACROS_H
 
+#include "log.h"
 #include "plugin.h"
 
 #define STRINGIFY_(__x) #__x
@@ -8,37 +9,27 @@
 #define PLUGIN_CREATE plugin_create
 #define PLUGIN_DESTROY plugin_destroy
 
-#ifdef NO_DEBUG
-#define PLUGIN_DEBUG(__message)
-#else
-#include <iostream>
-#define PLUGIN_DEBUG(__message) \
-    std::cout << '[' << STRINGIFY(PLUGIN_NAME) << "]: " << __message << '\n'; \
-    std::cout.flush();
-#endif
-
-
 #define PLUGIN_BEGIN \
     class PLUGIN_NAME: public Plugin { \
     public: \
         ~PLUGIN_NAME() \
         { \
-            PLUGIN_DEBUG("finalization"); \
+            LOG(TRACE, "Destroying plugin object"); \
         } \
         PLUGIN_NAME() \
             : Plugin(STRINGIFY(PLUGIN_NAME), PLUGIN_VERSION, PLUGIN_DESCRIPTION) \
         { \
-            PLUGIN_DEBUG("initialization"); \
+            LOG(TRACE, "Creating plugin object"); \
             Create create; \
             Destroy destroy;
 
 #define PLUGIN_PROVIDES(__interface, __provider) \
             create = []() -> Interface * { \
-                PLUGIN_DEBUG("providing interface [" << #__interface << "] with [" << #__provider << ']'); \
+                LOG(TRACE, "Allocating " << #__provider << " [" << #__interface << ']'); \
                 return new __provider; \
             }; \
             destroy = [](Interface *ptr) { \
-                PLUGIN_DEBUG("deleting object provided for interface [" << #__interface << "]"); \
+                LOG(TRACE, "Freeing " << #__provider << " [" << #__interface << ']'); \
                 auto object = dynamic_cast<__provider *>(ptr); \
                 delete object; \
             }; \

@@ -13,7 +13,7 @@ SOURCES += \
     audiofilesndfile.cpp
 
 LIBS += \
-    -L../../vendor/libsndfile -lsndfile
+    /home/android/Develop/WAVExplorer/vendor/libsndfile/build/src/.libs/libsndfile.a
 
 INCLUDEPATH += \
-    ../../../vendor
+    ../../..

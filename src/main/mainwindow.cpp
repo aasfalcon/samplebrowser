@@ -3,7 +3,6 @@
 
 #include <QFileSystemModel>
 #include <QDirModel>
-#include <QDebug>
 #include <QMenuBar>
 #include <QTime>
 #include <QSettings>

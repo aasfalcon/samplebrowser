@@ -39,4 +39,4 @@ HEADERS += \
     inputstream.h \
     chunk.h
 
-INCLUDEPATH += ..
+INCLUDEPATH += .. ../../vendor

@@ -3,7 +3,6 @@
 #include <string>
 
 #include <RtAudio.h>
-#include <QDebug>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStatusBar>
@@ -14,9 +13,10 @@
 #include "driverdialog.h"
 #include "ui_driverdialog.h"
 
+#include "shared/log.h"
 #include "sound/driver.h"
 #include "sound/player.h"
-#include "engine/config.h"
+#include "config.h"
 
 QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
     { IDriver::SampleInt8, tr("8 bit") },
@@ -163,18 +163,22 @@ void DriverDialog::critical(const QString &caption,
     messageBox->setStandardButtons(QMessageBox::Ok);
     messageBox->exec();
     delete messageBox;
-    qDebug() << message;
 }
 
 QString DriverDialog::testFilePath()
 {
     QString filename = "testfile.ogg";
     QString result = QStandardPaths::locate(
-                QStandardPaths::DataLocation, filename);
+                QStandardPaths::AppDataLocation, filename);
 
     if (result.isEmpty()) {
-        critical(tr("Settings test error"),
-                 tr("Unable to find test sound file \"%1\"").arg(filename));
+        QString message =
+                tr("Unable to find test sound file \"%1\" "
+                   "in path: %2").arg(filename)
+                .arg(QStandardPaths::standardLocations(
+                         QStandardPaths::AppDataLocation)[0]);
+        LOG(ERROR, message.toStdString());
+        critical(tr("Settings test error"), message);
     }
 
     return result;
@@ -190,7 +194,12 @@ void DriverDialog::modelApply()
         auto player = new Player<Sound::Float32>();
         auto processor = dynamic_cast<Processor<Sound::Float32> *>(player);
         _driver->setRoot(processor);
-        player->play(testFilePath().toStdString());
+
+        std::string path = testFilePath().toStdString();
+
+        if (!path.empty()) {
+            player->play(path);
+        }
 
         //_driver->disconnect();
         _model.isTested = true;
@@ -241,7 +250,7 @@ void DriverDialog::modelInitialize(IDriver::ApiType apiType)
     const IDriver::Api &api = _driver->apiInfo(apiType);
 
     _model.apiType = apiType;
-    _model.name = WEE_APPLICATION_NAME;
+    _model.name = APPLICATION_NAME;
     _model.inputDeviceId = api.defaultInput;
     _model.inputChannels = DEFAULT_CHANNEL_COUNT;
     _model.outputDeviceId = api.defaultOutput;
@@ -374,7 +383,7 @@ void DriverDialog::modelUpdate()
 {
     if (!_isUpdateLocked) {
         memset(&_model, 0, sizeof _model);
-        _model.name = WEE_APPLICATION_NAME;
+        _model.name = APPLICATION_NAME;
         modelBound();
         updateStatus();
     }

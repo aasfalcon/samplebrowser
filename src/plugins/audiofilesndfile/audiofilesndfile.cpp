@@ -4,18 +4,28 @@
 #include <sstream>
 
 #include "sound/converter.h"
+#include "shared/log.h"
 #include "audiofilesndfile.h"
 
 const unsigned LOGINFO_MAX_SIZE = 2048;
 
+#define ERROR(what) \
+    std::string message = what; \
+    LOG(ERROR, what); \
+    throw std::runtime_error(what);
+
+#define ERROR_SNDFILE(number, what) \
+    ERROR(sndfileError(number, what));
+
 AudioFileSndfile::AudioFileSndfile()
     : IAudioFile()
 {
+
 }
 
 AudioFileSndfile::~AudioFileSndfile()
 {
-    close();
+
 }
 
 void AudioFileSndfile::close()
@@ -25,32 +35,23 @@ void AudioFileSndfile::close()
             flush();
         }
 
-        int errorNumber = sf_close(_handle);
-
-        if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Error closing file handle"));
-        }
-
-        _handle = NULL;
+        _handle.reset();
     }
 }
 
 void AudioFileSndfile::flush()
 {
     if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
-        throw std::runtime_error("Attempt to write file not opened for writing.");
+        ERROR("Attempt to write file not opened for writing.");
     }
 
-    sf_write_sync(_handle);
+    sf_write_sync(_handle.get());
 }
 
 void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 {
-    if (_handle) {
-        close();
-    }
-
     _mode = mode;
+    _path = filename;
 
     if (ModeClosed == mode) {
         return;
@@ -64,11 +65,13 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     };
 
     SF_INFO sfinfo;
-    _handle = sf_open(filename, sfmode[mode], &sfinfo);
+    auto psndfile = sf_open(filename, sfmode[mode], &sfinfo);
+    auto deleter = [](SNDFILE *handle) { sf_close(handle); };
+    _handle = std::shared_ptr<SNDFILE>(psndfile, deleter);
 
     if (!_handle) {
         int errorNumber = sf_error(NULL);
-        throw std::runtime_error(sndfileError(errorNumber, "Error opening file handle"));
+        ERROR_SNDFILE(errorNumber, "Error opening file handle");
     }
 
     if (mode == ModeWrite) {
@@ -91,7 +94,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     int errorNumber = sf_command(NULL, SFC_GET_FORMAT_INFO, &sffi, sizeof sffi);
 
     if (errorNumber) {
-        throw std::runtime_error(sndfileError(errorNumber, "Can't get major format info"));
+        ERROR_SNDFILE(errorNumber, "Can't get major format info");
     }
 
     _info.format.majorText = sffi.name;
@@ -102,18 +105,21 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     errorNumber = sf_command(NULL, SFC_GET_FORMAT_INFO, &sffi, sizeof sffi);
 
     if (errorNumber) {
-        throw std::runtime_error(sndfileError(errorNumber, "Can't get minor format info"));
+        ERROR_SNDFILE(errorNumber, "Can't get minor format info");
     }
 
     _info.format.minorText = sffi.name;
 
     // strings
     for (int i = 0; i < StringEntryCount; i++) {
-        const char *string = sf_get_string(_handle, i + 1);
+        const char *string = sf_get_string(_handle.get(), i + 1);
 
         if (!string) {
-            errorNumber = sf_error(_handle);
-            throw std::runtime_error(sndfileError(errorNumber, "Can't get string entry"));
+            errorNumber = sf_error(_handle.get());
+
+            if (errorNumber != SF_ERR_NO_ERROR) {
+                ERROR_SNDFILE(errorNumber, "Can't get string entry");
+            }
         }
 
         _info.strings[i] = string;
@@ -126,14 +132,14 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     SF_BROADCAST_INFO bi;
     size = offsetof(SF_BROADCAST_INFO, coding_history);
 
-    if (sf_command(_handle, SFC_GET_BROADCAST_INFO, &bi, size)) {
+    if (sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, &bi, size)) {
         _info.chunkFlags |= 1 << ChunkBroadcastInfo;
         size += bi.coding_history_size;
         std::vector<ChunkData> buffer(unsigned(size), 0);
 
-        if (!sf_command(_handle, SFC_GET_BROADCAST_INFO, buffer.data(), size)) {
-            errorNumber = sf_error(_handle);
-            throw std::runtime_error(sndfileError(errorNumber, "Can't read broadcast info"));
+        if (!sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, buffer.data(), size)) {
+            errorNumber = sf_error(_handle.get());
+            ERROR_SNDFILE(errorNumber, "Can't read broadcast info");
         }
 
         _chunks[ChunkBroadcastInfo] = buffer;
@@ -142,14 +148,14 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     SF_CART_INFO ci;
     size = offsetof(SF_CART_INFO, tag_text);
 
-    if (sf_command(_handle, SFC_GET_CART_INFO, &ci, size)) {
+    if (sf_command(_handle.get(), SFC_GET_CART_INFO, &ci, size)) {
         _info.chunkFlags |= 1 << ChunkCartInfo;
         size += ci.tag_text_size;
         std::vector<ChunkData> buffer(unsigned(size), 0);
 
-        if (!sf_command(_handle, SFC_GET_CART_INFO, buffer.data(), size)) {
-            errorNumber = sf_error(_handle);
-            throw std::runtime_error(sndfileError(errorNumber, "Can't read cart info"));
+        if (!sf_command(_handle.get(), SFC_GET_CART_INFO, buffer.data(), size)) {
+            errorNumber = sf_error(_handle.get());
+            ERROR_SNDFILE(errorNumber, "Can't read cart info");
         }
 
         _chunks[ChunkCartInfo] = buffer;
@@ -157,14 +163,14 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 
     int count;
 
-    if (sf_command(_handle, SFC_GET_CUE_COUNT, &count, sizeof count)) {
+    if (sf_command(_handle.get(), SFC_GET_CUE_COUNT, &count, sizeof count)) {
         _info.chunkFlags |= 1 << ChunkCues;
         size = int(sizeof(SF_CUE_POINT)) * count;
         std::vector<ChunkData> buffer(unsigned(size), 0);
 
-        if (!sf_command(_handle, SFC_GET_CUE, buffer.data(), size)) {
-            errorNumber = sf_error(_handle);
-            throw std::runtime_error(sndfileError(errorNumber, "Can't read cue points"));
+        if (!sf_command(_handle.get(), SFC_GET_CUE, buffer.data(), size)) {
+            errorNumber = sf_error(_handle.get());
+            ERROR_SNDFILE(errorNumber, "Can't read cue points");
         }
 
         _chunks[ChunkCues] = buffer;
@@ -173,14 +179,14 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     SF_INSTRUMENT in;
     size = offsetof(SF_INSTRUMENT, loops);
 
-    if (sf_command(_handle, SFC_GET_INSTRUMENT, &in, size)) {
+    if (sf_command(_handle.get(), SFC_GET_INSTRUMENT, &in, size)) {
         _info.chunkFlags |= 1 << ChunkInstrument;
         size += int(sizeof in.loops[1]) * in.loop_count;
         std::vector<ChunkData> buffer(unsigned(size), 0);
 
-        if (!sf_command(_handle, SFC_GET_INSTRUMENT, buffer.data(), size)) {
-            errorNumber = sf_error(_handle);
-            throw std::runtime_error(sndfileError(errorNumber, "Can't read instrument data"));
+        if (!sf_command(_handle.get(), SFC_GET_INSTRUMENT, buffer.data(), size)) {
+            errorNumber = sf_error(_handle.get());
+            ERROR_SNDFILE(errorNumber, "Can't read instrument data");
         }
 
         _chunks[ChunkInstrument] = buffer;
@@ -189,7 +195,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     SF_LOOP_INFO li;
     size = sizeof(SF_LOOP_INFO);
 
-    if (sf_command(_handle, SFC_GET_LOOP_INFO, &li, size)) {
+    if (sf_command(_handle.get(), SFC_GET_LOOP_INFO, &li, size)) {
         _info.chunkFlags |= 1 << ChunkLoopInfo;
         std::vector<ChunkData> buffer(unsigned(size), 0);
         memcpy(buffer.data(), &li, size);
@@ -198,14 +204,14 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 
     // unknown chunks
     SF_CHUNK_INFO sfci;
-    SF_CHUNK_ITERATOR *it = sf_get_chunk_iterator(_handle, NULL);
+    SF_CHUNK_ITERATOR *it = sf_get_chunk_iterator(_handle.get(), NULL);
     memset(&sfci, 0, sizeof sfci);
 
     while (it) {
         int errorNumber = sf_get_chunk_data(it, &sfci);
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Error reading chunk data"));
+            ERROR_SNDFILE(errorNumber, "Error reading chunk data");
         }
 
         std::string id(sfci.id, sfci.id_size);
@@ -213,8 +219,6 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
         memcpy(buffer.data(), sfci.data, int(sfci.datalen));
         _chunksRaw[id] = buffer;
     }
-
-    _path = filename;
 }
 
 const IAudioFile::ChunkData *AudioFileSndfile::chunk(const char *id, unsigned *size)
@@ -234,7 +238,7 @@ const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type,
 void AudioFileSndfile::setChunk(const char *id, unsigned size, const IAudioFile::ChunkData *data)
 {
     if (_chunksFlushed) {
-        throw std::runtime_error("Attempt to set chunk after data write");
+        ERROR("Attempt to set chunk after data write");
     }
 
     std::vector<ChunkData> buffer(size);
@@ -245,7 +249,7 @@ void AudioFileSndfile::setChunk(const char *id, unsigned size, const IAudioFile:
 void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData *data)
 {
     if (_chunksFlushed) {
-        throw std::runtime_error("Attempt to set chunk after data write");
+        ERROR("Attempt to set chunk after data write");
     }
 
     std::vector<ChunkData> buffer(size);
@@ -270,28 +274,28 @@ void AudioFileSndfile::setProgressCallback(IAudioFile::ProgressCallback callback
 
 unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
 {
-    if (!_handle || _mode != ModeRead || _mode != ModeReadWrite) {
-        throw std::runtime_error("Attempt to read file not opened for reading.");
+    if (!_handle || !(_mode == ModeRead || _mode == ModeReadWrite)) {
+        ERROR("Attempt to read file not opened for reading.");
     }
 
     sf_count_t count;
 
-    switch (_info.sampleType) {
+    switch (int(_info.sampleType)) {
     case Sound::TypeFloat32:
-        count = sf_readf_float(_handle, static_cast<Sound::Float32 *>(buffer), frames);
+        count = sf_readf_float(_handle.get(), static_cast<Sound::Float32 *>(buffer), frames);
         break;
     case Sound::TypeFloat64:
-        count = sf_readf_double(_handle, static_cast<Sound::Float64 *>(buffer), frames);
+        count = sf_readf_double(_handle.get(), static_cast<Sound::Float64 *>(buffer), frames);
         break;
     case Sound::TypeInt8:
-        count = sf_read_raw(_handle, buffer, frames * _info.channels);
+        count = sf_read_raw(_handle.get(), buffer, frames * _info.channels);
         break;
     case Sound::TypeInt16:
-        count = sf_readf_short(_handle, static_cast<Sound::Int16 *>(buffer), frames);
+        count = sf_readf_short(_handle.get(), static_cast<Sound::Int16 *>(buffer), frames);
         break;
     case Sound::TypeInt24: {
         auto temp = std::vector<Sound::Float32>(frames * _info.channels);
-        count = sf_readf_float(_handle, temp.data(), frames);
+        count = sf_readf_float(_handle.get(), temp.data(), frames);
         Converter::instance().convert(
                     buffer, Sound::TypeInt24,
                     temp.data(), Sound::TypeFloat32,
@@ -299,26 +303,26 @@ unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
         break;
     }
     case Sound::TypeInt32:
-        count = sf_readf_int(_handle, static_cast<Sound::Int32 *>(buffer), frames);
+        count = sf_readf_int(_handle.get(), static_cast<Sound::Int32 *>(buffer), frames);
         break;
     default:
-        throw std::runtime_error("Unsupported sample type");
+        ERROR("Unsupported sample type");
     }
 
-    int errorNumber = sf_error(_handle);
+    int errorNumber = sf_error(_handle.get());
 
     if (errorNumber) {
-        throw std::runtime_error(sndfileError(errorNumber, "Error while reading file"));
+        ERROR_SNDFILE(errorNumber, "Error while reading file");
     }
 
     return unsigned(count);
 }
 
 unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
-                                 IAudioFile::SeekType st)
+                                IAudioFile::SeekType st)
 {
     if (!_info.seekable || !_handle) {
-        throw std::runtime_error("File not seekable or handle not open");
+        ERROR("File not seekable or handle not open");
     }
 
     static int whenceMap[3] = {
@@ -335,11 +339,11 @@ unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
         whence |= SFM_WRITE;
     }
 
-    sf_count_t result = sf_seek(_handle, offset, whence);
+    sf_count_t result = sf_seek(_handle.get(), offset, whence);
 
     if (result < 0) {
-        int errorNumber = sf_error(_handle);
-        throw std::runtime_error(sndfileError(errorNumber, "Unable to seek file"));
+        int errorNumber = sf_error(_handle.get());
+        ERROR_SNDFILE(errorNumber, "Unable to seek file");
     }
 
     return unsigned(result);
@@ -348,24 +352,24 @@ unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
 void AudioFileSndfile::write(const void *buffer, unsigned frames)
 {
     if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
-        throw std::runtime_error("Attempt to write file not opened for writing.");
+        ERROR("Attempt to write file not opened for writing.");
     }
 
     flushChunks();
     sf_count_t count;
 
-    switch (_info.sampleType) {
+    switch (int(_info.sampleType)) {
     case Sound::TypeFloat32:
-        count = sf_writef_float(_handle, static_cast<const Sound::Float32 *>(buffer), frames);
+        count = sf_writef_float(_handle.get(), static_cast<const Sound::Float32 *>(buffer), frames);
         break;
     case Sound::TypeFloat64:
-        count = sf_writef_double(_handle, static_cast<const Sound::Float64 *>(buffer), frames);
+        count = sf_writef_double(_handle.get(), static_cast<const Sound::Float64 *>(buffer), frames);
         break;
     case Sound::TypeInt8:
-        count = sf_write_raw(_handle, buffer, frames * _info.channels);
+        count = sf_write_raw(_handle.get(), buffer, frames * _info.channels);
         break;
     case Sound::TypeInt16:
-        count = sf_writef_short(_handle, static_cast<const Sound::Int16 *>(buffer), frames);
+        count = sf_writef_short(_handle.get(), static_cast<const Sound::Int16 *>(buffer), frames);
         break;
     case Sound::TypeInt24: {
         auto temp = std::vector<Sound::Float32>(frames * _info.channels);
@@ -373,31 +377,32 @@ void AudioFileSndfile::write(const void *buffer, unsigned frames)
                     temp.data(), Sound::TypeFloat32,
                     buffer, Sound::TypeInt24,
                     frames * _info.channels);
-        count = sf_writef_float(_handle, temp.data(), frames);
+        count = sf_writef_float(_handle.get(), temp.data(), frames);
         break;
     }
     case Sound::TypeInt32:
-        count = sf_writef_int(_handle, static_cast<const Sound::Int32 *>(buffer), frames);
+        count = sf_writef_int(_handle.get(), static_cast<const Sound::Int32 *>(buffer), frames);
         break;
     default:
-        throw std::runtime_error("Unsupported sample type");
+        ERROR("Unsupported sample type");
     }
 }
 
 std::string AudioFileSndfile::sndfileError(int errorNumber,
-                                            const std::string &userMessage)
+                                           const std::string &userMessage)
 {
+    const std::string libraryMessage = sf_error_number(errorNumber);
     char logInfo[LOGINFO_MAX_SIZE];
-    sf_command(_handle, SFC_GET_LOG_INFO, logInfo, LOGINFO_MAX_SIZE);
-    std::ostringstream message;
-    message << userMessage
-            << "I/O library error for file: " << _path << '\n'
-            << "Library reports: " << sf_error_number(errorNumber)
-            << "Library version: " << sf_version_string()
-            << "Library log follows:\n" << logInfo
-               ;
+    sf_command(_handle.get(), SFC_GET_LOG_INFO, logInfo, LOGINFO_MAX_SIZE);
+    LOG(INFO,
+        "Library error detailed information" << "\n\n"
+        << "Sound file: " << _path << '\n'
+        << "Library reports: " << libraryMessage << '\n'
+        << "Library version: " << sf_version_string() << '\n'
+        << "Library log follows:\n" << logInfo
+        );
 
-    return message.str();
+    return userMessage + ": " + libraryMessage;
 }
 
 void AudioFileSndfile::flushChunks()
@@ -411,37 +416,37 @@ void AudioFileSndfile::flushChunks()
 
     if (_info.chunkFlags & (1 << ChunkBroadcastInfo)) {
         buffer = _chunks[ChunkBroadcastInfo];
-        errorNumber = sf_command(_handle, SFC_SET_BROADCAST_INFO, buffer.data(), int(buffer.size()));
+        errorNumber = sf_command(_handle.get(), SFC_SET_BROADCAST_INFO, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Unable to set broadcast info"));
+            ERROR_SNDFILE(errorNumber, "Unable to set broadcast info");
         }
     }
 
     if (_info.chunkFlags & (1 << ChunkCartInfo)) {
         buffer = _chunks[ChunkCartInfo];
-        errorNumber = sf_command(_handle, SFC_SET_CART_INFO, buffer.data(), int(buffer.size()));
+        errorNumber = sf_command(_handle.get(), SFC_SET_CART_INFO, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Unable to set cart info"));
+            ERROR_SNDFILE(errorNumber, "Unable to set cart info");
         }
     }
 
     if (_info.chunkFlags & (1 << ChunkCues)) {
         buffer = _chunks[ChunkCues];
-        errorNumber = sf_command(_handle, SFC_SET_CUE, buffer.data(), int(buffer.size()));
+        errorNumber = sf_command(_handle.get(), SFC_SET_CUE, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Unable to set cues"));
+            ERROR_SNDFILE(errorNumber, "Unable to set cues");
         }
     }
 
     if (_info.chunkFlags & (1 << ChunkInstrument)) {
         buffer = _chunks[ChunkInstrument];
-        errorNumber = sf_command(_handle, SFC_SET_INSTRUMENT, buffer.data(), int(buffer.size()));
+        errorNumber = sf_command(_handle.get(), SFC_SET_INSTRUMENT, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Unable to set instrument chunk"));
+            ERROR_SNDFILE(errorNumber, "Unable to set instrument chunk");
         }
     }
 
@@ -486,10 +491,10 @@ void AudioFileSndfile::flushChunks()
         sfci.data = &acid;
         sfci.datalen = sizeof acid;
 
-        errorNumber = sf_set_chunk(_handle, &sfci);
+        errorNumber = sf_set_chunk(_handle.get(), &sfci);
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Unable to set loop info"));
+            ERROR_SNDFILE(errorNumber, "Unable to set loop info");
         }
     }
 
@@ -503,10 +508,10 @@ void AudioFileSndfile::flushChunks()
         sfci.data = buffer.data();
         sfci.datalen = buffer.size();
 
-        errorNumber = sf_set_chunk(_handle, &sfci);
+        errorNumber = sf_set_chunk(_handle.get(), &sfci);
 
         if (errorNumber) {
-            throw std::runtime_error(sndfileError(errorNumber, "Error setting raw chunk"));
+            ERROR_SNDFILE(errorNumber, "Error setting raw chunk");
         }
     }
 }

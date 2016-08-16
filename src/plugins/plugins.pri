@@ -4,6 +4,6 @@ TEMPLATE = lib
 CONFIG += c++11
 QMAKE_CXXFLAGS_RELEASE += -fno-rtti
 DEFINES += SERVER_LIBRARY PLUGIN_VERSION=\\\"$$VERSION\\\"
-INCLUDEPATH += ../..
+INCLUDEPATH += ../.. ../../../vendor
 LIBS += \
     -L../../shared -lweplsh

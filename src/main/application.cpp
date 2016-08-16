@@ -1,11 +1,16 @@
+#include <memory>
+
 #include <QFile>
-#include <QDebug>
 #include <QDir>
 #include <QSettings>
 #include <QStandardPaths>
 
+#include <log4cplus/consoleappender.h>
+using namespace log4cplus;
+
 #include "application.h"
 #include "config.h"
+#include "shared/log.h"
 #include "shared/server.h"
 
 Application::Application(int argc, char *argv[])
@@ -13,6 +18,7 @@ Application::Application(int argc, char *argv[])
     , _server(Server::instance())
     , _window(new Browser())
 {
+    initLog();
     _server->startup(pluginPath().toStdString());
     preparePluginServer();
     initResources();
@@ -35,7 +41,7 @@ int Application::run()
         this->_window->show();
         result = exec();
     } catch (std::exception e) {
-        qDebug() << e.what();
+        LOG(FATAL, e.what());
     }
 
     return result;
@@ -61,6 +67,19 @@ void Application::initConfig()
     }
 
     settings.sync();
+}
+
+void Application::initLog()
+{
+#define LOG_PATTERN "%-5p *** %m%n[ %b:%L ] %M%n"
+
+    auto console = SharedAppenderPtr(new ConsoleAppender(true, true));
+    auto layout = std::auto_ptr<Layout>(new PatternLayout(LOG_PATTERN));
+    auto logger = Logger::getInstance(APPLICATION_NAME);
+    console->setLayout(layout);
+    logger.addAppender(console);
+    logger.setLogLevel(TRACE_LOG_LEVEL);
+    LOG(TRACE, "Logger initialized");
 }
 
 void Application::initResources()

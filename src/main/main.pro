@@ -35,7 +35,7 @@ LIBS += \
     -L../../bundle/vpiano -lvpiano \
     \
     -L/usr/local/lib -lsndfile \
-    -ljack \
+    -llog4cplus \
     -lpng12 \
     -lltdl
 
@@ -44,6 +44,6 @@ RESOURCES += \
     assets/icons.qrc \
     assets/themes.qrc
 
-INCLUDEPATH += ../ ../../bundle ../../vendor ../plugins
+INCLUDEPATH += ../ ../../bundle ../../vendor/includes ../plugins
 
 PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../shared

@@ -22,8 +22,9 @@ private:
     std::shared_ptr<Server> _server;
     std::unique_ptr<Browser> _window;
 
-    void initResources();
     void initConfig();
+    void initLog();
+    void initResources();
     QString pluginPath();
     void prefer(const QMap<QString, QString> &providers);
     void preparePluginServer();
