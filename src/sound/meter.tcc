@@ -1,9 +1,5 @@
 #include "meter.h"
 
-#include "frame.h"
-#include "constframe.h"
-#include "sample.h"
-
 template<typename T>
 Meter<T>::Meter()
     : _peaksBuffer(1, 32)
@@ -49,5 +45,3 @@ void Meter<T>::process()
         }
     }
 }
-
-SOUND_INSTANTIATE(Meter)

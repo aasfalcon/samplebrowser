@@ -33,6 +33,6 @@ private:
     typename TaggedList::iterator find(unsigned id);
 };
 
-SOUND_INSTANTIATE_DECLARATION(Chain)
+#include "chain.tcc"
 
 #endif // CHAIN_H

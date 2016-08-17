@@ -4,7 +4,7 @@
 #include "sound.h"
 
 template<typename T>
-class Sample: public Object<T>
+class Sample: public Sound::Object<T>
 {
 public:
     Sample();
@@ -12,12 +12,15 @@ public:
     Sample(const Sample &source);
     ~Sample();
 
-    operator T() const;
+    static T min();
+    static T max();
+
+    operator T&() const;
 
 private:
     T _value;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Sample)
+#include "sample.tcc"
 
 #endif // SAMPLE_H

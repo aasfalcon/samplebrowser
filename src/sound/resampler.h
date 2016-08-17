@@ -4,10 +4,9 @@
 #include <memory>
 #include <mutex>
 
+#include "buffer.h"
 #include "processor.h"
-
-struct IResampler;
-template<typename T> class Buffer;
+#include "shared/iresampler.h"
 
 template<typename T>
 class Resampler: public Processor<T>
@@ -41,6 +40,6 @@ private:
     Sound::Type _sourceType;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Resampler)
+#include "resampler.tcc"
 
 #endif // RESAMPLER_H

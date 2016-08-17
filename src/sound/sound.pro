@@ -5,38 +5,46 @@ TEMPLATE = lib
 CONFIG += staticlib c++11
 
 SOURCES += \
-    sample.cpp \
-    buffer.cpp \
-    frame.cpp \
+    chunk.cpp \
     converter.cpp \
-    processor.cpp \
-    leveler.cpp \
-    constframe.cpp \
-    resampler.cpp \
-    sound.cpp \
-    chain.cpp \
     driver.cpp \
-    meter.cpp \
-    player.cpp \
-    inputstream.cpp \
-    chunk.cpp
+    basicstream.cpp \
+    ringbuffer.cpp
 
 HEADERS += \
-    sample.h \
     buffer.h \
-    frame.h \
-    sound.h \
-    converter.h \
-    processor.h \
-    leveler.h \
-    constframe.h \
-    resampler.h \
-    config.h \
+    buffer.tcc \
     chain.h \
+    chain.tcc \
+    chunk.h \
+    config.h \
+    constframe.h \
+    constframe.tcc \
+    converter.h \
     driver.h \
-    meter.h \
-    player.h \
+    frame.h \
+    frame.tcc \
     inputstream.h \
-    chunk.h
+    inputstream.tcc \
+    leveler.h \
+    leveler.tcc \
+    meter.h \
+    meter.tcc \
+    player.h \
+    player.tcc \
+    processor.h \
+    processor.tcc \
+    resampler.h \
+    resampler.tcc \
+    sample.h \
+    sample.tcc \
+    sound.h \
+    sound.tcc \
+    basicstream.h \
+    outputstream.h \
+    outputstream.tcc \
+    iostream.h \
+    iostream.tcc \
+    ringbuffer.h
 
 INCLUDEPATH += .. ../../vendor

@@ -2,14 +2,18 @@
 #define BUFFER_H
 
 #include <vector>
+
+#include "sample.h"
 #include "sound.h"
 
-template<typename T> class ConstFrame;
-template<typename T> class Frame;
-template<typename T> class Sample;
+template<typename T>
+class Frame;
 
 template<typename T>
-class Buffer: public Object<T>
+class ConstFrame;
+
+template<typename T>
+class Buffer: public Sound::Object<T>
 {
 public:
     Buffer();
@@ -60,6 +64,6 @@ private:
     std::vector<Sample<T>> _samples;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Buffer)
+#include "buffer.tcc"
 
 #endif // BUFFER_H

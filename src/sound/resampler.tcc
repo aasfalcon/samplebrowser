@@ -2,8 +2,6 @@
 
 #include "converter.h"
 #include "resampler.h"
-#include "sample.h"
-#include "shared/iresampler.h"
 #include "shared/server.h"
 
 template<typename T>
@@ -99,11 +97,3 @@ void Resampler<T>::process()
     _position += resampledFrames;
     _sourceMutex.unlock();
 }
-
-#define RESAMPLER_FEED(__typeA, __typeB) \
-    template \
-    void Resampler<Sound::__typeA>::feed<Sound::__typeB>( \
-        const Buffer<Sound::__typeB> &source, unsigned sampleRate);
-
-SOUND_INSTANTIATE(Resampler)
-SOUND_SPECIALIZE_COMPLEX(RESAMPLER_FEED)

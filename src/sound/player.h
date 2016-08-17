@@ -28,6 +28,6 @@ private:
     void calibrate();
 };
 
-SOUND_INSTANTIATE_DECLARATION(Player)
+#include "player.tcc"
 
 #endif // PLAYER_H

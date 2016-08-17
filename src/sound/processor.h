@@ -6,7 +6,7 @@
 #include "buffer.h"
 
 template<typename T>
-class Processor: public Object<T>
+class Processor: public Sound::Object<T>
 {
 public:
     Processor();
@@ -32,7 +32,6 @@ private:
     unsigned _sampleRate;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Processor)
+#include "processor.tcc"
 
 #endif // PROCESSOR_H
-

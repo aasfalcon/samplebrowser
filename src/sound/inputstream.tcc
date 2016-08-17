@@ -1,208 +1,87 @@
-#include "sample.h"
-#include "inputstream.h"
+#include <stdexcept>
+
 #include "shared/log.h"
-#include "shared/server.h"
+#include "inputstream.h"
 
-template<typename T>
-InputStream<T>::InputStream(const std::string &path, bool readAheadNow)
-    : Object<T> ()
-    , _bufferSize(DEFAULT_BUFFER_SIZE)
-    , _isPreloaded(false)
-    , _path(path)
-    , _provider(PLUGIN_FACTORY(IAudioFile))
+inline InputStream::InputStream()
 {
-    _provider->open(path.c_str(), IAudioFile::ModeRead);
 
-    if (readAheadNow) {
-        readAhead();
-    }
 }
 
-template<typename T>
-unsigned InputStream<T>::bufferSize() const
+inline InputStream::InputStream(const std::string &path)
 {
-    return _bufferSize;
+    open(path, IAudioFile::ModeRead);
 }
 
-template<typename T>
-void InputStream<T>::drop()
+unsigned InputStream::pos() const
 {
-    if (_isPreloaded) {
-        _provider->seek(- int(_current.frames()) - int(_next.frames()),
-                        IAudioFile::SeekCur);
-        _isPreloaded = false;
-    }
+    return BasicStream::pos(IAudioFile::SeekTypeRead);
 }
 
-template<typename T>
-bool InputStream<T>::eof() const
+void InputStream::seek(int pos, IAudioFile::SeekWhence whence)
 {
-    if (!_provider) {
-        return true;
-    }
-
-    const IAudioFile::FileInfo &info = *_provider->fileInfo();
-    return _provider->seek(0, IAudioFile::SeekCur) == info.frames
-            && (!_isPreloaded || _current.isEmpty());
+    BasicStream::seek(pos, whence, IAudioFile::SeekTypeRead);
 }
 
-template<typename T>
-bool InputStream<T>::isSeekable() const
+inline InputStream &InputStream::operator >>(Compression &compression)
 {
-    const IAudioFile::FileInfo &info = *_provider->fileInfo();
-    return info.seekable;
+    read(compression);
+    return *this;
 }
 
-template<typename T>
-std::string InputStream<T>::path() const
+inline InputStream &InputStream::operator >>(Chunk &chunk)
 {
-    return _path;
+    read(chunk);
+    return *this;
 }
 
-template<typename T>
-unsigned InputStream<T>::pos() const
+inline InputStream &InputStream::operator >>(Format &format)
 {
-    unsigned result = _provider->seek(0, IAudioFile::SeekCur);
-
-    if (_isPreloaded) {
-        result -= _current.frames() + _next.frames();
-    }
-
-    return result;
+    read(format);
+    return *this;
 }
 
-template<typename T>
-unsigned InputStream<T>::seek(int pos, IAudioFile::SeekWhence whence)
+inline InputStream &InputStream::operator >>(FormatText &formatText)
 {
-    drop();
-    unsigned result = _provider->seek(pos, whence);
-    readAhead();
-    return result;
+    read(formatText);
+    return *this;
 }
 
-template<typename T>
-void InputStream<T>::setBufferSize(unsigned value)
+inline InputStream &InputStream::operator >>(Info &info)
 {
-    if (_bufferSize != value) {
-        _bufferSize = value;
-
-        if (_isPreloaded) {
-            drop();
-            readAhead();
-        }
-    }
+    read(info);
+    return *this;
 }
 
-template<typename T>
-InputStream<T> &InputStream<T>::operator >>(Chunk &chunk)
+inline InputStream &InputStream::operator >>(Strings &strings)
 {
-    const IAudioFile::ChunkData *ptr = nullptr;
-    unsigned size = 0;
+    read(strings);
+    return *this;
+}
 
-    if (dynamic_cast<BroadcastInfo *>(&chunk)) {
-        ptr = _provider->chunk(IAudioFile::ChunkBroadcastInfo, &size);
-    } else if (dynamic_cast<LoopInfo *>(&chunk)) {
-        ptr = _provider->chunk(IAudioFile::ChunkLoopInfo, &size);
-    } else if (dynamic_cast<Instrument *>(&chunk)) {
-        ptr = _provider->chunk(IAudioFile::ChunkInstrument, &size);
-    } else if (dynamic_cast<CartInfo *>(&chunk)) {
-        ptr = _provider->chunk(IAudioFile::ChunkCartInfo, &size);
-    } else if (dynamic_cast<Cues *>(&chunk)) {
-        ptr = _provider->chunk(IAudioFile::ChunkCues, &size);
-    }
-
-    if (ptr && size) {
-        Chunk::RawData data;
-        data.assign(ptr, ptr + size);
-        chunk.fromRaw(data);
-    }
-
+inline InputStream &InputStream::operator >>(RawChunks &rawChunks)
+{
+    read(rawChunks);
     return *this;
 }
 
 template<typename T>
-void InputStream<T>::preload()
+InputStream &InputStream::operator >>(Buffer<T> &buffer)
 {
-    if (_isPreloaded) {
-        std::string message = "Stream buffer already preloaded";
+    unsigned frames = buffer.frames();
+
+    if (!frames) {
+        std::string message = "Zero buffer size";
         LOG(ERROR, message);
         throw std::runtime_error(message);
     }
 
-    const IAudioFile::FileInfo &info = *_provider->fileInfo();
-    _next.reallocate(info.channels, _bufferSize);
-    unsigned framesRead = _provider->read(_next.ptr(), _bufferSize);
-
-    if (framesRead < _bufferSize) {
-        _next.resize(framesRead);
-    }
-
-    _isPreloaded = true;
-}
-
-template<typename T>
-void InputStream<T>::readAhead()
-{
-    preload();
-    swap();
-    preload();
-}
-
-template<typename T>
-void InputStream<T>::swap()
-{
-    if (!_isPreloaded) {
-        std::string message = "Attempt to swap non-preloaded buffer";
+    if (buffer.channels() != this->_fi.channels) {
+        std::string message = "Buffer channel count doesn't match";
         LOG(ERROR, message);
         throw std::runtime_error(message);
     }
 
-    _current = _next;
-    _isPreloaded = false;
-}
-
-template<typename T>
-InputStream<T> &InputStream<T>::operator >>(Buffer<T> &buffer)
-{
-    if (!_isPreloaded) {
-        readAhead();
-    } else if (_preloadThread.joinable()) {
-        _preloadThread.join();
-    }
-
-    buffer = _current;
-    swap();
-
-    _preloadThread = std::thread(&InputStream<T>::preload, this);
+    read(buffer.data(), buffer.type(), frames);
     return *this;
 }
-
-template<typename T>
-InputStream<T> &InputStream<T>::operator >>(InputStreamInfo &info)
-{
-    auto &fi = *_provider->fileInfo();
-    info.channels = fi.channels;
-    info.formatMajor = fi.format.majorText;
-    info.formatMinor = fi.format.minorText;
-    info.frames = fi.frames;
-    info.sampleRate = fi.sampleRate;
-    info.sampleType = fi.sampleType;
-    return *this;
-}
-
-template<typename T>
-InputStream<T> &InputStream<T>::operator >>(InputStreamStrings &strings)
-{
-    auto &fi = *_provider->fileInfo();
-    strings.clear();
-
-    for (unsigned i = 0; i < IAudioFile::StringEntryCount; i++) {
-        if (fi.strings[i]) {
-            strings[static_cast<IAudioFile::StringEntry>(i)] = fi.strings[i];
-        }
-    }
-
-    return *this;
-}
-
-SOUND_INSTANTIATE(InputStream)

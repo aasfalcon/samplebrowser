@@ -1,14 +1,16 @@
 #ifndef FRAME_H
 #define FRAME_H
 
+#include "buffer.h"
+#include "constframe.h"
+#include "sample.h"
 #include "sound.h"
 
-template<typename T> class Buffer;
-template<typename T> class ConstFrame;
-template<typename T> class Sample;
+template<typename T>
+class ConstFrame;
 
 template<typename T>
-class Frame: public Object<T>
+class Frame: public Sound::Object<T>
 {
     friend class ConstFrame<T>;
 public:
@@ -32,6 +34,6 @@ private:
     Sample<T> *_data;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Frame)
+#include "frame.tcc"
 
 #endif // FRAME_H

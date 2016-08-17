@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <cstddef>
 #include <stdexcept>
@@ -16,6 +17,73 @@ const unsigned LOGINFO_MAX_SIZE = 2048;
 
 #define ERROR_SNDFILE(number, what) \
     ERROR(sndfileError(number, what));
+
+std::map<int, IAudioFile::FormatMajor> AudioFileSndfile::_majorMap = {
+    {SF_FORMAT_WAV,     IAudioFile::MajorWAV},
+    {SF_FORMAT_AIFF,    IAudioFile::MajorAIFF},
+    {SF_FORMAT_AU,      IAudioFile::MajorAU},
+    {SF_FORMAT_RAW,     IAudioFile::MajorRAW},
+    {SF_FORMAT_PAF,     IAudioFile::MajorPAF},
+    {SF_FORMAT_SVX,     IAudioFile::MajorSVX},
+    {SF_FORMAT_NIST,    IAudioFile::MajorNIST},
+    {SF_FORMAT_VOC,     IAudioFile::MajorVOC},
+    {SF_FORMAT_IRCAM,   IAudioFile::MajorIRCAM},
+    {SF_FORMAT_W64,     IAudioFile::MajorW64},
+    {SF_FORMAT_MAT4,    IAudioFile::MajorMAT4},
+    {SF_FORMAT_MAT5,    IAudioFile::MajorMAT5},
+    {SF_FORMAT_PVF,     IAudioFile::MajorPVF},
+    {SF_FORMAT_XI,      IAudioFile::MajorXI},
+    {SF_FORMAT_HTK,     IAudioFile::MajorHTK},
+    {SF_FORMAT_SDS,     IAudioFile::MajorSDS},
+    {SF_FORMAT_AVR,     IAudioFile::MajorAVR},
+    {SF_FORMAT_WAVEX,   IAudioFile::MajorWAVEX},
+    {SF_FORMAT_SD2,     IAudioFile::MajorSD2},
+    {SF_FORMAT_FLAC,    IAudioFile::MajorFLAC},
+    {SF_FORMAT_CAF,     IAudioFile::MajorCAF},
+    {SF_FORMAT_WVE,     IAudioFile::MajorWVE},
+    {SF_FORMAT_OGG,     IAudioFile::MajorOGG},
+    {SF_FORMAT_MPC2K,   IAudioFile::MajorMPC2K},
+    {SF_FORMAT_RF64,    IAudioFile::MajorRF64},
+};
+
+std::map<int, IAudioFile::FormatMinor> AudioFileSndfile::_minorMap = {
+    {SF_FORMAT_PCM_S8,      IAudioFile::MinorPCM_S8},
+    {SF_FORMAT_PCM_16,      IAudioFile::MinorPCM_16},
+    {SF_FORMAT_PCM_24,      IAudioFile::MinorPCM_24},
+    {SF_FORMAT_PCM_32,      IAudioFile::MinorPCM_32},
+
+    {SF_FORMAT_PCM_U8,      IAudioFile::MinorPCM_U8},
+
+    {SF_FORMAT_FLOAT,       IAudioFile::MinorFloat},
+    {SF_FORMAT_DOUBLE,      IAudioFile::MinorDouble},
+
+    {SF_FORMAT_ULAW,        IAudioFile::MinorULAW},
+    {SF_FORMAT_ALAW,        IAudioFile::MinorALAW},
+    {SF_FORMAT_IMA_ADPCM,   IAudioFile::MinorIMA_ADPCM},
+    {SF_FORMAT_MS_ADPCM,    IAudioFile::MinorMS_ADPCM},
+
+    {SF_FORMAT_GSM610,      IAudioFile::MinorGSM610},
+    {SF_FORMAT_VOX_ADPCM,   IAudioFile::MinorVOX_ADPCM},
+
+    {SF_FORMAT_G721_32,     IAudioFile::MinorG721_32k},
+    {SF_FORMAT_G723_24,     IAudioFile::MinorG723_24k},
+    {SF_FORMAT_G723_40,     IAudioFile::MinorG723_40k},
+
+    {SF_FORMAT_DWVW_12,     IAudioFile::MinorDWVW_12},
+    {SF_FORMAT_DWVW_16,     IAudioFile::MinorDWVW_16},
+    {SF_FORMAT_DWVW_24,     IAudioFile::MinorDWVW_24},
+    {SF_FORMAT_DWVW_N,      IAudioFile::MinorDWVW_N},
+
+    {SF_FORMAT_DPCM_8,      IAudioFile::MinorDPCM_8},
+    {SF_FORMAT_DPCM_16,     IAudioFile::MinorDPCM_16},
+
+    {SF_FORMAT_VORBIS,      IAudioFile::MinorVorbis},
+
+    {SF_FORMAT_ALAC_16,     IAudioFile::MinorALAC_16},
+    {SF_FORMAT_ALAC_20,     IAudioFile::MinorALAC_20},
+    {SF_FORMAT_ALAC_24,     IAudioFile::MinorALAC_24},
+    {SF_FORMAT_ALAC_32,     IAudioFile::MinorALAC_32},
+};
 
 AudioFileSndfile::AudioFileSndfile()
     : IAudioFile()
@@ -46,6 +114,66 @@ void AudioFileSndfile::flush()
     }
 
     sf_write_sync(_handle.get());
+}
+
+IAudioFile::FormatText &AudioFileSndfile::formatText(
+        const IAudioFile::Format &format)
+{
+    _formatText.reset(new FormatText());
+
+    int sfFormat = formatConvert(format);
+
+    SF_FORMAT_INFO fi;
+    fi.format = sfFormat & SF_FORMAT_TYPEMASK;
+    int error = sf_command(NULL, SFC_GET_FORMAT_INFO, &fi, sizeof fi);
+
+    if (error) {
+        ERROR_SNDFILE(error, "Can't get major format info");
+    }
+
+    _formatText->majorText = fi.name;
+
+    fi.format = sfFormat & SF_FORMAT_SUBMASK;
+    error = sf_command(NULL, SFC_GET_FORMAT_INFO, &fi, sizeof fi);
+
+    if (error) {
+        ERROR_SNDFILE(error, "Can't get minor format info");
+    }
+
+    _formatText->minorText = fi.name;
+    return *_formatText;
+}
+
+const IAudioFile::SimpleFormats &AudioFileSndfile::formats()
+{
+    if (!_simpleFormats) {
+        _simpleFormats = std::make_shared<SimpleFormats>();
+
+        sf_command(nullptr, SFC_GET_SIMPLE_FORMAT_COUNT,
+                   &_simpleFormats->count, sizeof _simpleFormats->count);
+
+        _simpleFormatsData.clear();
+        SF_FORMAT_INFO fi;
+
+        for (unsigned i = 0; i < _simpleFormats->count; i++) {
+            fi.format = int(i);
+            int error = sf_command(NULL, SFC_GET_SIMPLE_FORMAT, &fi, sizeof fi);
+
+            if (error) {
+                ERROR_SNDFILE(error, "Can't get simple format info");
+            }
+
+            SimpleFormats::Formats sff;
+            sff.description = fi.name;
+            sff.extension = fi.extension;
+            sff.format = formatConvert(fi.format);
+            _simpleFormatsData.push_back(sff);
+        }
+
+        _simpleFormats->formats = _simpleFormatsData.data();
+    }
+
+    return *_simpleFormats;
 }
 
 void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
@@ -82,130 +210,59 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     _info.frames = unsigned(sfinfo.frames);
     _info.sampleRate = unsigned(sfinfo.samplerate);
     _info.seekable = bool(sfinfo.seekable);
+    _info.format = formatConvert(sfinfo.format);
 
-    int format = sfinfo.format;
-    _info.format.major = FormatMajor(format & SF_FORMAT_TYPEMASK >> 16);
-    _info.format.minor = FormatMinor(format & SF_FORMAT_SUBMASK);
+    switch (int(_info.format.minor)) {
+    case MinorDPCM_8:
+    case MinorPCM_S8:
+    case MinorPCM_U8:
+        _info.sampleType = Sound::TypeInt8;
+        break;
 
-    // major format
-    SF_FORMAT_INFO sffi;
-    sffi.format = format & SF_FORMAT_TYPEMASK;
+    case MinorALAC_20:
+    case MinorALAC_24:
+    case MinorDWVW_24:
+    case MinorPCM_24:
+        _info.sampleType = Sound::TypeInt24;
+        break;
 
-    int errorNumber = sf_command(NULL, SFC_GET_FORMAT_INFO, &sffi, sizeof sffi);
+    case MinorALAC_32:
+    case MinorPCM_32:
+        _info.sampleType = Sound::TypeInt32;
+        break;
 
-    if (errorNumber) {
-        ERROR_SNDFILE(errorNumber, "Can't get major format info");
-    }
+    case MinorDWVW_N:
+    case MinorFloat:
+    case MinorVorbis:
+        // TODO: move following subformats to AudioFileMPG123
+    case MinorMPEG1_0_DualChannel:
+    case MinorMPEG1_0_JointStereo:
+    case MinorMPEG1_0_Mono:
+    case MinorMPEG1_0_Stereo:
+    case MinorMPEG2_0_DualChannel:
+    case MinorMPEG2_0_JointStereo:
+    case MinorMPEG2_0_Mono:
+    case MinorMPEG2_0_Stereo:
+    case MinorMPEG2_5_DualChannel:
+    case MinorMPEG2_5_JointStereo:
+    case MinorMPEG2_5_Mono:
+    case MinorMPEG2_5_Stereo:
+        _info.sampleType = Sound::TypeFloat32;
+        break;
 
-    _info.format.majorText = sffi.name;
+    case MinorDouble:
+        _info.sampleType = Sound::TypeFloat64;
+        break;
 
-    // minor format
-    sffi.format = format & SF_FORMAT_SUBMASK;
-
-    errorNumber = sf_command(NULL, SFC_GET_FORMAT_INFO, &sffi, sizeof sffi);
-
-    if (errorNumber) {
-        ERROR_SNDFILE(errorNumber, "Can't get minor format info");
-    }
-
-    _info.format.minorText = sffi.name;
-
-    // strings
-    for (int i = 0; i < StringEntryCount; i++) {
-        const char *string = sf_get_string(_handle.get(), i + 1);
-
-        if (!string) {
-            errorNumber = sf_error(_handle.get());
-
-            if (errorNumber != SF_ERR_NO_ERROR) {
-                ERROR_SNDFILE(errorNumber, "Can't get string entry");
-            }
-        }
-
-        _info.strings[i] = string;
-    }
-
-    // known chunks
-    _info.chunkFlags = 0;
-    int size;
-
-    SF_BROADCAST_INFO bi;
-    size = offsetof(SF_BROADCAST_INFO, coding_history);
-
-    if (sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, &bi, size)) {
-        _info.chunkFlags |= 1 << ChunkBroadcastInfo;
-        size += bi.coding_history_size;
-        std::vector<ChunkData> buffer(unsigned(size), 0);
-
-        if (!sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, buffer.data(), size)) {
-            errorNumber = sf_error(_handle.get());
-            ERROR_SNDFILE(errorNumber, "Can't read broadcast info");
-        }
-
-        _chunks[ChunkBroadcastInfo] = buffer;
-    }
-
-    SF_CART_INFO ci;
-    size = offsetof(SF_CART_INFO, tag_text);
-
-    if (sf_command(_handle.get(), SFC_GET_CART_INFO, &ci, size)) {
-        _info.chunkFlags |= 1 << ChunkCartInfo;
-        size += ci.tag_text_size;
-        std::vector<ChunkData> buffer(unsigned(size), 0);
-
-        if (!sf_command(_handle.get(), SFC_GET_CART_INFO, buffer.data(), size)) {
-            errorNumber = sf_error(_handle.get());
-            ERROR_SNDFILE(errorNumber, "Can't read cart info");
-        }
-
-        _chunks[ChunkCartInfo] = buffer;
-    }
-
-    int count;
-
-    if (sf_command(_handle.get(), SFC_GET_CUE_COUNT, &count, sizeof count)) {
-        _info.chunkFlags |= 1 << ChunkCues;
-        size = int(sizeof(SF_CUE_POINT)) * count;
-        std::vector<ChunkData> buffer(unsigned(size), 0);
-
-        if (!sf_command(_handle.get(), SFC_GET_CUE, buffer.data(), size)) {
-            errorNumber = sf_error(_handle.get());
-            ERROR_SNDFILE(errorNumber, "Can't read cue points");
-        }
-
-        _chunks[ChunkCues] = buffer;
-    }
-
-    SF_INSTRUMENT in;
-    size = offsetof(SF_INSTRUMENT, loops);
-
-    if (sf_command(_handle.get(), SFC_GET_INSTRUMENT, &in, size)) {
-        _info.chunkFlags |= 1 << ChunkInstrument;
-        size += int(sizeof in.loops[1]) * in.loop_count;
-        std::vector<ChunkData> buffer(unsigned(size), 0);
-
-        if (!sf_command(_handle.get(), SFC_GET_INSTRUMENT, buffer.data(), size)) {
-            errorNumber = sf_error(_handle.get());
-            ERROR_SNDFILE(errorNumber, "Can't read instrument data");
-        }
-
-        _chunks[ChunkInstrument] = buffer;
-    }
-
-    SF_LOOP_INFO li;
-    size = sizeof(SF_LOOP_INFO);
-
-    if (sf_command(_handle.get(), SFC_GET_LOOP_INFO, &li, size)) {
-        _info.chunkFlags |= 1 << ChunkLoopInfo;
-        std::vector<ChunkData> buffer(unsigned(size), 0);
-        memcpy(buffer.data(), &li, size);
-        _chunks[ChunkLoopInfo] = buffer;
+    default:
+        _info.sampleType = Sound::TypeInt16;
     }
 
     // unknown chunks
-    SF_CHUNK_INFO sfci;
     SF_CHUNK_ITERATOR *it = sf_get_chunk_iterator(_handle.get(), NULL);
+    SF_CHUNK_INFO sfci;
     memset(&sfci, 0, sizeof sfci);
+    _rawChunksData.clear();
 
     while (it) {
         int errorNumber = sf_get_chunk_data(it, &sfci);
@@ -215,45 +272,150 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
         }
 
         std::string id(sfci.id, sfci.id_size);
-        std::vector<ChunkData> buffer(sfci.datalen);
-        memcpy(buffer.data(), sfci.data, int(sfci.datalen));
-        _chunksRaw[id] = buffer;
+        std::vector<ChunkData> data;
+        data.assign(reinterpret_cast<ChunkData *>(sfci.data),
+                    reinterpret_cast<ChunkData *>(sfci.data) + sfci.datalen);
+        _rawChunksData.push_back({id, data});
     }
 }
 
-const IAudioFile::ChunkData *AudioFileSndfile::chunk(const char *id, unsigned *size)
+IAudioFile::RawChunk *AudioFileSndfile::rawChunks(unsigned *count)
 {
-    const std::vector<ChunkData> &result = _chunksRaw.at(id);
-    *size = result.size();
-    return result.data();
-}
+    // valid until setRawChunks called
+    *count = _rawChunksData.size();
 
-const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type, unsigned *size)
-{
-    const std::vector<ChunkData> &result = _chunks.at(type);
-    *size = result.size();
-    return result.data();
-}
+    _rawChunks.clear();
 
-void AudioFileSndfile::setChunk(const char *id, unsigned size, const IAudioFile::ChunkData *data)
-{
-    if (_chunksFlushed) {
-        ERROR("Attempt to set chunk after data write");
+    for (auto it = _rawChunksData.cbegin(); it != _rawChunksData.cend(); ++it) {
+        _rawChunks.push_back({ it->id.c_str(), it->data.data(), it->data.size() });
     }
 
-    std::vector<ChunkData> buffer(size);
-    memcpy(buffer.data(), data, int(size));
-    _chunksRaw[id] = buffer;
+    return _rawChunks.data();
+}
+
+const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type,
+                                                     unsigned *size)
+{
+    switch (type) {
+    case ChunkBroadcastInfo: {
+        SF_BROADCAST_INFO bi;
+        int bytes = offsetof(SF_BROADCAST_INFO, coding_history);
+
+        if (sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, &bi, bytes)) {
+            _info.chunkFlags |= 1 << ChunkBroadcastInfo;
+            bytes += bi.coding_history_size;
+            std::vector<ChunkData> buffer(unsigned(bytes), 0);
+
+            if (!sf_command(_handle.get(), SFC_GET_BROADCAST_INFO, buffer.data(), bytes)) {
+                int errorNumber = sf_error(_handle.get());
+                ERROR_SNDFILE(errorNumber, "Can't read broadcast info");
+            }
+
+            _chunks[ChunkBroadcastInfo] = buffer;
+        }
+
+        break;
+    };
+
+    case ChunkCartInfo: {
+        SF_CART_INFO ci;
+        int bytes = offsetof(SF_CART_INFO, tag_text);
+
+        if (sf_command(_handle.get(), SFC_GET_CART_INFO, &ci, bytes)) {
+            _info.chunkFlags |= 1 << ChunkCartInfo;
+            bytes += ci.tag_text_size;
+            std::vector<ChunkData> buffer(unsigned(bytes), 0);
+
+            if (!sf_command(_handle.get(), SFC_GET_CART_INFO, buffer.data(), bytes)) {
+                int errorNumber = sf_error(_handle.get());
+                ERROR_SNDFILE(errorNumber, "Can't read cart info");
+            }
+
+            _chunks[ChunkCartInfo] = buffer;
+        }
+
+        break;
+    };
+
+    case ChunkCues: {
+        int count;
+
+        if (sf_command(_handle.get(), SFC_GET_CUE_COUNT, &count, sizeof count)) {
+            _info.chunkFlags |= 1 << ChunkCues;
+            int bytes = int(sizeof(SF_CUE_POINT)) * count;
+            std::vector<ChunkData> buffer(unsigned(bytes), 0);
+
+            if (!sf_command(_handle.get(), SFC_GET_CUE, buffer.data(), bytes)) {
+                int errorNumber = sf_error(_handle.get());
+                ERROR_SNDFILE(errorNumber, "Can't read cue points");
+            }
+
+            _chunks[ChunkCues] = buffer;
+        }
+
+        break;
+    };
+
+    case ChunkInstrument: {
+        SF_INSTRUMENT in;
+        int bytes = offsetof(SF_INSTRUMENT, loops);
+
+        if (sf_command(_handle.get(), SFC_GET_INSTRUMENT, &in, bytes)) {
+            _info.chunkFlags |= 1 << ChunkInstrument;
+            bytes += int(sizeof in.loops[1]) * in.loop_count;
+            std::vector<ChunkData> buffer(unsigned(bytes), 0);
+
+            if (!sf_command(_handle.get(), SFC_GET_INSTRUMENT, buffer.data(), bytes)) {
+                int errorNumber = sf_error(_handle.get());
+                ERROR_SNDFILE(errorNumber, "Can't read instrument data");
+            }
+
+            _chunks[ChunkInstrument] = buffer;
+        }
+
+        break;
+    };
+
+    case ChunkLoopInfo: {
+        SF_LOOP_INFO li;
+        int bytes = sizeof(SF_LOOP_INFO);
+
+        if (sf_command(_handle.get(), SFC_GET_LOOP_INFO, &li, bytes)) {
+            _info.chunkFlags |= 1 << ChunkLoopInfo;
+            std::vector<ChunkData> buffer(unsigned(bytes), 0);
+            memcpy(buffer.data(), &li, bytes);
+            _chunks[ChunkLoopInfo] = buffer;
+        }
+
+        break;
+    };
+
+    default: {
+        std::string message = "Unknown chunk type";
+        LOG(ERROR, message);
+        throw std::out_of_range(message);
+    };
+
+    };
+
+    try {
+        const std::vector<ChunkData> &result = _chunks.at(type);
+        *size = result.size();
+        return result.data();
+    } catch (std::out_of_range) {
+        *size = 0;
+        return nullptr;
+    }
 }
 
 void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData *data)
 {
     if (_chunksFlushed) {
-        ERROR("Attempt to set chunk after data write");
+        ERROR("Attempt to write chunk after data write");
     }
 
-    std::vector<ChunkData> buffer(size);
-    memcpy(buffer.data(), data, int(size));
+    std::vector<ChunkData> buffer;
+    buffer.assign(data, data + size);
     _chunks[type] = buffer;
 }
 
@@ -265,6 +427,47 @@ const IAudioFile::FileInfo *AudioFileSndfile::fileInfo() const
 void AudioFileSndfile::setFileInfo(const IAudioFile::FileInfo *value)
 {
     _info = *value;
+}
+
+void AudioFileSndfile::setRawChunks(IAudioFile::RawChunk *chunks, unsigned count)
+{
+    if (_chunksFlushed) {
+        ERROR("Attempt to write chunk after data write");
+    }
+
+    _rawChunksData.clear();
+    _rawChunks.clear();
+
+    for (unsigned i = 0; i < count; i++) {
+        std::string id = chunks[i].id;
+        std::vector<ChunkData> data;
+        data.assign(chunks[i].data, chunks[i].data + chunks[i].size);
+        _rawChunksData.push_back({ id, data });
+    }
+}
+
+const char *AudioFileSndfile::string(IAudioFile::StringEntry entry)
+{
+    const char *result = sf_get_string(_handle.get(), entry);
+
+    if (!result) {
+        int errorNumber = sf_error(_handle.get());
+
+        if (errorNumber != SF_ERR_NO_ERROR) {
+            ERROR_SNDFILE(errorNumber, "Can't read string entry");
+        }
+    }
+
+    return result;
+}
+
+void AudioFileSndfile::setString(IAudioFile::StringEntry entry, const char *value)
+{
+    int error = sf_set_string(_handle.get(), entry, value);
+
+    if (error != SF_ERR_NO_ERROR) {
+        ERROR_SNDFILE(error, "Can't write string entry");
+    }
 }
 
 void AudioFileSndfile::setProgressCallback(IAudioFile::ProgressCallback callback)
@@ -318,7 +521,7 @@ unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
     return unsigned(count);
 }
 
-unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
+unsigned AudioFileSndfile::seek(int pos, IAudioFile::SeekWhence sw,
                                 IAudioFile::SeekType st)
 {
     if (!_info.seekable || !_handle) {
@@ -339,7 +542,7 @@ unsigned AudioFileSndfile::seek(int offset, IAudioFile::SeekWhence sw,
         whence |= SFM_WRITE;
     }
 
-    sf_count_t result = sf_seek(_handle.get(), offset, whence);
+    sf_count_t result = sf_seek(_handle.get(), pos, whence);
 
     if (result < 0) {
         int errorNumber = sf_error(_handle.get());
@@ -388,8 +591,39 @@ void AudioFileSndfile::write(const void *buffer, unsigned frames)
     }
 }
 
+IAudioFile::Format AudioFileSndfile::formatConvert(int sfformat) const
+{
+    IAudioFile::Format result;
+
+    result.major = _majorMap[sfformat & SF_FORMAT_TYPEMASK];
+    result.minor = _minorMap[sfformat & SF_FORMAT_SUBMASK];
+
+    return result;
+}
+
+int AudioFileSndfile::formatConvert(const IAudioFile::Format &format) const
+{
+    int result = 0;
+
+    for (auto it = _majorMap.cbegin(); it != _majorMap.cend(); ++it) {
+        if (it->second == format.major) {
+            result = it->first;
+            break;
+        }
+    }
+
+    for (auto it = _minorMap.cbegin(); it != _minorMap.cend(); ++it) {
+        if (it->second == format.minor) {
+            result |= it->first;
+            break;
+        }
+    }
+
+    return result;
+}
+
 std::string AudioFileSndfile::sndfileError(int errorNumber,
-                                           const std::string &userMessage)
+                                           const std::string &userMessage) const
 {
     const std::string libraryMessage = sf_error_number(errorNumber);
     char logInfo[LOGINFO_MAX_SIZE];
@@ -419,7 +653,7 @@ void AudioFileSndfile::flushChunks()
         errorNumber = sf_command(_handle.get(), SFC_SET_BROADCAST_INFO, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Unable to set broadcast info");
+            ERROR_SNDFILE(errorNumber, "Unable to write broadcast info");
         }
     }
 
@@ -428,7 +662,7 @@ void AudioFileSndfile::flushChunks()
         errorNumber = sf_command(_handle.get(), SFC_SET_CART_INFO, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Unable to set cart info");
+            ERROR_SNDFILE(errorNumber, "Unable to write cart info");
         }
     }
 
@@ -437,7 +671,7 @@ void AudioFileSndfile::flushChunks()
         errorNumber = sf_command(_handle.get(), SFC_SET_CUE, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Unable to set cues");
+            ERROR_SNDFILE(errorNumber, "Unable to write cues");
         }
     }
 
@@ -446,7 +680,7 @@ void AudioFileSndfile::flushChunks()
         errorNumber = sf_command(_handle.get(), SFC_SET_INSTRUMENT, buffer.data(), int(buffer.size()));
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Unable to set instrument chunk");
+            ERROR_SNDFILE(errorNumber, "Unable to write instrument chunk");
         }
     }
 
@@ -494,24 +728,22 @@ void AudioFileSndfile::flushChunks()
         errorNumber = sf_set_chunk(_handle.get(), &sfci);
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Unable to set loop info");
+            ERROR_SNDFILE(errorNumber, "Unable to write loop info");
         }
     }
 
-    for (auto it = _chunksRaw.begin(); it != _chunksRaw.end(); ++it) {
-        buffer = it->second;
-
+    for (auto it = _rawChunksData.begin(); it != _rawChunksData.end(); ++it) {
         SF_CHUNK_INFO sfci;
         memset(&sfci, 0, sizeof sfci);
-        strncpy(sfci.id, it->first.c_str(), sizeof sfci.id);
-        sfci.id_size = it->first.length();
-        sfci.data = buffer.data();
-        sfci.datalen = buffer.size();
+        strncpy(sfci.id, it->id.c_str(), sizeof sfci.id);
+        sfci.id_size = it->id.length();
+        sfci.data = it->data.data();
+        sfci.datalen = it->data.size();
 
         errorNumber = sf_set_chunk(_handle.get(), &sfci);
 
         if (errorNumber) {
-            ERROR_SNDFILE(errorNumber, "Error setting raw chunk");
+            ERROR_SNDFILE(errorNumber, "Error writing raw chunk");
         }
     }
 }

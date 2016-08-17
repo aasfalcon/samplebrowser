@@ -127,10 +127,10 @@ unsigned AudioFileMPG123::read(void *buffer, unsigned frames)
     return unsigned(sizeRead);
 }
 
-unsigned AudioFileMPG123::seek(int offset, IAudioFile::SeekWhence sw, IAudioFile::SeekType st)
+unsigned AudioFileMPG123::seek(int pos, IAudioFile::SeekWhence sw, IAudioFile::SeekType st)
 {
     if (!_mpgmode) {
-        return AudioFileSndfile::seek(offset, sw, st);
+        return AudioFileSndfile::seek(pos, sw, st);
     }
 
     static int whenceMap[3] = {
@@ -139,7 +139,7 @@ unsigned AudioFileMPG123::seek(int offset, IAudioFile::SeekWhence sw, IAudioFile
         SEEK_SET,
     };
 
-    int result = mpg123_seek(_mpghandle, offset, whenceMap[sw]);
+    int result = mpg123_seek(_mpghandle, pos, whenceMap[sw]);
 
     if (result < 0) {
         throw std::runtime_error(mpgError("Error seeking MPEG stream", result));

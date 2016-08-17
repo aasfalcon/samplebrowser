@@ -1,10 +1,7 @@
 #include <cstring>
 
 #include "buffer.h"
-#include "constframe.h"
 #include "converter.h"
-#include "frame.h"
-#include "sample.h"
 
 template<typename T>
 Buffer<T>::Buffer()
@@ -135,7 +132,7 @@ const T *Buffer<T>::ptr() const
 template<typename T>
 void Buffer<T>::reallocate(unsigned channels, unsigned frames)
 {
-    if (_channels != _channels && _frames != frames) {
+    if (_channels != channels || _frames != frames) {
         if (_channels * _frames < channels * frames) {
             _samples.clear();
         }
@@ -231,10 +228,10 @@ void Buffer<T>::mono(const Buffer<T> &source, bool mixdown)
             double sum = 0.;
 
             for (unsigned i = 0; i < _channels; i++) {
-                sum += (double)(T)frame.at(i);
+                sum += double(T(frame.at(i)));
             }
 
-            rframe.put(0, static_cast<T>(sum / _channels));
+            rframe.put(0, static_cast<T>(sum / double(_channels)));
         }
     } else {
         for (auto frame = source.cbegin(); frame != source.cend();
@@ -248,7 +245,7 @@ void Buffer<T>::mono(const Buffer<T> &source, bool mixdown)
 template<typename T>
 void Buffer<T>::silence()
 {
-    memset((void *)data(), 0, size() * sizeof(T));
+    memset(data(), 0, size() * sizeof(T));
 }
 
 template<typename T>
@@ -284,5 +281,3 @@ void Buffer<T>::stereo(const Buffer<T> &source, bool pullup)
         }
     }
 }
-
-SOUND_INSTANTIATE(Buffer)

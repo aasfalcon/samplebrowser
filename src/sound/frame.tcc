@@ -1,8 +1,6 @@
 #include <stdexcept>
-#include "buffer.h"
-#include "constframe.h"
+
 #include "frame.h"
-#include "sample.h"
 
 template<typename T>
 Frame<T>::Frame(Buffer<T> &buffer)
@@ -83,5 +81,3 @@ bool Frame<T>::operator!=(const ConstFrame<T> &rht) const
 {
     return rht._data != _data;
 }
-
-SOUND_INSTANTIATE(Frame)

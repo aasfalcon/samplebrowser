@@ -1,4 +1,3 @@
-#include "sample.h"
 #include "player.h"
 
 template<typename T>
@@ -67,5 +66,3 @@ void Player<T>::process()
         Resampler<T>::process();
     }
 }
-
-SOUND_INSTANTIATE(Player)

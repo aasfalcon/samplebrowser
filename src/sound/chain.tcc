@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include "chain.h"
 
 template<typename T>
@@ -86,5 +87,3 @@ std::list<unsigned> Chain<T>::processors() const
 
     return result;
 }
-
-SOUND_INSTANTIATE(Chain)

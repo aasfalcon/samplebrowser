@@ -1,9 +1,8 @@
 #ifndef METER_H
 #define METER_H
 
+#include "constframe.h"
 #include "processor.h"
-
-template<typename T> class ContFrame;
 
 template<typename T>
 class Meter: public Processor<T>
@@ -21,6 +20,6 @@ private:
     Buffer<T> _peaksBuffer;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Meter)
+#include "meter.tcc"
 
 #endif // METER_H

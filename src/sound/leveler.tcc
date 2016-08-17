@@ -1,8 +1,9 @@
 #include <stdexcept>
+
 #include "constframe.h"
 #include "frame.h"
-#include "sample.h"
 #include "leveler.h"
+#include "sample.h"
 
 template<typename T>
 Leveler<T>::Leveler()
@@ -10,11 +11,13 @@ Leveler<T>::Leveler()
     , _balance(0.0)
     , _level(1.0)
 {
+
 }
 
 template<typename T>
 Leveler<T>::~Leveler()
 {
+
 }
 
 template<typename T>
@@ -66,5 +69,3 @@ void Leveler<T>::setLevel(double value)
 
     _level = value;
 }
-
-SOUND_INSTANTIATE(Leveler)

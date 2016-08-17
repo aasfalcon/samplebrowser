@@ -7,8 +7,10 @@
 #include <vector>
 
 struct Chunk {
-    template<typename T>
-    friend class InputStream;
+    friend class BasicInputStream;
+    friend class BasicOutputStream;
+
+    bool exists;
 
 public:
     typedef std::vector<unsigned char> RawData;

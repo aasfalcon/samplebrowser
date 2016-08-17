@@ -15,7 +15,7 @@ public:
     void open(const char *filename, Mode mode);
 
     unsigned read(void *buffer, unsigned frames);
-    unsigned seek(int offset, SeekWhence sw, SeekType st = SeekTypeDefault);
+    unsigned seek(int pos, SeekWhence sw, SeekType st = SeekTypeDefault);
 
 private:
     mpg123_handle_struct *_mpghandle;

@@ -20,6 +20,6 @@ private:
     double _level;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Leveler)
+#include "leveler.tcc"
 
 #endif // LEVELER_H

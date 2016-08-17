@@ -3,13 +3,14 @@
 
 #include "interface.h"
 #include "../sound/sound.h"
+#include <sndfile.h>
 
 struct IAudioFile: Interface {
     typedef void (*ProgressCallback)(unsigned percent);
     typedef unsigned char ChunkData;
 
     enum ChunkType {
-        ChunkBroadcastInfo = 1,
+        ChunkBroadcastInfo,
         ChunkLoopInfo,
         ChunkInstrument,
         ChunkCartInfo,
@@ -19,7 +20,7 @@ struct IAudioFile: Interface {
     };
 
     enum FormatMajor {
-        MajorWAV = 1,
+        MajorWAV,
         MajorAIFF,
         MajorAU,
         MajorRAW,
@@ -47,13 +48,11 @@ struct IAudioFile: Interface {
 
         MajorMP1,
         MajorMP2,
-        MajorMP3,
-
-        MajorCount
+        MajorMP3
     };
 
     enum FormatMinor {
-        MinorPCM_S8 = 1,
+        MinorPCM_S8,
         MinorPCM_16,
         MinorPCM_24,
         MinorPCM_32,
@@ -66,9 +65,9 @@ struct IAudioFile: Interface {
         MinorMS_ADPCM,
         MinorGSM610,
         MinorVOX_ADPCM,
-        MinorG721_32,
-        MinorG723_24,
-        MinorG723_40,
+        MinorG721_32k,
+        MinorG723_24k,
+        MinorG723_40k,
         MinorDWVW_12,
         MinorDWVW_16,
         MinorDWVW_24,
@@ -92,9 +91,7 @@ struct IAudioFile: Interface {
         MinorMPEG2_5_Mono,
         MinorMPEG2_5_Stereo,
         MinorMPEG2_5_JointStereo,
-        MinorMPEG2_5_DualChannel,
-
-        MinorCount
+        MinorMPEG2_5_DualChannel
     };
 
     enum Mode {
@@ -147,8 +144,11 @@ struct IAudioFile: Interface {
     };
 
     struct CompressionInfo {
-        WavexAmbisonic ambisonic;
-        CompressionType type;
+        union {
+            WavexAmbisonic ambisonic;
+            CompressionType type;
+        };
+
         unsigned bitrate;
         double level;
         double quality;
@@ -157,8 +157,21 @@ struct IAudioFile: Interface {
     struct Format {
         FormatMajor major;
         FormatMinor minor;
+    };
+
+    struct FormatText {
         const char *majorText;
         const char *minorText;
+    };
+
+    struct SimpleFormats {
+        unsigned count;
+
+        struct Formats {
+            const char *description;
+            const char *extension;
+            Format format;
+        } *formats;
     };
 
     struct FileInfo {
@@ -170,24 +183,30 @@ struct IAudioFile: Interface {
         Sound::Type sampleType;
         unsigned sampleRate;
         bool seekable;
-        const char *strings[StringEntryCount];
     };
 
-    virtual void close() = 0;
-    virtual void flush() = 0;
-    virtual void open(const char *filename, Mode mode) = 0;
+    struct RawChunk {
+        const char *id;
+        const ChunkData *data;
+        unsigned size;
+    };
 
-    virtual const ChunkData *chunk(const char *id, unsigned *size) = 0;
     virtual const ChunkData *chunk(ChunkType type, unsigned *size) = 0;
-    virtual void setChunk(const char *id, unsigned size, const ChunkData *data) = 0;
-    virtual void setChunk(ChunkType type, unsigned size, const ChunkData *data) = 0;
-
+    virtual void close() = 0;
     virtual const FileInfo *fileInfo() const = 0;
+    virtual void flush() = 0;
+    virtual FormatText &formatText(const Format &format) = 0;
+    virtual const SimpleFormats &formats() = 0;
+    virtual void open(const char *filename, Mode mode) = 0;
+    virtual RawChunk *rawChunks(unsigned *count) = 0;
+    virtual unsigned read(void *buffer, Sound::Type sampleType, unsigned frames) = 0;
+    virtual unsigned seek(int pos, SeekWhence sw, SeekType st = SeekTypeDefault) = 0;
+    virtual void setChunk(ChunkType type, unsigned size, const ChunkData *data) = 0;
     virtual void setFileInfo(const FileInfo *value) = 0;
     virtual void setProgressCallback(ProgressCallback callback) = 0;
-
-    virtual unsigned read(void *buffer, unsigned frames) = 0;
-    virtual unsigned seek(int offset, SeekWhence sw, SeekType st = SeekTypeDefault) = 0;
+    virtual void setRawChunks(RawChunk *chunks, unsigned count) = 0;
+    virtual void setString(StringEntry entry, const char *value) = 0;
+    virtual const char *string(StringEntry entry) = 0;
     virtual void write(const void *buffer, unsigned frames) = 0;
 };
 
