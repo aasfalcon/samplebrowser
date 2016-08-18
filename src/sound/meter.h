@@ -1,25 +1,26 @@
 #ifndef METER_H
 #define METER_H
 
-#include "constframe.h"
 #include "processor.h"
 
-template<typename T>
-class Meter: public Processor<T>
-{
+template <typename T>
+class ConstFrame;
+
+template <typename T>
+class Meter : public Processor<T> {
 public:
     Meter();
     ~Meter();
-    const ConstFrame<T> peaks() const;
+    ConstFrame<T> peaks() const;
     void process();
 
 protected:
     void init();
 
 private:
-    Buffer<T> _peaksBuffer;
+    Buffer<T> _peaks;
 };
 
-#include "meter.tcc"
+SOUND_INSTANTIATION_DECLARE(Meter);
 
 #endif // METER_H

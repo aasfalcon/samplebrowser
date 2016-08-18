@@ -199,7 +199,7 @@ struct IAudioFile: Interface {
     virtual const SimpleFormats &formats() = 0;
     virtual void open(const char *filename, Mode mode) = 0;
     virtual RawChunk *rawChunks(unsigned *count) = 0;
-    virtual unsigned read(void *buffer, Sound::Type sampleType, unsigned frames) = 0;
+    virtual unsigned read(void *buffer, Sound::Type type, unsigned frames) = 0;
     virtual unsigned seek(int pos, SeekWhence sw, SeekType st = SeekTypeDefault) = 0;
     virtual void setChunk(ChunkType type, unsigned size, const ChunkData *data) = 0;
     virtual void setFileInfo(const FileInfo *value) = 0;

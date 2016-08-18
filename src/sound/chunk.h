@@ -17,20 +17,21 @@ public:
 
     virtual ~Chunk() {}
 
-    template<class T>
-    inline static T create(const RawData &data) {
+    template <class T>
+    inline static T create(const RawData& data)
+    {
         T chunk;
         chunk.fromRaw(data);
         return chunk;
     }
 
 protected:
-    static void copy(char *dest, const std::string &source, unsigned max);
-    virtual void fromRaw(const RawData &data) = 0;
+    static void copy(char* dest, const std::string& source, unsigned max);
+    virtual void fromRaw(const RawData& data) = 0;
     virtual RawData toRaw() const = 0;
 };
 
-struct BroadcastInfo: Chunk {
+struct BroadcastInfo : Chunk {
     std::string
         description,
         originator,
@@ -42,11 +43,11 @@ struct BroadcastInfo: Chunk {
     int version;
 
 protected:
-    void fromRaw(const RawData &data);
+    void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
 
-struct LoopInfo: Chunk {
+struct LoopInfo : Chunk {
     enum Mode {
         None = 800,
         Forward,
@@ -63,11 +64,11 @@ struct LoopInfo: Chunk {
     float bpm;
 
 protected:
-    void fromRaw(const RawData &data);
+    void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
 
-struct Instrument: Chunk {
+struct Instrument : Chunk {
     struct Loop {
         LoopInfo::Mode mode;
 
@@ -91,7 +92,7 @@ struct Instrument: Chunk {
     Loops loops;
 
 protected:
-    void fromRaw(const RawData &data);
+    void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
 
@@ -123,7 +124,7 @@ struct CartInfo : public Chunk {
     Timers postTimers;
 
 protected:
-    void fromRaw(const RawData &data);
+    void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
 
@@ -141,9 +142,9 @@ struct Cue {
     std::string name;
 };
 
-struct Cues: Chunk, std::list<Cue> {
+struct Cues : Chunk, std::list<Cue> {
 protected:
-    void fromRaw(const RawData &data);
+    void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
 

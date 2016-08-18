@@ -3,9 +3,8 @@
 
 #include "processor.h"
 
-template<typename T>
-class Leveler: public Processor<T>
-{
+template <typename T>
+class Leveler : public Processor<T> {
 public:
     Leveler();
     ~Leveler();
@@ -20,6 +19,6 @@ private:
     double _level;
 };
 
-#include "leveler.tcc"
+SOUND_INSTANTIATION_DECLARE(Leveler);
 
 #endif // LEVELER_H

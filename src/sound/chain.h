@@ -6,14 +6,13 @@
 
 #include "processor.h"
 
-template<typename T>
-class Chain: public Processor<T>
-{
+template <typename T>
+class Chain : public Processor<T> {
 public:
     Chain();
     ~Chain();
 
-    void addProcessor(unsigned id, std::shared_ptr<Processor<T>> processor);
+    void addProcessor(unsigned id, std::shared_ptr<Processor<T> > processor);
     bool hasProcessor(unsigned id);
     void removeProcessor(unsigned id);
     void swapProcessors(unsigned first, unsigned second);
@@ -24,7 +23,7 @@ protected:
     virtual void init();
 
 private:
-    typedef std::pair<unsigned, std::shared_ptr<Processor<T>>> Tagged;
+    typedef std::pair<unsigned, std::shared_ptr<Processor<T> > > Tagged;
     typedef std::list<Tagged> TaggedList;
 
     bool _active;
@@ -33,6 +32,6 @@ private:
     typename TaggedList::iterator find(unsigned id);
 };
 
-#include "chain.tcc"
+SOUND_INSTANTIATION_DECLARE(Chain)
 
 #endif // CHAIN_H

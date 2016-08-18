@@ -1,6 +1,6 @@
-#include "sample.h"
-#include "sound.h"
 #include "driver.h"
+#include "runtime.h"
+#include "shared/log.h"
 #include "shared/server.h"
 
 Driver::Driver()
@@ -56,6 +56,28 @@ const IDriver::DriverInfo &Driver::info() const
     return *_provider->driverInfo();
 }
 
+template <typename T>
+void Driver::init(std::shared_ptr<Processor<T> > root)
+{
+    if (sampleType() != Sound::Object<T>::type()) {
+        std::string message = "Wrong root processor sample format";
+        LOG(ERROR, message);
+        throw std::runtime_error(message);
+    }
+
+    Runtime<T>* pruntime = new Runtime<T>(
+        std::shared_ptr<Processor<T> >(root),
+        _options->outputChannels, _bufferFrames,
+        latency(), sampleRate());
+
+    _runtime = std::shared_ptr<void>(pruntime, [](void* ptr) {
+        Runtime<T>* pruntime = reinterpret_cast<Runtime<T>*>(ptr);
+        delete pruntime;
+    });
+
+    LOG(TRACE, "Driver initialized");
+}
+
 unsigned Driver::latency() const
 {
     return _provider->streamInfo()->latency;
@@ -64,19 +86,6 @@ unsigned Driver::latency() const
 std::shared_ptr<IDriver::ConnectOptions> Driver::options() const
 {
     return _options;
-}
-
-template<typename T>
-Processor<T> *Driver::root() const
-{
-    if (sampleType() != Sound::Object<T>::type()) {
-        std::string message = "Attempt to get root processor with wrong sample format";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
-    }
-
-    auto runtime = reinterpret_cast<Runtime<T> *>(_runtime.get());
-    return runtime->root().get();
 }
 
 unsigned Driver::sampleRate() const
@@ -104,49 +113,7 @@ double Driver::time() const
     return _provider->time();
 }
 
-template<typename T>
-void Driver::setRoot(Processor<T> *processor)
-{
-    if (sampleType() != Sound::Object<T>::type()) {
-        std::string message = "Wrong root processor sample format";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
-    }
+#define DRIVER_INIT(__type) \
+    template void Driver::init<__type>(std::shared_ptr<Processor<__type> > root);
 
-    Runtime<T> *pruntime = new Runtime<T>(
-                std::shared_ptr<Processor<T>>(processor),
-                _options->outputChannels,
-                _bufferFrames,
-                latency(),
-                sampleRate());
-
-    _runtime = std::shared_ptr<void>(pruntime, [](void *ptr) {
-        Runtime<T> *pruntime = reinterpret_cast<Runtime<T> *>(ptr);
-        delete pruntime;
-    });
-}
-
-template<typename T>
-Driver::Runtime<T>::Runtime(
-        std::shared_ptr<Processor<T>> rootProcessor,
-        unsigned channels, unsigned frames,
-        unsigned latency, unsigned sampleRate)
-    : _inputBuffer(channels, frames)
-    , _outputBuffer(channels, frames)
-    , _rootProcessor(rootProcessor)
-{
-    _rootProcessor->kickIn(&_outputBuffer, &_inputBuffer,
-                           latency, sampleRate);
-}
-
-template<typename T>
-Driver::Runtime<T>::~Runtime()
-{
-
-}
-
-template<typename T>
-std::shared_ptr<Processor<T>> Driver::Runtime<T>::root()
-{
-    return _rootProcessor;
-}
+SOUND_INSTANTIATE_METHOD(DRIVER_INIT);

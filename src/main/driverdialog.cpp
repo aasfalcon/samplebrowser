@@ -2,21 +2,21 @@
 #include <list>
 #include <string>
 
-#include <RtAudio.h>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStatusBar>
-#include <QPushButton>
 #include <QWidgetList>
-#include <QMessageBox>
+#include <RtAudio.h>
 
 #include "driverdialog.h"
 #include "ui_driverdialog.h"
 
+#include "config.h"
 #include "shared/log.h"
 #include "sound/driver.h"
 #include "sound/player.h"
-#include "config.h"
 
 QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
     { IDriver::SampleInt8, tr("8 bit") },
@@ -27,7 +27,7 @@ QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
     { IDriver::SampleFloat64, tr("Float 64 bit") },
 };
 
-DriverDialog::DriverDialog(QWidget *parent)
+DriverDialog::DriverDialog(QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::DriverDialog)
     , _driver(new Driver)
@@ -51,20 +51,20 @@ DriverDialog::DriverDialog(QWidget *parent)
     auto comboChanged = static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged);
     auto updateAll = [this]() { modelUpdate(); controlsUpdate(); };
 
-    connect(ui->bufferCount,    spinChanged,    this, &DriverDialog::modelUpdate);
-    connect(ui->bufferSize,     comboChanged,   this, &DriverDialog::modelUpdate);
-    connect(ui->inChannels,     spinChanged,    this, &DriverDialog::modelUpdate);
-    connect(ui->outChannels,    spinChanged,    this, &DriverDialog::modelUpdate);
-    connect(ui->sampleFormat,   comboChanged,   this, &DriverDialog::modelUpdate);
-    connect(ui->sampleRate,     comboChanged,   this, &DriverDialog::modelUpdate);
-    connect(ui->xrunStop,       checkToggled,   this, &DriverDialog::modelUpdate);
-    connect(ui->priority,       spinChanged,    this, &DriverDialog::modelUpdate);
+    connect(ui->bufferCount, spinChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->bufferSize, comboChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->inChannels, spinChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->outChannels, spinChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->sampleFormat, comboChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->sampleRate, comboChanged, this, &DriverDialog::modelUpdate);
+    connect(ui->xrunStop, checkToggled, this, &DriverDialog::modelUpdate);
+    connect(ui->priority, spinChanged, this, &DriverDialog::modelUpdate);
 
-    connect(ui->driverType,     comboChanged,   this, updateAll);
-    connect(ui->duplexMode,     checkToggled,   this, updateAll);
-    connect(ui->inputDevice,    comboChanged,   this, updateAll);
-    connect(ui->outputDevice,   comboChanged,   this, updateAll);
-    connect(ui->realtime,       checkToggled,   this, updateAll);
+    connect(ui->driverType, comboChanged, this, updateAll);
+    connect(ui->duplexMode, checkToggled, this, updateAll);
+    connect(ui->inputDevice, comboChanged, this, updateAll);
+    connect(ui->outputDevice, comboChanged, this, updateAll);
+    connect(ui->realtime, checkToggled, this, updateAll);
 
     modelLoad();
 }
@@ -96,18 +96,18 @@ void DriverDialog::controlsUpdate()
         selectByValue(ui->sampleRate, _model.sampleRate);
         selectByValue(ui->bufferSize, _model.bufferSize);
 
-        const IDriver::Api &api = _driver->apiInfo(_model.apiType);
+        const IDriver::Api& api = _driver->apiInfo(_model.apiType);
         unsigned channelsInputMax = 0;
         unsigned channelsOutputMax = 0;
 
         if (api.deviceCount) {
-            auto &inputDevice = api.devices[_model.inputDeviceId];
-            auto &outputDevice = api.devices[_model.outputDeviceId];
+            auto& inputDevice = api.devices[_model.inputDeviceId];
+            auto& outputDevice = api.devices[_model.outputDeviceId];
 
             channelsInputMax = std::max(inputDevice.channelsInput,
-                                     inputDevice.channelsDuplex);
+                inputDevice.channelsDuplex);
             channelsOutputMax = std::max(outputDevice.channelsOutput,
-                                      outputDevice.channelsDuplex);
+                outputDevice.channelsDuplex);
         }
 
         ui->inChannels->setMaximum(int(channelsInputMax));
@@ -145,11 +145,11 @@ void DriverDialog::controlsUpdate()
     }
 }
 
-void DriverDialog::critical(const QString &caption,
-                            const QString &message,
-                            const QString &source)
+void DriverDialog::critical(const QString& caption,
+    const QString& message,
+    const QString& source)
 {
-    QMessageBox *messageBox = new QMessageBox(this);
+    QMessageBox* messageBox = new QMessageBox(this);
     messageBox->setIcon(QMessageBox::Critical);
 
     QString text = message;
@@ -169,14 +169,14 @@ QString DriverDialog::testFilePath()
 {
     QString filename = "testfile.ogg";
     QString result = QStandardPaths::locate(
-                QStandardPaths::AppDataLocation, filename);
+        QStandardPaths::AppDataLocation, filename);
 
     if (result.isEmpty()) {
-        QString message =
-                tr("Unable to find test sound file \"%1\" "
-                   "in path: %2").arg(filename)
-                .arg(QStandardPaths::standardLocations(
-                         QStandardPaths::AppDataLocation)[0]);
+        QString message = tr("Unable to find test sound file \"%1\" "
+                             "in path: %2")
+                              .arg(filename)
+                              .arg(QStandardPaths::standardLocations(
+                                  QStandardPaths::AppDataLocation)[0]);
         LOG(ERROR, message.toStdString());
         critical(tr("Settings test error"), message);
     }
@@ -191,9 +191,9 @@ void DriverDialog::modelApply()
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
 
-        auto player = new Player<Sound::Float32>();
-        auto processor = dynamic_cast<Processor<Sound::Float32> *>(player);
-        _driver->setRoot(processor);
+        auto player = std::make_shared<Player<Sound::Float32>>();
+        auto processor = std::static_pointer_cast<Processor<Sound::Float32>>(player);
+        _driver->init(processor);
 
         std::string path = testFilePath().toStdString();
 
@@ -204,10 +204,10 @@ void DriverDialog::modelApply()
         //_driver->disconnect();
         _model.isTested = true;
         updateStatus();
-    } catch(std::runtime_error e) {
+    } catch (std::runtime_error e) {
         setStatus("dialog-error", tr("Internal error"));
         critical(tr("Internal error"), e.what());
-    } catch(RtAudioError e) {
+    } catch (RtAudioError e) {
         setStatus("dialog-error", tr("Connection error"));
         critical(tr("Connection error"), e.what(), tr("Driver"));
     }
@@ -241,13 +241,13 @@ void DriverDialog::modelBound()
 
     _model.priority = ui->priority->value();
     _model.sampleFormat = IDriver::SampleFormat(
-                ui->sampleFormat->currentData().toInt());
+        ui->sampleFormat->currentData().toInt());
     _model.sampleRate = unsigned(ui->sampleRate->currentData().toInt());
 }
 
 void DriverDialog::modelInitialize(IDriver::ApiType apiType)
 {
-    const IDriver::Api &api = _driver->apiInfo(apiType);
+    const IDriver::Api& api = _driver->apiInfo(apiType);
 
     _model.apiType = apiType;
     _model.name = APPLICATION_NAME;
@@ -267,21 +267,21 @@ void DriverDialog::modelInitialize(IDriver::ApiType apiType)
 
     if (api.deviceCount) {
         _model.sampleFormat = selectFormat(
-                    api.devices[api.defaultOutput].sampleFormats,
-                    api.devices[api.defaultInput].sampleFormats,
-                    _model.isDuplex);
+            api.devices[api.defaultOutput].sampleFormats,
+            api.devices[api.defaultInput].sampleFormats,
+            _model.isDuplex);
         _model.sampleRate = selectSampleRate(
-                    api.devices[api.defaultOutput].sampleRates,
-                    api.devices[api.defaultOutput].sampleRateCount,
-                    api.devices[api.defaultInput].sampleRates,
-                    api.devices[api.defaultInput].sampleRateCount,
-                    _model.isDuplex);
+            api.devices[api.defaultOutput].sampleRates,
+            api.devices[api.defaultOutput].sampleRateCount,
+            api.devices[api.defaultInput].sampleRates,
+            api.devices[api.defaultInput].sampleRateCount,
+            _model.isDuplex);
     }
 }
 
 void DriverDialog::modelLoad()
 {
-    const IDriver::DriverInfo &info = _driver->info();
+    const IDriver::DriverInfo& info = _driver->info();
     QSettings settings;
     settings.beginGroup("audio");
 
@@ -297,7 +297,7 @@ void DriverDialog::modelLoad()
         }
     }
 
-    const IDriver::Api &api = _driver->apiInfo(apiType);
+    const IDriver::Api& api = _driver->apiInfo(apiType);
     const QString inputName = settings.value("inputDevice").toString();
     const QString outputName = settings.value("outputDevice").toString();
     const QString formatName = settings.value("sampleFormat").toString();
@@ -324,16 +324,16 @@ void DriverDialog::modelLoad()
 #define GET_FIELD(__name, __variant, __type) \
     _model.__name = __type(settings.value(#__name, _model.__name).to##__variant());
 
-    GET_FIELD(bufferCount,      Int, unsigned);
-    GET_FIELD(bufferSize,       Int, unsigned);
-    GET_FIELD(inputChannels,    Int, unsigned);
-    GET_FIELD(isStoppingOnXrun, Bool,);
-    GET_FIELD(isDuplex,         Bool,);
-    GET_FIELD(isRealtime,       Bool,);
-    GET_FIELD(isTested,         Bool,);
-    GET_FIELD(outputChannels,   Int, unsigned);
-    GET_FIELD(priority,         Int,);
-    GET_FIELD(sampleRate,       Int, unsigned);
+    GET_FIELD(bufferCount, Int, unsigned);
+    GET_FIELD(bufferSize, Int, unsigned);
+    GET_FIELD(inputChannels, Int, unsigned);
+    GET_FIELD(isStoppingOnXrun, Bool, );
+    GET_FIELD(isDuplex, Bool, );
+    GET_FIELD(isRealtime, Bool, );
+    GET_FIELD(isTested, Bool, );
+    GET_FIELD(outputChannels, Int, unsigned);
+    GET_FIELD(priority, Int, );
+    GET_FIELD(sampleRate, Int, unsigned);
 
 #undef GET_FIELD
 
@@ -343,8 +343,8 @@ void DriverDialog::modelLoad()
 
 void DriverDialog::modelSave()
 {
-    const IDriver::DriverInfo &info = _driver->info();
-    const IDriver::Api &api = _driver->apiInfo(_model.apiType);
+    const IDriver::DriverInfo& info = _driver->info();
+    const IDriver::Api& api = _driver->apiInfo(_model.apiType);
     QSettings settings;
 
     settings.beginGroup("audio");
@@ -401,8 +401,8 @@ void DriverDialog::populateBufferSizes()
 void DriverDialog::populateDriverTypes()
 {
     if (!ui->driverType->count()) {
-        ui->driverType-> clear();
-        auto &info = _driver->info();
+        ui->driverType->clear();
+        auto& info = _driver->info();
 
         for (unsigned i = 0; i < info.apiCount; i++) {
             ui->driverType->addItem(info.names[i], info.apis[i]);
@@ -417,10 +417,10 @@ void DriverDialog::populateInputs(IDriver::ApiType type)
     ui->inputDevice->clear();
 
     if (ui->duplexMode->isChecked()) {
-        const IDriver::Api &api = _driver->apiInfo(type);
+        const IDriver::Api& api = _driver->apiInfo(type);
 
         for (unsigned i = 0; i < api.deviceCount; i++) {
-            auto &device = api.devices[i];
+            auto& device = api.devices[i];
 
             if (device.channelsDuplex > 0 || device.channelsInput > 0) {
                 ui->inputDevice->addItem(device.name, i);
@@ -435,7 +435,7 @@ void DriverDialog::populateInputs(IDriver::ApiType type)
     if (!count) {
         bool isDuplex = ui->duplexMode->isChecked();
         bool hasOutput = ui->outputDevice->count() > 0
-                && ui->outputDevice->itemData(0).toInt() >= 0;
+            && ui->outputDevice->itemData(0).toInt() >= 0;
 
         if (!isDuplex && hasOutput) {
             ui->inputDevice->addItem(tr("(not used)"), -1);
@@ -443,16 +443,15 @@ void DriverDialog::populateInputs(IDriver::ApiType type)
             ui->inputDevice->addItem(tr("(unavailable)"), -1);
         }
     }
-
 }
 
 void DriverDialog::populateOutputs(IDriver::ApiType type)
 {
     ui->outputDevice->clear();
-    const IDriver::Api &api = _driver->apiInfo(type);
+    const IDriver::Api& api = _driver->apiInfo(type);
 
     for (unsigned i = 0; i < api.deviceCount; i++) {
-        auto &device = api.devices[i];
+        auto& device = api.devices[i];
 
         if (device.channelsDuplex > 0 || device.channelsOutput > 0) {
             ui->outputDevice->addItem(device.name, i);
@@ -471,7 +470,7 @@ void DriverDialog::populateOutputs(IDriver::ApiType type)
 void DriverDialog::populateSampleRates(IDriver::ApiType type)
 {
     ui->sampleRate->clear();
-    const IDriver::Api &api = _driver->apiInfo(type);
+    const IDriver::Api& api = _driver->apiInfo(type);
 
     int inputDeviceId = ui->inputDevice->currentData().toInt();
     int outputDeviceId = ui->outputDevice->currentData().toInt();
@@ -479,13 +478,13 @@ void DriverDialog::populateSampleRates(IDriver::ApiType type)
     bool hasOutput = outputDeviceId >= 0;
 
     if (hasOutput) {
-        auto &outputDevice = api.devices[outputDeviceId];
+        auto& outputDevice = api.devices[outputDeviceId];
 
         for (unsigned i = 0; i < outputDevice.sampleRateCount; i++) {
             unsigned rate = outputDevice.sampleRates[i];
 
             if (hasInput) {
-                auto &inputDevice = api.devices[inputDeviceId];
+                auto& inputDevice = api.devices[inputDeviceId];
 
                 for (unsigned j = 0; j < inputDevice.sampleRateCount; j++) {
                     if (rate == inputDevice.sampleRates[j]) {
@@ -497,7 +496,7 @@ void DriverDialog::populateSampleRates(IDriver::ApiType type)
             }
         }
     } else if (hasInput) {
-        auto &inputDevice = api.devices[inputDeviceId];
+        auto& inputDevice = api.devices[inputDeviceId];
 
         for (unsigned i = 0; i < inputDevice.sampleRateCount; i++) {
             unsigned rate = inputDevice.sampleRates[i];
@@ -515,7 +514,7 @@ void DriverDialog::populateSampleFormats(IDriver::ApiType type)
     }
 
     unsigned flags = 0;
-    const IDriver::Api &api = _driver->apiInfo(type);
+    const IDriver::Api& api = _driver->apiInfo(type);
 
     int inputDeviceId = ui->inputDevice->currentData().toInt();
     int outputDeviceId = ui->outputDevice->currentData().toInt();
@@ -523,12 +522,12 @@ void DriverDialog::populateSampleFormats(IDriver::ApiType type)
     bool hasOutput = outputDeviceId >= 0;
 
     if (hasOutput) {
-        auto &outputDevice = api.devices[outputDeviceId];
+        auto& outputDevice = api.devices[outputDeviceId];
         flags = outputDevice.sampleFormats;
     }
 
     if (hasInput) {
-        auto &inputDevice = api.devices[inputDeviceId];
+        auto& inputDevice = api.devices[inputDeviceId];
 
         if (hasOutput) {
             flags &= inputDevice.sampleFormats;
@@ -544,7 +543,7 @@ void DriverDialog::populateSampleFormats(IDriver::ApiType type)
     }
 }
 
-void DriverDialog::selectByValue(QComboBox *target, unsigned value)
+void DriverDialog::selectByValue(QComboBox* target, unsigned value)
 {
     bool isFound = false;
     int closest = 0;
@@ -569,8 +568,8 @@ void DriverDialog::selectByValue(QComboBox *target, unsigned value)
 }
 
 IDriver::SampleFormat DriverDialog::selectFormat(
-        unsigned outFlags, unsigned inFlags, bool isDuplex,
-        IDriver::SampleFormat defaultFormat)
+    unsigned outFlags, unsigned inFlags, bool isDuplex,
+    IDriver::SampleFormat defaultFormat)
 {
     IDriver::SampleFormat result = defaultFormat;
 
@@ -597,9 +596,9 @@ IDriver::SampleFormat DriverDialog::selectFormat(
     return result;
 }
 
-unsigned DriverDialog::selectSampleRate(const unsigned *outRates, unsigned outRateCount,
-                                        const unsigned *inRates, unsigned inRateCount,
-                                        bool isDuplex, unsigned defaultRate)
+unsigned DriverDialog::selectSampleRate(const unsigned* outRates, unsigned outRateCount,
+    const unsigned* inRates, unsigned inRateCount,
+    bool isDuplex, unsigned defaultRate)
 {
     unsigned result = defaultRate;
     std::list<unsigned> available;
@@ -618,15 +617,14 @@ unsigned DriverDialog::selectSampleRate(const unsigned *outRates, unsigned outRa
     }
 
     if (std::find(available.begin(), available.end(), result)
-            == available.end())
-    {
+        == available.end()) {
         result = available.front();
     }
 
     return result;
 }
 
-void DriverDialog::setStatus(const QString &themeIcon, const QString &message)
+void DriverDialog::setStatus(const QString& themeIcon, const QString& message)
 {
     _statusIcon->setPixmap(QIcon::fromTheme(themeIcon).pixmap(18));
     _statusText->setText(message);
@@ -641,8 +639,7 @@ void DriverDialog::updateStatus()
         _latencyText->clear();
 
         if (!ui->outputDevice->count()
-                || ui->outputDevice->itemData(0) < 0)
-        {
+            || ui->outputDevice->itemData(0) < 0) {
             setStatus("dialog-error", tr("Not available"));
         } else {
             setStatus("", "");
@@ -655,9 +652,9 @@ void DriverDialog::on_DriverDialog_accepted()
     modelSave();
 }
 
-void DriverDialog::on_buttonBox_clicked(QAbstractButton *button)
+void DriverDialog::on_buttonBox_clicked(QAbstractButton* button)
 {
-    auto btn = dynamic_cast<QPushButton *>(button);
+    auto btn = dynamic_cast<QPushButton*>(button);
 
     if (ui->buttonBox->button(QDialogButtonBox::Reset) == btn) {
         modelLoad();
@@ -670,7 +667,7 @@ void DriverDialog::on_driverType_currentIndexChanged(int index)
 {
     if (!_isUpdateLocked) {
         IDriver::ApiType type = static_cast<IDriver::ApiType>(
-                    ui->driverType->itemData(index).toInt());
+            ui->driverType->itemData(index).toInt());
 
         if (_model.apiType != type) {
             modelInitialize(type);

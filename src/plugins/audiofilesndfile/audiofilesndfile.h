@@ -23,7 +23,7 @@ public:
     const FileInfo *fileInfo() const;
     void open(const char *filename, Mode mode);
     RawChunk *rawChunks(unsigned *count);
-    unsigned read(void *buffer, unsigned frames);
+    unsigned read(void *buffer, Sound::Type type, unsigned frames);
     unsigned seek(int pos, SeekWhence sw, SeekType st = SeekTypeDefault);
     void setChunk(ChunkType type, unsigned size, const ChunkData *data);
     void setFileInfo(const FileInfo *value);

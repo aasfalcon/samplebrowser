@@ -2,8 +2,7 @@
 #define CONFIG_H
 
 namespace Sound {
-    const char *APPLICATION_NAME = "WAVExporer";
+const char* APPLICATION_NAME = "WAVExporer";
 }
 
 #endif // CONFIG_H
-

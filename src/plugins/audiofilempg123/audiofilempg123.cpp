@@ -109,10 +109,10 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
     _info.sampleType = Sound::TypeFloat32;
 }
 
-unsigned AudioFileMPG123::read(void *buffer, unsigned frames)
+unsigned AudioFileMPG123::read(void *buffer, Sound::Type type, unsigned frames)
 {
     if (!_mpgmode) {
-        return AudioFileSndfile::read(buffer, frames);
+        return AudioFileSndfile::read(buffer, type, frames);
     }
 
     int size = int(frames * _info.channels * sizeof(Sound::Float32));

@@ -5,38 +5,35 @@
 #include "outputstream.h"
 
 class IOStream
-        : virtual public InputStream
-        , virtual public OutputStream
-{
+    : virtual public InputStream,
+      virtual public OutputStream {
 public:
-    inline IOStream(const std::string &path);
+    IOStream(const std::string& path);
 
-    inline unsigned pos() const;
-    inline void seek(int pos, IAudioFile::SeekWhence whence);
+    unsigned pos() const;
+    void seek(int pos, IAudioFile::SeekWhence whence);
 
-    inline IOStream &operator >>(Compression &rht);
-    inline IOStream &operator >>(Chunk &rht);
-    inline IOStream &operator >>(Format &rht);
-    inline IOStream &operator >>(FormatText &rht);
-    inline IOStream &operator >>(Info &rht);
-    inline IOStream &operator >>(Strings &rht);
-    inline IOStream &operator >>(RawChunks &rht);
+    IOStream& operator>>(Compression& rht);
+    IOStream& operator>>(Chunk& rht);
+    IOStream& operator>>(Format& rht);
+    IOStream& operator>>(FormatText& rht);
+    IOStream& operator>>(Info& rht);
+    IOStream& operator>>(Strings& rht);
+    IOStream& operator>>(RawChunks& rht);
 
-    template<typename T>
-    inline IOStream &operator >>(Buffer<T> &rht);
+    template <typename T>
+    IOStream& operator>>(Buffer<T>& rht);
 
-    inline IOStream &operator <<(const Compression &rht);
-    inline IOStream &operator <<(const Chunk &rht);
-    inline IOStream &operator <<(const Format &rht);
-    inline IOStream &operator <<(const Info &rht);
-    inline IOStream &operator <<(const Strings &rht);
-    inline IOStream &operator <<(const RawChunk &rht);
-    inline IOStream &operator <<(const RawChunks &rht);
+    IOStream& operator<<(const Compression& rht);
+    IOStream& operator<<(const Chunk& rht);
+    IOStream& operator<<(const Format& rht);
+    IOStream& operator<<(const Info& rht);
+    IOStream& operator<<(const Strings& rht);
+    IOStream& operator<<(const RawChunk& rht);
+    IOStream& operator<<(const RawChunks& rht);
 
-    template<typename T>
-    inline IOStream &operator <<(const Buffer<T> &rht);
+    template <typename T>
+    IOStream& operator<<(const Buffer<T>& rht);
 };
-
-#include "iostream.tcc"
 
 #endif // IOStream_H

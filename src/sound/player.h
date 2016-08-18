@@ -4,30 +4,22 @@
 #include <memory>
 #include <string>
 
-#include "resampler.h"
 #include "inputstream.h"
+#include "resampler.h"
 
-template<typename T>
-class Player: public Resampler<T>
-{
+template <typename T>
+class Player : public Resampler<T> {
 public:
     Player();
     ~Player();
 
-    void play(const std::string &path);
-    void process();
-    void stop();
+    void play(const std::string& path);
 
 private:
-    typedef std::shared_ptr<InputStream<T>> PStream;
-    Buffer<T> _playerBuffer;
-    InputStreamInfo _info;
-    bool _isPlaying;
-    PStream _stream;
-
-    void calibrate();
+    Buffer<Sound::Float32> _readBuffer;
+    std::shared_ptr<InputStream> _stream;
 };
 
-#include "player.tcc"
+SOUND_INSTANTIATION_DECLARE(Player);
 
 #endif // PLAYER_H

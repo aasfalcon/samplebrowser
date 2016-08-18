@@ -21,17 +21,16 @@ namespace Ui {
 class DriverDialog;
 }
 
-class DriverDialog : public QDialog
-{
+class DriverDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit DriverDialog(QWidget *parent = 0);
+    explicit DriverDialog(QWidget* parent = 0);
     ~DriverDialog();
 
 private slots:
     void on_DriverDialog_accepted();
-    void on_buttonBox_clicked(QAbstractButton *button);
+    void on_buttonBox_clicked(QAbstractButton* button);
 
     void on_driverType_currentIndexChanged(int index);
 
@@ -46,16 +45,16 @@ private:
     static const int DEFAULT_BUFFER_SIZE = 256;
     static const unsigned DEFAULT_BUFFER_COUNT = 3;
 
-    Ui::DriverDialog *ui;
+    Ui::DriverDialog* ui;
     std::shared_ptr<Driver> _driver;
     static QMap<IDriver::SampleFormat, QString> _formatMap;
     IDriver::ConnectOptions _model;
     bool _isUpdateLocked;
     double _latency;
-    QLabel *_latencyText;
-    QStatusBar *_statusBar;
-    QLabel *_statusIcon;
-    QLabel *_statusText;
+    QLabel* _latencyText;
+    QStatusBar* _statusBar;
+    QLabel* _statusIcon;
+    QLabel* _statusText;
 
     void modelApply();
     void modelBound();
@@ -65,8 +64,8 @@ private:
     void modelSave();
 
     void controlsUpdate();
-    void critical(const QString &caption, const QString &message,
-                  const QString &source = QString());
+    void critical(const QString& caption, const QString& message,
+        const QString& source = QString());
     void populateBufferSizes();
     void populateDriverTypes();
     void populateInputs(IDriver::ApiType type);
@@ -74,14 +73,14 @@ private:
     void populateSampleRates(IDriver::ApiType type);
     void populateSampleFormats(IDriver::ApiType type);
 
-    void selectByValue(QComboBox *target, unsigned value);
-    void setStatus(const QString &themeIcon, const QString &message);
+    void selectByValue(QComboBox* target, unsigned value);
+    void setStatus(const QString& themeIcon, const QString& message);
     IDriver::SampleFormat selectFormat(
-            unsigned outFlags, unsigned inFlags, bool isDuplex,
-            IDriver::SampleFormat defaultFormat = DEFAULT_SAMPLE_FORMAT);
-    unsigned selectSampleRate(const unsigned *outRates, unsigned outRateCount,
-                              const unsigned *inRates, unsigned inRateCount,
-                              bool isDuplex, unsigned defaultRate = DEFAULT_SAMPLE_RATE);
+        unsigned outFlags, unsigned inFlags, bool isDuplex,
+        IDriver::SampleFormat defaultFormat = DEFAULT_SAMPLE_FORMAT);
+    unsigned selectSampleRate(const unsigned* outRates, unsigned outRateCount,
+        const unsigned* inRates, unsigned inRateCount,
+        bool isDuplex, unsigned defaultRate = DEFAULT_SAMPLE_RATE);
     QString testFilePath();
     void updateStatus();
 };

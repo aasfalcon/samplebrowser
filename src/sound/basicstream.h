@@ -10,11 +10,9 @@
 #include "chunk.h"
 #include "shared/iaudiofile.h"
 
-class BasicStream
-{
+class BasicStream {
 public:
-    class Eof: public std::exception
-    {
+    class Eof : public std::exception {
     public:
         Eof(unsigned tail);
         unsigned tail();
@@ -49,7 +47,7 @@ public:
     std::string path() const;
     unsigned pos(IAudioFile::SeekType type) const;
     void seek(int pos, IAudioFile::SeekWhence whence,
-              IAudioFile::SeekType type);
+        IAudioFile::SeekType type);
 
 protected:
     IAudioFile::FileInfo _fi;
@@ -60,12 +58,10 @@ protected:
     BasicStream();
     virtual ~BasicStream() = 0;
 
-    void open(const std::string &path, IAudioFile::Mode mode);
+    void open(const std::string& path, IAudioFile::Mode mode);
 };
 
-
-class BasicInputStream: virtual protected BasicStream
-{
+class BasicInputStream : virtual protected BasicStream {
 public:
     bool eof() const;
 
@@ -73,32 +69,30 @@ protected:
     BasicInputStream();
     ~BasicInputStream();
 
-    void read(Compression &compression);
-    void read(Chunk &chunk);
-    void read(Format &format);
-    void read(FormatText &formatText);
-    void read(Info &info);
-    void read(Strings &strings);
-    void read(RawChunks &rawChunks);
-    void read(void *data, Sound::Type type, unsigned frames);
+    void read(Compression& compression);
+    void read(Chunk& chunk);
+    void read(Format& format);
+    void read(FormatText& formatText);
+    void read(Info& info);
+    void read(Strings& strings);
+    void read(RawChunks& rawChunks);
+    void read(void* data, Sound::Type type, unsigned frames);
 };
 
-
-class BasicOutputStream: virtual protected BasicStream
-{
+class BasicOutputStream : virtual protected BasicStream {
 protected:
     std::vector<IAudioFile::RawChunk> _rawChunks;
 
     BasicOutputStream();
     ~BasicOutputStream();
 
-    void write(const Compression &compression);
-    void write(const Chunk &chunk);
-    void write(const Format &format);
-    void write(const Info &info);
-    void write(const Strings &strings);
-    void write(const RawChunks &rawChunks);
-    void write(const RawChunk &rawChunk);
+    void write(const Compression& compression);
+    void write(const Chunk& chunk);
+    void write(const Format& format);
+    void write(const Info& info);
+    void write(const Strings& strings);
+    void write(const RawChunks& rawChunks);
+    void write(const RawChunk& rawChunk);
 
     void outputStart();
 
@@ -106,12 +100,10 @@ private:
     bool _isOutputStarted;
 };
 
-
 class BasicIOStream
-        : virtual protected BasicInputStream
-        , virtual protected BasicOutputStream
-        , virtual public BasicStream
-{
+    : virtual protected BasicInputStream,
+      virtual protected BasicOutputStream,
+      virtual public BasicStream {
 public:
     unsigned pos() const;
     void seek(int pos, IAudioFile::SeekWhence whence);
@@ -120,6 +112,5 @@ protected:
     BasicIOStream();
     ~BasicIOStream();
 };
-
 
 #endif // BASICSTREAM_H

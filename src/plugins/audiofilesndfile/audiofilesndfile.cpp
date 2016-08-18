@@ -1,99 +1,97 @@
 #include <algorithm>
-#include <cstring>
 #include <cstddef>
-#include <stdexcept>
+#include <cstring>
 #include <sstream>
+#include <stdexcept>
 
-#include "sound/converter.h"
-#include "shared/log.h"
 #include "audiofilesndfile.h"
+#include "shared/log.h"
+#include "sound/buffer.h"
 
 const unsigned LOGINFO_MAX_SIZE = 2048;
 
-#define ERROR(what) \
+#define ERROR(what)             \
     std::string message = what; \
-    LOG(ERROR, what); \
+    LOG(ERROR, what);           \
     throw std::runtime_error(what);
 
 #define ERROR_SNDFILE(number, what) \
     ERROR(sndfileError(number, what));
 
 std::map<int, IAudioFile::FormatMajor> AudioFileSndfile::_majorMap = {
-    {SF_FORMAT_WAV,     IAudioFile::MajorWAV},
-    {SF_FORMAT_AIFF,    IAudioFile::MajorAIFF},
-    {SF_FORMAT_AU,      IAudioFile::MajorAU},
-    {SF_FORMAT_RAW,     IAudioFile::MajorRAW},
-    {SF_FORMAT_PAF,     IAudioFile::MajorPAF},
-    {SF_FORMAT_SVX,     IAudioFile::MajorSVX},
-    {SF_FORMAT_NIST,    IAudioFile::MajorNIST},
-    {SF_FORMAT_VOC,     IAudioFile::MajorVOC},
-    {SF_FORMAT_IRCAM,   IAudioFile::MajorIRCAM},
-    {SF_FORMAT_W64,     IAudioFile::MajorW64},
-    {SF_FORMAT_MAT4,    IAudioFile::MajorMAT4},
-    {SF_FORMAT_MAT5,    IAudioFile::MajorMAT5},
-    {SF_FORMAT_PVF,     IAudioFile::MajorPVF},
-    {SF_FORMAT_XI,      IAudioFile::MajorXI},
-    {SF_FORMAT_HTK,     IAudioFile::MajorHTK},
-    {SF_FORMAT_SDS,     IAudioFile::MajorSDS},
-    {SF_FORMAT_AVR,     IAudioFile::MajorAVR},
-    {SF_FORMAT_WAVEX,   IAudioFile::MajorWAVEX},
-    {SF_FORMAT_SD2,     IAudioFile::MajorSD2},
-    {SF_FORMAT_FLAC,    IAudioFile::MajorFLAC},
-    {SF_FORMAT_CAF,     IAudioFile::MajorCAF},
-    {SF_FORMAT_WVE,     IAudioFile::MajorWVE},
-    {SF_FORMAT_OGG,     IAudioFile::MajorOGG},
-    {SF_FORMAT_MPC2K,   IAudioFile::MajorMPC2K},
-    {SF_FORMAT_RF64,    IAudioFile::MajorRF64},
+    { SF_FORMAT_WAV, IAudioFile::MajorWAV },
+    { SF_FORMAT_AIFF, IAudioFile::MajorAIFF },
+    { SF_FORMAT_AU, IAudioFile::MajorAU },
+    { SF_FORMAT_RAW, IAudioFile::MajorRAW },
+    { SF_FORMAT_PAF, IAudioFile::MajorPAF },
+    { SF_FORMAT_SVX, IAudioFile::MajorSVX },
+    { SF_FORMAT_NIST, IAudioFile::MajorNIST },
+    { SF_FORMAT_VOC, IAudioFile::MajorVOC },
+    { SF_FORMAT_IRCAM, IAudioFile::MajorIRCAM },
+    { SF_FORMAT_W64, IAudioFile::MajorW64 },
+    { SF_FORMAT_MAT4, IAudioFile::MajorMAT4 },
+    { SF_FORMAT_MAT5, IAudioFile::MajorMAT5 },
+    { SF_FORMAT_PVF, IAudioFile::MajorPVF },
+    { SF_FORMAT_XI, IAudioFile::MajorXI },
+    { SF_FORMAT_HTK, IAudioFile::MajorHTK },
+    { SF_FORMAT_SDS, IAudioFile::MajorSDS },
+    { SF_FORMAT_AVR, IAudioFile::MajorAVR },
+    { SF_FORMAT_WAVEX, IAudioFile::MajorWAVEX },
+    { SF_FORMAT_SD2, IAudioFile::MajorSD2 },
+    { SF_FORMAT_FLAC, IAudioFile::MajorFLAC },
+    { SF_FORMAT_CAF, IAudioFile::MajorCAF },
+    { SF_FORMAT_WVE, IAudioFile::MajorWVE },
+    { SF_FORMAT_OGG, IAudioFile::MajorOGG },
+    { SF_FORMAT_MPC2K, IAudioFile::MajorMPC2K },
+    { SF_FORMAT_RF64, IAudioFile::MajorRF64 },
 };
 
 std::map<int, IAudioFile::FormatMinor> AudioFileSndfile::_minorMap = {
-    {SF_FORMAT_PCM_S8,      IAudioFile::MinorPCM_S8},
-    {SF_FORMAT_PCM_16,      IAudioFile::MinorPCM_16},
-    {SF_FORMAT_PCM_24,      IAudioFile::MinorPCM_24},
-    {SF_FORMAT_PCM_32,      IAudioFile::MinorPCM_32},
+    { SF_FORMAT_PCM_S8, IAudioFile::MinorPCM_S8 },
+    { SF_FORMAT_PCM_16, IAudioFile::MinorPCM_16 },
+    { SF_FORMAT_PCM_24, IAudioFile::MinorPCM_24 },
+    { SF_FORMAT_PCM_32, IAudioFile::MinorPCM_32 },
 
-    {SF_FORMAT_PCM_U8,      IAudioFile::MinorPCM_U8},
+    { SF_FORMAT_PCM_U8, IAudioFile::MinorPCM_U8 },
 
-    {SF_FORMAT_FLOAT,       IAudioFile::MinorFloat},
-    {SF_FORMAT_DOUBLE,      IAudioFile::MinorDouble},
+    { SF_FORMAT_FLOAT, IAudioFile::MinorFloat },
+    { SF_FORMAT_DOUBLE, IAudioFile::MinorDouble },
 
-    {SF_FORMAT_ULAW,        IAudioFile::MinorULAW},
-    {SF_FORMAT_ALAW,        IAudioFile::MinorALAW},
-    {SF_FORMAT_IMA_ADPCM,   IAudioFile::MinorIMA_ADPCM},
-    {SF_FORMAT_MS_ADPCM,    IAudioFile::MinorMS_ADPCM},
+    { SF_FORMAT_ULAW, IAudioFile::MinorULAW },
+    { SF_FORMAT_ALAW, IAudioFile::MinorALAW },
+    { SF_FORMAT_IMA_ADPCM, IAudioFile::MinorIMA_ADPCM },
+    { SF_FORMAT_MS_ADPCM, IAudioFile::MinorMS_ADPCM },
 
-    {SF_FORMAT_GSM610,      IAudioFile::MinorGSM610},
-    {SF_FORMAT_VOX_ADPCM,   IAudioFile::MinorVOX_ADPCM},
+    { SF_FORMAT_GSM610, IAudioFile::MinorGSM610 },
+    { SF_FORMAT_VOX_ADPCM, IAudioFile::MinorVOX_ADPCM },
 
-    {SF_FORMAT_G721_32,     IAudioFile::MinorG721_32k},
-    {SF_FORMAT_G723_24,     IAudioFile::MinorG723_24k},
-    {SF_FORMAT_G723_40,     IAudioFile::MinorG723_40k},
+    { SF_FORMAT_G721_32, IAudioFile::MinorG721_32k },
+    { SF_FORMAT_G723_24, IAudioFile::MinorG723_24k },
+    { SF_FORMAT_G723_40, IAudioFile::MinorG723_40k },
 
-    {SF_FORMAT_DWVW_12,     IAudioFile::MinorDWVW_12},
-    {SF_FORMAT_DWVW_16,     IAudioFile::MinorDWVW_16},
-    {SF_FORMAT_DWVW_24,     IAudioFile::MinorDWVW_24},
-    {SF_FORMAT_DWVW_N,      IAudioFile::MinorDWVW_N},
+    { SF_FORMAT_DWVW_12, IAudioFile::MinorDWVW_12 },
+    { SF_FORMAT_DWVW_16, IAudioFile::MinorDWVW_16 },
+    { SF_FORMAT_DWVW_24, IAudioFile::MinorDWVW_24 },
+    { SF_FORMAT_DWVW_N, IAudioFile::MinorDWVW_N },
 
-    {SF_FORMAT_DPCM_8,      IAudioFile::MinorDPCM_8},
-    {SF_FORMAT_DPCM_16,     IAudioFile::MinorDPCM_16},
+    { SF_FORMAT_DPCM_8, IAudioFile::MinorDPCM_8 },
+    { SF_FORMAT_DPCM_16, IAudioFile::MinorDPCM_16 },
 
-    {SF_FORMAT_VORBIS,      IAudioFile::MinorVorbis},
+    { SF_FORMAT_VORBIS, IAudioFile::MinorVorbis },
 
-    {SF_FORMAT_ALAC_16,     IAudioFile::MinorALAC_16},
-    {SF_FORMAT_ALAC_20,     IAudioFile::MinorALAC_20},
-    {SF_FORMAT_ALAC_24,     IAudioFile::MinorALAC_24},
-    {SF_FORMAT_ALAC_32,     IAudioFile::MinorALAC_32},
+    { SF_FORMAT_ALAC_16, IAudioFile::MinorALAC_16 },
+    { SF_FORMAT_ALAC_20, IAudioFile::MinorALAC_20 },
+    { SF_FORMAT_ALAC_24, IAudioFile::MinorALAC_24 },
+    { SF_FORMAT_ALAC_32, IAudioFile::MinorALAC_32 },
 };
 
 AudioFileSndfile::AudioFileSndfile()
     : IAudioFile()
 {
-
 }
 
 AudioFileSndfile::~AudioFileSndfile()
 {
-
 }
 
 void AudioFileSndfile::close()
@@ -116,8 +114,8 @@ void AudioFileSndfile::flush()
     sf_write_sync(_handle.get());
 }
 
-IAudioFile::FormatText &AudioFileSndfile::formatText(
-        const IAudioFile::Format &format)
+IAudioFile::FormatText& AudioFileSndfile::formatText(
+    const IAudioFile::Format& format)
 {
     _formatText.reset(new FormatText());
 
@@ -144,13 +142,13 @@ IAudioFile::FormatText &AudioFileSndfile::formatText(
     return *_formatText;
 }
 
-const IAudioFile::SimpleFormats &AudioFileSndfile::formats()
+const IAudioFile::SimpleFormats& AudioFileSndfile::formats()
 {
     if (!_simpleFormats) {
         _simpleFormats = std::make_shared<SimpleFormats>();
 
         sf_command(nullptr, SFC_GET_SIMPLE_FORMAT_COUNT,
-                   &_simpleFormats->count, sizeof _simpleFormats->count);
+            &_simpleFormats->count, sizeof _simpleFormats->count);
 
         _simpleFormatsData.clear();
         SF_FORMAT_INFO fi;
@@ -176,7 +174,7 @@ const IAudioFile::SimpleFormats &AudioFileSndfile::formats()
     return *_simpleFormats;
 }
 
-void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
+void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
 {
     _mode = mode;
     _path = filename;
@@ -194,7 +192,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 
     SF_INFO sfinfo;
     auto psndfile = sf_open(filename, sfmode[mode], &sfinfo);
-    auto deleter = [](SNDFILE *handle) { sf_close(handle); };
+    auto deleter = [](SNDFILE* handle) { sf_close(handle); };
     _handle = std::shared_ptr<SNDFILE>(psndfile, deleter);
 
     if (!_handle) {
@@ -223,8 +221,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     case MinorALAC_24:
     case MinorDWVW_24:
     case MinorPCM_24:
-        _info.sampleType = Sound::TypeInt24;
-        break;
+        // 24 bit
 
     case MinorALAC_32:
     case MinorPCM_32:
@@ -234,7 +231,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     case MinorDWVW_N:
     case MinorFloat:
     case MinorVorbis:
-        // TODO: move following subformats to AudioFileMPG123
+    // TODO: move following subformats to AudioFileMPG123
     case MinorMPEG1_0_DualChannel:
     case MinorMPEG1_0_JointStereo:
     case MinorMPEG1_0_Mono:
@@ -259,7 +256,7 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
     }
 
     // unknown chunks
-    SF_CHUNK_ITERATOR *it = sf_get_chunk_iterator(_handle.get(), NULL);
+    SF_CHUNK_ITERATOR* it = sf_get_chunk_iterator(_handle.get(), NULL);
     SF_CHUNK_INFO sfci;
     memset(&sfci, 0, sizeof sfci);
     _rawChunksData.clear();
@@ -273,13 +270,13 @@ void AudioFileSndfile::open(const char *filename, IAudioFile::Mode mode)
 
         std::string id(sfci.id, sfci.id_size);
         std::vector<ChunkData> data;
-        data.assign(reinterpret_cast<ChunkData *>(sfci.data),
-                    reinterpret_cast<ChunkData *>(sfci.data) + sfci.datalen);
-        _rawChunksData.push_back({id, data});
+        data.assign(reinterpret_cast<ChunkData*>(sfci.data),
+            reinterpret_cast<ChunkData*>(sfci.data) + sfci.datalen);
+        _rawChunksData.push_back({ id, data });
     }
 }
 
-IAudioFile::RawChunk *AudioFileSndfile::rawChunks(unsigned *count)
+IAudioFile::RawChunk* AudioFileSndfile::rawChunks(unsigned* count)
 {
     // valid until setRawChunks called
     *count = _rawChunksData.size();
@@ -293,8 +290,8 @@ IAudioFile::RawChunk *AudioFileSndfile::rawChunks(unsigned *count)
     return _rawChunks.data();
 }
 
-const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type,
-                                                     unsigned *size)
+const IAudioFile::ChunkData* AudioFileSndfile::chunk(IAudioFile::ChunkType type,
+    unsigned* size)
 {
     switch (type) {
     case ChunkBroadcastInfo: {
@@ -395,11 +392,10 @@ const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type,
         LOG(ERROR, message);
         throw std::out_of_range(message);
     };
-
     };
 
     try {
-        const std::vector<ChunkData> &result = _chunks.at(type);
+        const std::vector<ChunkData>& result = _chunks.at(type);
         *size = result.size();
         return result.data();
     } catch (std::out_of_range) {
@@ -408,7 +404,7 @@ const IAudioFile::ChunkData *AudioFileSndfile::chunk(IAudioFile::ChunkType type,
     }
 }
 
-void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData *data)
+void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const IAudioFile::ChunkData* data)
 {
     if (_chunksFlushed) {
         ERROR("Attempt to write chunk after data write");
@@ -419,17 +415,17 @@ void AudioFileSndfile::setChunk(IAudioFile::ChunkType type, unsigned size, const
     _chunks[type] = buffer;
 }
 
-const IAudioFile::FileInfo *AudioFileSndfile::fileInfo() const
+const IAudioFile::FileInfo* AudioFileSndfile::fileInfo() const
 {
     return &_info;
 }
 
-void AudioFileSndfile::setFileInfo(const IAudioFile::FileInfo *value)
+void AudioFileSndfile::setFileInfo(const IAudioFile::FileInfo* value)
 {
     _info = *value;
 }
 
-void AudioFileSndfile::setRawChunks(IAudioFile::RawChunk *chunks, unsigned count)
+void AudioFileSndfile::setRawChunks(IAudioFile::RawChunk* chunks, unsigned count)
 {
     if (_chunksFlushed) {
         ERROR("Attempt to write chunk after data write");
@@ -446,9 +442,9 @@ void AudioFileSndfile::setRawChunks(IAudioFile::RawChunk *chunks, unsigned count
     }
 }
 
-const char *AudioFileSndfile::string(IAudioFile::StringEntry entry)
+const char* AudioFileSndfile::string(IAudioFile::StringEntry entry)
 {
-    const char *result = sf_get_string(_handle.get(), entry);
+    const char* result = sf_get_string(_handle.get(), entry);
 
     if (!result) {
         int errorNumber = sf_error(_handle.get());
@@ -461,7 +457,7 @@ const char *AudioFileSndfile::string(IAudioFile::StringEntry entry)
     return result;
 }
 
-void AudioFileSndfile::setString(IAudioFile::StringEntry entry, const char *value)
+void AudioFileSndfile::setString(IAudioFile::StringEntry entry, const char* value)
 {
     int error = sf_set_string(_handle.get(), entry, value);
 
@@ -475,7 +471,7 @@ void AudioFileSndfile::setProgressCallback(IAudioFile::ProgressCallback callback
     _progress = callback;
 }
 
-unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
+unsigned AudioFileSndfile::read(void* buffer, Sound::Type type, unsigned frames)
 {
     if (!_handle || !(_mode == ModeRead || _mode == ModeReadWrite)) {
         ERROR("Attempt to read file not opened for reading.");
@@ -483,30 +479,21 @@ unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
 
     sf_count_t count;
 
-    switch (int(_info.sampleType)) {
+    switch (type) {
     case Sound::TypeFloat32:
-        count = sf_readf_float(_handle.get(), static_cast<Sound::Float32 *>(buffer), frames);
+        count = sf_readf_float(_handle.get(), static_cast<Sound::Float32*>(buffer), frames);
         break;
     case Sound::TypeFloat64:
-        count = sf_readf_double(_handle.get(), static_cast<Sound::Float64 *>(buffer), frames);
+        count = sf_readf_double(_handle.get(), static_cast<Sound::Float64*>(buffer), frames);
         break;
     case Sound::TypeInt8:
         count = sf_read_raw(_handle.get(), buffer, frames * _info.channels);
         break;
     case Sound::TypeInt16:
-        count = sf_readf_short(_handle.get(), static_cast<Sound::Int16 *>(buffer), frames);
+        count = sf_readf_short(_handle.get(), static_cast<Sound::Int16*>(buffer), frames);
         break;
-    case Sound::TypeInt24: {
-        auto temp = std::vector<Sound::Float32>(frames * _info.channels);
-        count = sf_readf_float(_handle.get(), temp.data(), frames);
-        Converter::instance().convert(
-                    buffer, Sound::TypeInt24,
-                    temp.data(), Sound::TypeFloat32,
-                    frames * _info.channels);
-        break;
-    }
     case Sound::TypeInt32:
-        count = sf_readf_int(_handle.get(), static_cast<Sound::Int32 *>(buffer), frames);
+        count = sf_readf_int(_handle.get(), static_cast<Sound::Int32*>(buffer), frames);
         break;
     default:
         ERROR("Unsupported sample type");
@@ -522,7 +509,7 @@ unsigned AudioFileSndfile::read(void *buffer, unsigned frames)
 }
 
 unsigned AudioFileSndfile::seek(int pos, IAudioFile::SeekWhence sw,
-                                IAudioFile::SeekType st)
+    IAudioFile::SeekType st)
 {
     if (!_info.seekable || !_handle) {
         ERROR("File not seekable or handle not open");
@@ -552,7 +539,7 @@ unsigned AudioFileSndfile::seek(int pos, IAudioFile::SeekWhence sw,
     return unsigned(result);
 }
 
-void AudioFileSndfile::write(const void *buffer, unsigned frames)
+void AudioFileSndfile::write(const void* buffer, unsigned frames)
 {
     if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
         ERROR("Attempt to write file not opened for writing.");
@@ -563,28 +550,19 @@ void AudioFileSndfile::write(const void *buffer, unsigned frames)
 
     switch (int(_info.sampleType)) {
     case Sound::TypeFloat32:
-        count = sf_writef_float(_handle.get(), static_cast<const Sound::Float32 *>(buffer), frames);
+        count = sf_writef_float(_handle.get(), static_cast<const Sound::Float32*>(buffer), frames);
         break;
     case Sound::TypeFloat64:
-        count = sf_writef_double(_handle.get(), static_cast<const Sound::Float64 *>(buffer), frames);
+        count = sf_writef_double(_handle.get(), static_cast<const Sound::Float64*>(buffer), frames);
         break;
     case Sound::TypeInt8:
         count = sf_write_raw(_handle.get(), buffer, frames * _info.channels);
         break;
     case Sound::TypeInt16:
-        count = sf_writef_short(_handle.get(), static_cast<const Sound::Int16 *>(buffer), frames);
+        count = sf_writef_short(_handle.get(), static_cast<const Sound::Int16*>(buffer), frames);
         break;
-    case Sound::TypeInt24: {
-        auto temp = std::vector<Sound::Float32>(frames * _info.channels);
-        Converter::instance().convert(
-                    temp.data(), Sound::TypeFloat32,
-                    buffer, Sound::TypeInt24,
-                    frames * _info.channels);
-        count = sf_writef_float(_handle.get(), temp.data(), frames);
-        break;
-    }
     case Sound::TypeInt32:
-        count = sf_writef_int(_handle.get(), static_cast<const Sound::Int32 *>(buffer), frames);
+        count = sf_writef_int(_handle.get(), static_cast<const Sound::Int32*>(buffer), frames);
         break;
     default:
         ERROR("Unsupported sample type");
@@ -601,7 +579,7 @@ IAudioFile::Format AudioFileSndfile::formatConvert(int sfformat) const
     return result;
 }
 
-int AudioFileSndfile::formatConvert(const IAudioFile::Format &format) const
+int AudioFileSndfile::formatConvert(const IAudioFile::Format& format) const
 {
     int result = 0;
 
@@ -623,18 +601,19 @@ int AudioFileSndfile::formatConvert(const IAudioFile::Format &format) const
 }
 
 std::string AudioFileSndfile::sndfileError(int errorNumber,
-                                           const std::string &userMessage) const
+    const std::string& userMessage) const
 {
     const std::string libraryMessage = sf_error_number(errorNumber);
     char logInfo[LOGINFO_MAX_SIZE];
     sf_command(_handle.get(), SFC_GET_LOG_INFO, logInfo, LOGINFO_MAX_SIZE);
     LOG(INFO,
-        "Library error detailed information" << "\n\n"
-        << "Sound file: " << _path << '\n'
-        << "Library reports: " << libraryMessage << '\n'
-        << "Library version: " << sf_version_string() << '\n'
-        << "Library log follows:\n" << logInfo
-        );
+        "Library error detailed information"
+            << "\n\n"
+            << "Sound file: " << _path << '\n'
+            << "Library reports: " << libraryMessage << '\n'
+            << "Library version: " << sf_version_string() << '\n'
+            << "Library log follows:\n"
+            << logInfo);
 
     return userMessage + ": " + libraryMessage;
 }
@@ -686,7 +665,7 @@ void AudioFileSndfile::flushChunks()
 
     if (_info.chunkFlags & (1 << ChunkLoopInfo)) {
         buffer = _chunks[ChunkLoopInfo];
-        auto li = reinterpret_cast<SF_LOOP_INFO *>(buffer.data());
+        auto li = reinterpret_cast<SF_LOOP_INFO*>(buffer.data());
 
         unsigned flags = 0;
 

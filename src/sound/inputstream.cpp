@@ -1,14 +1,13 @@
 #include <stdexcept>
 
-#include "shared/log.h"
 #include "inputstream.h"
+#include "shared/log.h"
 
-inline InputStream::InputStream()
+InputStream::InputStream()
 {
-
 }
 
-inline InputStream::InputStream(const std::string &path)
+InputStream::InputStream(const std::string& path)
 {
     open(path, IAudioFile::ModeRead);
 }
@@ -23,50 +22,50 @@ void InputStream::seek(int pos, IAudioFile::SeekWhence whence)
     BasicStream::seek(pos, whence, IAudioFile::SeekTypeRead);
 }
 
-inline InputStream &InputStream::operator >>(Compression &compression)
+InputStream& InputStream::operator>>(Compression& compression)
 {
     read(compression);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(Chunk &chunk)
+InputStream& InputStream::operator>>(Chunk& chunk)
 {
     read(chunk);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(Format &format)
+InputStream& InputStream::operator>>(Format& format)
 {
     read(format);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(FormatText &formatText)
+InputStream& InputStream::operator>>(FormatText& formatText)
 {
     read(formatText);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(Info &info)
+InputStream& InputStream::operator>>(Info& info)
 {
     read(info);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(Strings &strings)
+InputStream& InputStream::operator>>(Strings& strings)
 {
     read(strings);
     return *this;
 }
 
-inline InputStream &InputStream::operator >>(RawChunks &rawChunks)
+InputStream& InputStream::operator>>(RawChunks& rawChunks)
 {
     read(rawChunks);
     return *this;
 }
 
-template<typename T>
-InputStream &InputStream::operator >>(Buffer<T> &buffer)
+template <typename T>
+InputStream& InputStream::operator>>(Buffer<T>& buffer)
 {
     unsigned frames = buffer.frames();
 
@@ -85,3 +84,8 @@ InputStream &InputStream::operator >>(Buffer<T> &buffer)
     read(buffer.data(), buffer.type(), frames);
     return *this;
 }
+
+#define READ_BUFFER(__type) \
+    template InputStream& InputStream::operator>><__type>(Buffer<__type>&);
+
+SOUND_INSTANTIATE_METHOD(READ_BUFFER);

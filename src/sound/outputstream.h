@@ -1,29 +1,29 @@
 #ifndef OUTPUTSTREAM_H
 #define OUTPUTSTREAM_H
 
-#include "buffer.h"
 #include "basicstream.h"
+#include "buffer.h"
 
-class OutputStream: virtual public BasicOutputStream
-{
+class OutputStream : virtual public BasicOutputStream {
 public:
-    inline OutputStream(const std::string &path);
+    OutputStream(const std::string& path);
 
-    inline unsigned pos() const;
-    inline void seek(int pos, IAudioFile::SeekWhence whence);
+    unsigned pos() const;
+    void seek(int pos, IAudioFile::SeekWhence whence);
 
-    inline OutputStream &operator <<(const Compression &compression);
-    inline OutputStream &operator <<(const Chunk &chunk);
-    inline OutputStream &operator <<(const Format &format);
-    inline OutputStream &operator <<(const Info &info);
-    inline OutputStream &operator <<(const Strings &strings);
-    inline OutputStream &operator <<(const RawChunk &rawChunk);
-    inline OutputStream &operator <<(const RawChunks &rawChunks);
+    OutputStream& operator<<(const Compression& compression);
+    OutputStream& operator<<(const Chunk& chunk);
+    OutputStream& operator<<(const Format& format);
+    OutputStream& operator<<(const Info& info);
+    OutputStream& operator<<(const Strings& strings);
+    OutputStream& operator<<(const RawChunk& rawChunk);
+    OutputStream& operator<<(const RawChunks& rawChunks);
 
-    template<typename T>
-    OutputStream &operator <<(const Buffer<T> &buffer);
+    template <typename T>
+    OutputStream& operator<<(const Buffer<T>& buffer);
+
+protected:
+    OutputStream();
 };
-
-#include "outputstream.tcc"
 
 #endif // OUTPUTSTREAM_H

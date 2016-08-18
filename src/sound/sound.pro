@@ -7,42 +7,44 @@ CONFIG += staticlib c++11
 SOURCES += \
     chunk.cpp \
     driver.cpp \
-    basicstream.cpp
+    basicstream.cpp \
+    sound.cpp \
+    runtime.cpp \
+    ringbuffer.cpp \
+    resampler.cpp \
+    processor.cpp \
+    player.cpp \
+    outputstream.cpp \
+    meter.cpp \
+    leveler.cpp \
+    iostream.cpp \
+    inputstream.cpp \
+    frame.cpp \
+    constframe.cpp \
+    chain.cpp \
+    buffer.cpp \
+    sample.cpp
 
 HEADERS += \
+    basicstream.h \
     buffer.h \
-    buffer.tcc \
     chain.h \
-    chain.tcc \
     chunk.h \
     config.h \
     constframe.h \
-    constframe.tcc \
     driver.h \
     frame.h \
-    frame.tcc \
     inputstream.h \
-    inputstream.tcc \
-    leveler.h \
-    leveler.tcc \
-    meter.h \
-    meter.tcc \
-    player.h \
-    player.tcc \
-    processor.h \
-    processor.tcc \
-    resampler.h \
-    resampler.tcc \
-    sample.h \
-    sample.tcc \
-    sound.h \
-    sound.tcc \
-    basicstream.h \
-    outputstream.h \
-    outputstream.tcc \
     iostream.h \
-    iostream.tcc \
+    leveler.h \
+    meter.h \
+    outputstream.h \
+    player.h \
+    processor.h \
+    resampler.h \
     ringbuffer.h \
-    ringbuffer.tcc
+    runtime.h \
+    sample.h \
+    sound.h
 
 INCLUDEPATH += .. ../../vendor

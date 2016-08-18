@@ -34,7 +34,7 @@ LIBS += \
     -L../../bundle/audiowaveform -laudiowaveform \
     -L../../bundle/vpiano -lvpiano \
     \
-    -L/usr/local/lib -lsndfile \
+    -lsndfile \
     -llog4cplus \
     -lpng12 \
     -lltdl

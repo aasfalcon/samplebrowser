@@ -1,7 +1,12 @@
-#include "shared/log.h"
 #include "outputstream.h"
+#include "shared/log.h"
 
-OutputStream::OutputStream(const std::string &path)
+OutputStream::OutputStream()
+{
+
+}
+
+OutputStream::OutputStream(const std::string& path)
 {
     open(path, IAudioFile::ModeWrite);
 }
@@ -16,50 +21,50 @@ void OutputStream::seek(int pos, IAudioFile::SeekWhence whence)
     BasicStream::seek(pos, whence, IAudioFile::SeekTypeWrite);
 }
 
-OutputStream &OutputStream::operator <<(const Compression &compression)
+OutputStream& OutputStream::operator<<(const Compression& compression)
 {
     write(compression);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const Chunk &chunk)
+OutputStream& OutputStream::operator<<(const Chunk& chunk)
 {
     write(chunk);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const Format &format)
+OutputStream& OutputStream::operator<<(const Format& format)
 {
     write(format);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const Info &info)
+OutputStream& OutputStream::operator<<(const Info& info)
 {
     write(info);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const Strings &strings)
+OutputStream& OutputStream::operator<<(const Strings& strings)
 {
     write(strings);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const RawChunk &rawChunk)
+OutputStream& OutputStream::operator<<(const RawChunk& rawChunk)
 {
     write(rawChunk);
     return *this;
 }
 
-OutputStream &OutputStream::operator <<(const RawChunks &rawChunks)
+OutputStream& OutputStream::operator<<(const RawChunks& rawChunks)
 {
     write(rawChunks);
     return *this;
 }
 
-template<typename T>
-OutputStream &OutputStream::operator <<(const Buffer<T> &buffer)
+template <typename T>
+OutputStream& OutputStream::operator<<(const Buffer<T>& buffer)
 {
     unsigned frames = buffer.frames();
 
@@ -75,6 +80,11 @@ OutputStream &OutputStream::operator <<(const Buffer<T> &buffer)
         throw std::runtime_error(message);
     }
 
-    _provider->write(buffer.data(), buffer.type(), frames);
+    _provider->write(buffer.data(), frames);
     return *this;
 }
+
+#define WRITE_BUFFER(__type) \
+    template OutputStream& OutputStream::operator<<<__type>(const Buffer<__type>&);
+
+SOUND_INSTANTIATE_METHOD(WRITE_BUFFER);

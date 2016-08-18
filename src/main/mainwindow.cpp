@@ -1,16 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QFileSystemModel>
-#include <QDirModel>
-#include <QMenuBar>
-#include <QTime>
-#include <QSettings>
 #include <QCloseEvent>
+#include <QDirModel>
+#include <QFileSystemModel>
+#include <QMenuBar>
+#include <QSettings>
+#include <QTime>
 
 #include "driverdialog.h"
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , _scanner(new Scanner(this))
@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     // level meter and slider
-    QHBoxLayout *layout = new QHBoxLayout(ui->meterArea);
+    QHBoxLayout* layout = new QHBoxLayout(ui->meterArea);
     ui->meterArea->setLayout(layout);
     _meter = new Meter(ui->meterArea);
     layout->addWidget(_meter);
@@ -26,18 +26,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     _meterUpdater = new Helper(this, true);
     connect(_meterUpdater, &Helper::repeating,
-            this, &MainWindow::updateMeter);
+        this, &MainWindow::updateMeter);
 
     QSettings config;
     ui->level->setValue(config.value("main/level", 80).toInt());
 
     // dir tree
-    QFileSystemModel *model = new QFileSystemModel(ui->treeView);
-    model->setFilter(QDir::AllDirs|QDir::NoDotAndDotDot);
+    QFileSystemModel* model = new QFileSystemModel(ui->treeView);
+    model->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
 
     QString home = QDir::homePath();
     QModelIndex index = model->index(home);
-    ui->treeView->setStyleSheet( "QTreeView::branch {  border-image: url(none.png); }" );
+    ui->treeView->setStyleSheet("QTreeView::branch {  border-image: url(none.png); }");
     ui->treeView->setModel(model);
     ui->treeView->setRootIndex(index);
     model->setRootPath(home);
@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->treeView->hideColumn(i);
     }
 
-    QHeaderView *header = ui->treeView->header();
+    QHeaderView* header = ui->treeView->header();
     header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
     // files
@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     header = ui->files->header();
     header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     connect(ui->files->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &MainWindow::filesSelectionChanged);
+        this, &MainWindow::filesSelectionChanged);
 
     // details pane
     ui->details->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -73,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
     // scanner
     _peaksUpdater = new Helper(this);
     connect(_peaksUpdater, &Helper::performing,
-            this, &MainWindow::updatePeaks);
+        this, &MainWindow::updatePeaks);
 }
 
 MainWindow::~MainWindow()
@@ -83,10 +83,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::filesSelectionChanged(const QItemSelection &selected, const QItemSelection &) {
-    QFileSystemModel
-            *filesModel = (QFileSystemModel *)ui->files->model();
-    const QModelIndexList &selectedIndexes = selected.indexes();
+void MainWindow::filesSelectionChanged(const QItemSelection& selected, const QItemSelection&)
+{
+    QFileSystemModel* filesModel = (QFileSystemModel*)ui->files->model();
+    const QModelIndexList& selectedIndexes = selected.indexes();
 
     if (selectedIndexes.count()) {
         QModelIndex index = selected.indexes().at(0);
@@ -94,26 +94,27 @@ void MainWindow::filesSelectionChanged(const QItemSelection &selected, const QIt
         //_player.play(path);
 
         // show file info
-//        SoundFile::TextInfo info = SoundFile::readInfo(path);
-//        ui->filename->setText(info.name);
-//        ui->details->setItem(0, 0, new QTableWidgetItem(info.format));
-//        ui->details->setItem(0, 1, new QTableWidgetItem(info.codec));
-//        ui->details->setItem(0, 2, new QTableWidgetItem(info.channels));
-//        ui->details->setItem(0, 3, new QTableWidgetItem(info.rate));
-//        ui->details->setItem(0, 4, new QTableWidgetItem(info.duration));
-//        ui->details->setItem(0, 5, new QTableWidgetItem(info.size));
+        //        SoundFile::TextInfo info = SoundFile::readInfo(path);
+        //        ui->filename->setText(info.name);
+        //        ui->details->setItem(0, 0, new QTableWidgetItem(info.format));
+        //        ui->details->setItem(0, 1, new QTableWidgetItem(info.codec));
+        //        ui->details->setItem(0, 2, new QTableWidgetItem(info.channels));
+        //        ui->details->setItem(0, 3, new QTableWidgetItem(info.rate));
+        //        ui->details->setItem(0, 4, new QTableWidgetItem(info.duration));
+        //        ui->details->setItem(0, 5, new QTableWidgetItem(info.size));
 
         //_peaksUpdater->perform(path);
     }
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
+void MainWindow::closeEvent(QCloseEvent* event)
+{
     QSettings config;
     config.setValue("main/level", ui->level->value());
     event->accept();
 }
 
-void MainWindow::on_treeView_expanded(const QModelIndex &index)
+void MainWindow::on_treeView_expanded(const QModelIndex& index)
 {
     if (_last_expanded.isValid()) {
         QModelIndexList previous_parents, current_parents;
@@ -122,14 +123,14 @@ void MainWindow::on_treeView_expanded(const QModelIndex &index)
         do {
             previous_parents.append(walker);
             walker = walker.parent();
-        } while(walker.isValid());
+        } while (walker.isValid());
 
         walker = index;
 
         do {
             current_parents.append(walker);
             walker = walker.parent();
-        } while(walker.isValid());
+        } while (walker.isValid());
 
         foreach (walker, previous_parents) {
             if (current_parents.indexOf(walker) >= 0) {
@@ -143,13 +144,14 @@ void MainWindow::on_treeView_expanded(const QModelIndex &index)
     _last_expanded = QModelIndex(index);
 }
 
-void MainWindow::on_treeView_activated(const QModelIndex &index)
+void MainWindow::on_treeView_activated(const QModelIndex& index)
 {
     ui->treeView->expand(index);
 
     QFileSystemModel
-            *filesModel = (QFileSystemModel *)ui->files->model(),
-            *treeModel = (QFileSystemModel *)ui->treeView->model();
+        *filesModel
+        = (QFileSystemModel *)ui->files->model(),
+        *treeModel = (QFileSystemModel *)ui->treeView->model();
     QString path = treeModel->filePath(index);
     _scanner->perform(path);
 
@@ -157,7 +159,7 @@ void MainWindow::on_treeView_activated(const QModelIndex &index)
     ui->files->setRootIndex(filesModel->index(path));
 }
 
-void MainWindow::on_treeView_clicked(const QModelIndex &index)
+void MainWindow::on_treeView_clicked(const QModelIndex& index)
 {
     on_treeView_activated(index);
 }
@@ -183,7 +185,7 @@ void MainWindow::updateMeter()
     //_meter->setRightValue(peaks[1]);
 }
 
-void MainWindow::updatePeaks(const QString &path)
+void MainWindow::updatePeaks(const QString& path)
 {
     QString imagePath = _scanner->scanFile(path);
     QPixmap pixmap = QPixmap(imagePath).scaled(ui->peaks->size());
@@ -192,6 +194,6 @@ void MainWindow::updatePeaks(const QString &path)
 
 void MainWindow::on_actionSound_settings_triggered()
 {
-    DriverDialog *dialog = new DriverDialog(this);
+    DriverDialog* dialog = new DriverDialog(this);
     dialog->show();
 }

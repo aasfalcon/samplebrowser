@@ -1,19 +1,18 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <memory>
 #include <QApplication>
 #include <QMap>
 #include <QString>
+#include <memory>
 
 #include "browser.h"
 
 class Server;
 
-class Application: private QApplication
-{
+class Application : private QApplication {
 public:
-    Application(int argc, char *argv[]);
+    Application(int argc, char* argv[]);
     ~Application();
 
     int run();
@@ -26,9 +25,9 @@ private:
     void initLog();
     void initResources();
     QString pluginPath();
-    void prefer(const QMap<QString, QString> &providers);
+    void prefer(const QMap<QString, QString>& providers);
     void preparePluginServer();
-    void selectTheme(const QString &theme);
+    void selectTheme(const QString& theme);
 };
 
 #endif // APPLICATION_H

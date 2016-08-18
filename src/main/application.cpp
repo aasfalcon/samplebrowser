@@ -1,7 +1,7 @@
 #include <memory>
 
-#include <QFile>
 #include <QDir>
+#include <QFile>
 #include <QSettings>
 #include <QStandardPaths>
 
@@ -13,7 +13,7 @@ using namespace log4cplus;
 #include "shared/log.h"
 #include "shared/server.h"
 
-Application::Application(int argc, char *argv[])
+Application::Application(int argc, char* argv[])
     : QApplication(argc, argv)
     , _server(Server::instance())
     , _window(new Browser())
@@ -107,7 +107,7 @@ void Application::preparePluginServer()
     }
 }
 
-void Application::selectTheme(const QString &theme)
+void Application::selectTheme(const QString& theme)
 {
     QFile qss(QString(":/themes/%1/main.qss").arg(theme));
     qss.open(QFile::ReadOnly);

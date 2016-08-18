@@ -5,31 +5,29 @@
 #include "leveler.h"
 #include "sample.h"
 
-template<typename T>
+template <typename T>
 Leveler<T>::Leveler()
     : Processor<T>()
     , _balance(0.0)
     , _level(1.0)
 {
-
 }
 
-template<typename T>
+template <typename T>
 Leveler<T>::~Leveler()
 {
-
 }
 
-template<typename T>
+template <typename T>
 double Leveler<T>::level() const
 {
     return _level;
 }
 
-template<typename T>
+template <typename T>
 void Leveler<T>::process()
 {
-    auto &out = *this->out();
+    auto& out = *this->out();
     unsigned channels = out.channels();
 
     for (auto frame = out.begin(); frame != out.end(); ++frame) {
@@ -44,13 +42,13 @@ void Leveler<T>::process()
                 }
             }
 
-            T sample = T(level * double(frame.at(i)));
-            frame.put(i, sample);
+            T sample = frame[i];
+            frame[i] = T(double(sample) * level);
         }
     }
 }
 
-template<typename T>
+template <typename T>
 void Leveler<T>::setBalance(double value)
 {
     if (value < -1 || value > 1) {
@@ -60,7 +58,7 @@ void Leveler<T>::setBalance(double value)
     _balance = value;
 }
 
-template<typename T>
+template <typename T>
 void Leveler<T>::setLevel(double value)
 {
     if (value < 0) {
@@ -69,3 +67,5 @@ void Leveler<T>::setLevel(double value)
 
     _level = value;
 }
+
+SOUND_INSTANTIATE(Leveler);

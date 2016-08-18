@@ -3,43 +3,39 @@
 
 #include <memory>
 #include <mutex>
+#include <thread>
 
-#include "buffer.h"
 #include "processor.h"
+#include "ringbuffer.h"
 #include "shared/iresampler.h"
 
-template<typename T>
-class Resampler: public Processor<T>
-{
+template <typename T>
+class Resampler : public Processor<T> {
 public:
+    typedef void (*Feeder)(RingBuffer<Sound::Float32>& ring, bool& isEnough, void *userData);
+
     Resampler();
     ~Resampler();
 
-    void drop();
-
-    template<typename S>
-    void feed(const Buffer<S> &source, unsigned sampleRate);
-
-    virtual void process();
+    void process();
+    void start(unsigned channels, unsigned sampleRate, Feeder feeder, void *userData);
+    void stop();
 
 protected:
-    unsigned _bufferFrames;
-    unsigned _position;
-    unsigned _sourceFrames;
+    std::mutex _mutex;
 
-    virtual void init();
+    unsigned feedFrames(unsigned sourceSampleRate);
+    void init();
 
 private:
-    Buffer<Sound::Float32> _buffer;
-    Buffer<Sound::Float32> _channelBuffer;
+    Feeder _feeder;
+    bool _isEnough;
     std::shared_ptr<IResampler> _resampler;
-    std::shared_ptr<char> _source;
-    unsigned _sourceChannels;
-    std::mutex _sourceMutex;
-    unsigned _sourceRate;
-    Sound::Type _sourceType;
+    std::shared_ptr<RingBuffer<Sound::Float32> > _ring;
+    unsigned _sampleRate;
+    void *_userData;
 };
 
-#include "resampler.tcc"
+SOUND_INSTANTIATION_DECLARE(Resampler);
 
 #endif // RESAMPLER_H

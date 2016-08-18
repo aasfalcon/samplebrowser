@@ -14,7 +14,7 @@ public:
     void close();
     void open(const char *filename, Mode mode);
 
-    unsigned read(void *buffer, unsigned frames);
+    unsigned read(void *buffer, Sound::Type type, unsigned frames);
     unsigned seek(int pos, SeekWhence sw, SeekType st = SeekTypeDefault);
 
 private:

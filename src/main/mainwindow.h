@@ -13,34 +13,33 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent);
+    explicit MainWindow(QWidget* parent);
     ~MainWindow();
 
 protected:
-    void closeEvent(QCloseEvent *);
+    void closeEvent(QCloseEvent*);
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     QModelIndex _last_expanded;
-    Scanner *_scanner;
+    Scanner* _scanner;
     friend class PeaksUpdater;
     //class PeaksUpdater *_peaks_updater;
-    Helper *_meterUpdater;
-    Helper *_peaksUpdater;
+    Helper* _meterUpdater;
+    Helper* _peaksUpdater;
 
-    Meter *_meter;
-    void updatePeaks(const QString &path);
+    Meter* _meter;
+    void updatePeaks(const QString& path);
 
 private slots:
-    void filesSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
-    void on_treeView_expanded(const QModelIndex &index);
-    void on_treeView_activated(const QModelIndex &index);
-    void on_treeView_clicked(const QModelIndex &index);
+    void filesSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void on_treeView_expanded(const QModelIndex& index);
+    void on_treeView_activated(const QModelIndex& index);
+    void on_treeView_clicked(const QModelIndex& index);
     void on_level_valueChanged(int value);
     void updateMeter();
     void on_actionSound_settings_triggered();
