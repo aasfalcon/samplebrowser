@@ -17,46 +17,41 @@ class Buffer: public Sound::Object<T>
 {
 public:
     Buffer();
-    Buffer(const Buffer<T> &source);
+
+    template<typename S>
+    Buffer(ConstFrame<S> sbeg, ConstFrame<S> send);
+
     Buffer(unsigned channels, unsigned frames);
+
+    template<typename S>
+    void assign(ConstFrame<S> sbeg, ConstFrame<S> send);
+
+    template<typename S>
+    void assign(unsigned channels, const S *sbeg, const S *send);
 
     Frame<T> begin();
     ConstFrame<T> cbegin() const;
     ConstFrame<T> cend() const;
     unsigned channels() const;
-    Sample<T> *data();
-    const Sample<T> *data() const;
+
+    template<typename S>
+    Frame<T> copyFrom(ConstFrame<S> sbeg, ConstFrame<S> send);
+
     Frame<T> end();
     unsigned frames() const;
-
-    void fromArray(const void *array, Sound::Type type,
-                   unsigned channels, unsigned frames);
-
-    template<typename S>
-    void fromArray(const Sample<S> *array,
-                   unsigned channels, unsigned frames);
-
-    template<typename S>
-    void fromBuffer(const Buffer<S> &buffer,
-                    unsigned offset = 0, unsigned count = 0);
-
     bool isEmpty() const;
-    void mono(const Buffer<T> &source, bool mixdown = true);
-    T *ptr();
-    const T *ptr() const;
+    T *data();
+    const T *data() const;
+    void nativeInt24(void *dest);
     void reallocate(unsigned channels, unsigned frames);
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
                        Sound::Quality quality = Sound::QualityBest);
     void resize(unsigned frames);
-    void resample(const Buffer<T> &source,
-                  unsigned destRate, unsigned sourceRate,
+    void resample(ConstFrame<T> sbeg, ConstFrame<T> send, unsigned destRate, unsigned sourceRate,
                   Sound::Quality quality = Sound::QualityBest);
-
-    void peekChannels(const Buffer<T> &source,
-                      unsigned count, bool mixdown = true);
     void silence();
+    void silence(Frame<T> dbeg, Frame<T> dend);
     unsigned size() const;
-    void stereo(const Buffer<T> &source, bool pullup = true);
 
 private:
     unsigned _channels;

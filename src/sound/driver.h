@@ -57,6 +57,4 @@ private:
     Sound::Type _sampleType;
 };
 
-SOUND_INSTANTIATE_DECLARATION(Driver::Runtime)
-
 #endif // DRIVER_H

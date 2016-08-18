@@ -58,5 +58,3 @@ unsigned Processor<T>::sampleRate() const
 {
     return _sampleRate;
 }
-
-SOUND_INSTANTIATE(Processor)

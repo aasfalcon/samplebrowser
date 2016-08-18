@@ -15,7 +15,11 @@ public:
     static T min();
     static T max();
 
-    operator T&() const;
+    operator const T&() const;
+    operator T &();
+
+    template<typename S>
+    Sample<T> &operator =(Sample<S> rht);
 
 private:
     T _value;

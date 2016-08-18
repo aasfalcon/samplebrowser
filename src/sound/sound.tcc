@@ -1,12 +1,6 @@
 #include "sound.h"
 
 template<typename T>
-Sound::Object<T>::~Object()
-{
-
-}
-
-template<typename T>
 struct always_false {
     enum { value = false };
 };

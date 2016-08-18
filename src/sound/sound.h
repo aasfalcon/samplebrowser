@@ -14,6 +14,7 @@ typedef double          Float64;
 
 struct Int24 {
     Int24(std::int32_t val): value(val) {}
+    Int24(double val): value(val) {}
     operator std::int32_t() const { return value; }
     operator std::int32_t &() { return value; }
     std::int32_t value;
@@ -29,7 +30,7 @@ enum MaxInt {
 
 enum MinInt {
     MinInt8     = SCHAR_MIN,
-    MinInt16    = SHORT_MIN,
+    MinInt16    = SHRT_MIN,
     MinInt24    = -8388608,
     MinInt32    = INT_MIN,
 };
@@ -50,9 +51,9 @@ enum Type {
     TypeInt16,
     TypeInt24,
     TypeInt32,
-
-    TypeCount
 };
+
+const unsigned TypeCount = TypeInt32 + 1;
 
 template<typename T>
 class Object {

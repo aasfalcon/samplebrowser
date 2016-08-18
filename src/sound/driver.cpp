@@ -34,28 +34,15 @@ void Driver::connect(const IDriver::ConnectOptions &options)
     _provider = PLUGIN_FACTORY(IDriver);
     _bufferFrames = _provider->connect(options);
 
-    unsigned formats[Sound::TypeCount] = {
-        IDriver::SampleFloat32,
-        IDriver::SampleFloat64,
-        IDriver::SampleInt8,
-        IDriver::SampleInt16,
-        IDriver::SampleInt24,
-        IDriver::SampleInt32,
+    std::map<unsigned, Sound::Type> formatsMap = {
+        {IDriver::SampleFloat32, Sound::TypeFloat32},
+        {IDriver::SampleFloat64, Sound::TypeFloat64},
+        {IDriver::SampleInt8, Sound::TypeInt8},
+        {IDriver::SampleInt16, Sound::TypeInt16},
+        {IDriver::SampleInt32, Sound::TypeInt32},
     };
 
-    _sampleType = Sound::TypeCount;
-
-    for (unsigned st = 0; st < Sound::TypeCount; st++) {
-        if (formats[st] == options.sampleFormat) {
-            _sampleType = Sound::Type(st);
-            break;
-        }
-    }
-
-    if (_sampleType == Sound::TypeCount) {
-        throw std::runtime_error("Unknown sample format");
-    }
-
+    _sampleType = formatsMap.at(options.sampleFormat);
     _options = std::make_shared<IDriver::ConnectOptions>(options);
 }
 
@@ -82,8 +69,10 @@ std::shared_ptr<IDriver::ConnectOptions> Driver::options() const
 template<typename T>
 Processor<T> *Driver::root() const
 {
-    if (sampleType() != Object<T>::type()) {
-        throw std::runtime_error("Attempt to get root processor with wrong sample format");
+    if (sampleType() != Sound::Object<T>::type()) {
+        std::string message = "Attempt to get root processor with wrong sample format";
+        LOG(ERROR, message);
+        throw std::runtime_error(message);
     }
 
     auto runtime = reinterpret_cast<Runtime<T> *>(_runtime.get());
@@ -118,8 +107,10 @@ double Driver::time() const
 template<typename T>
 void Driver::setRoot(Processor<T> *processor)
 {
-    if (sampleType() != Object<T>::type()) {
-        throw std::runtime_error("Wrong root processor sample format");
+    if (sampleType() != Sound::Object<T>::type()) {
+        std::string message = "Wrong root processor sample format";
+        LOG(ERROR, message);
+        throw std::runtime_error(message);
     }
 
     Runtime<T> *pruntime = new Runtime<T>(
@@ -159,12 +150,3 @@ std::shared_ptr<Processor<T>> Driver::Runtime<T>::root()
 {
     return _rootProcessor;
 }
-
-#define ROOT_PROPERTY(__type) \
-    template Processor<Sound::__type> *\
-    Driver::root() const; \
-    template void \
-    Driver::setRoot(Processor<Sound::__type> *value);
-
-SOUND_SPECIALIZE(ROOT_PROPERTY)
-SOUND_INSTANTIATE(Driver::Runtime)

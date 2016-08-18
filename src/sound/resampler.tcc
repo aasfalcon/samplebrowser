@@ -34,7 +34,7 @@ void Resampler<T>::feed(const Buffer<S> &buffer, unsigned sampleRate)
     _source = std::shared_ptr<char>(
                 reinterpret_cast<char *>(new S[buffer.size()]),
                 [](char *array) { delete[] reinterpret_cast<S *>(array); });
-    memcpy(_source.get(), buffer.ptr(), int(buffer.size() * sizeof(S)));
+    memcpy(_source.get(), buffer.data(), int(buffer.size() * sizeof(S)));
     _sourceChannels = buffer.channels();
     _sourceFrames = buffer.frames();
     _sourceRate = sampleRate;
@@ -80,17 +80,17 @@ void Resampler<T>::process()
     _channelBuffer.peekChannels(_buffer, _channelBuffer.channels());
 
     unsigned resampledFrames =
-            _resampler->process(_channelBuffer.ptr(), _bufferFrames);
+            _resampler->process(_channelBuffer.data(), _bufferFrames);
 
     auto &out = *this->out();
     Converter::instance().convert(
-                out.ptr(), out.type(),
+                out.data(), out.type(),
                 _resampler->output(), Object<Sound::Float32>::type(),
                 resampledFrames);
 
     if (resampledFrames < out.frames()) {
         unsigned offset = resampledFrames * out.channels();
-        std::memset(out.ptr() + offset, 0,
+        std::memset(out.data() + offset, 0,
                     std::size_t(out.size() - offset) * sizeof(T));
     }
 

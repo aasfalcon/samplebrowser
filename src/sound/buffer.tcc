@@ -1,7 +1,12 @@
 #include <cstring>
+#include <stdexcept>
+#include <string>
 
 #include "buffer.h"
-#include "converter.h"
+#include "constframe.h"
+#include "shared/iresampler.h"
+#include "shared/log.h"
+#include "shared/server.h"
 
 template<typename T>
 Buffer<T>::Buffer()
@@ -13,12 +18,11 @@ Buffer<T>::Buffer()
 }
 
 template<typename T>
-Buffer<T>::Buffer(const Buffer<T> &source)
-    : _channels(source._channels)
-    , _frames(source._frames)
-    , _samples(source._samples)
+template<typename S>
+Buffer<T>::Buffer(ConstFrame<S> sbeg, ConstFrame<S> send)
+    : Buffer<T>()
 {
-
+    assign(sbeg, send);
 }
 
 template<typename T>
@@ -31,9 +35,67 @@ Buffer<T>::Buffer(unsigned channels, unsigned frames)
 }
 
 template<typename T>
+template<typename S>
+void Buffer<T>::assign(ConstFrame<S> sbeg, ConstFrame<S> send)
+{
+    unsigned channels = sbeg.channels();
+    reallocate(channels, send - sbeg);
+    copyFrom(sbeg, send, false);
+}
+
+template<typename T>
+template<typename S>
+void Buffer<T>::assign(unsigned channels, const S *sbeg, const S *send)
+{
+    auto begFrame = ConstFrame<T>(channels, sbeg);
+    auto endFrame = ConstFrame<T>(channels, send);
+    assign(begFrame, endFrame);
+}
+
+template<typename T>
 Frame<T> Buffer<T>::begin()
 {
     return Frame<T>(*this);
+}
+
+template<typename T>
+template<typename S>
+Frame<T> Buffer<T>::copyFrom(ConstFrame<S> sbeg, ConstFrame<S> send)
+{
+    if (sbeg.channels() != send.channels()) {
+        std::string message = "Begin and end frame channels count differs";
+        LOG(ERROR, message
+            << ". Begin channels: " << sbeg.channels()
+            << ", end channels: " << send.channels());
+        throw std::out_of_range(message);
+    }
+
+    int count = send - sbeg;
+
+    if (count < 0) {
+        std::string message = "End frame is before begin frame on copy";
+        LOG(ERROR, message);
+        throw std::out_of_range(message);
+    }
+
+    if (_frames < count) {
+        std::string message = "Buffer overflow";
+        LOG(ERROR, message
+            << ". Buffer frames: " << _frames << " vs " << count);
+        throw std::out_of_range(message);
+    }
+
+    if (this->type() == sbeg.type() && _channels == sbeg.channels()) {
+        std::memcpy(this->data(), sbeg.data(), count * _channels * sizeof(T));
+    } else {
+        Frame<T> dit = begin();
+
+        for (ConstFrame<S> sit = sbeg; sit != send; ++sit, ++dit) {
+            dit = sit;
+        }
+    }
+
+    return begin() + count;
 }
 
 template<typename T>
@@ -55,18 +117,6 @@ unsigned Buffer<T>::channels() const
 }
 
 template<typename T>
-Sample<T> *Buffer<T>::data()
-{
-    return _samples.data();
-}
-
-template<typename T>
-const Sample<T> *Buffer<T>::data() const
-{
-    return _samples.data();
-}
-
-template<typename T>
 Frame<T> Buffer<T>::end()
 {
     return Frame<T>(*this, size());
@@ -79,54 +129,55 @@ unsigned Buffer<T>::frames() const
 }
 
 template<typename T>
-template<typename S>
-void Buffer<T>::fromArray(const Sample<S> *array,
-                          unsigned channels, unsigned frames)
-{
-    fromArray(array, Sample<S>::type(), channels, frames);
-}
-
-template<typename T>
-void Buffer<T>::fromArray(const void *array, Sound::Type type,
-                          unsigned channels, unsigned frames)
-{
-    reallocate(channels, frames);
-    Converter::instance().convert(
-                data(), Sample<T>::type(), array, type, size());
-}
-
-template<typename T>
 bool Buffer<T>::isEmpty() const
 {
     return _frames == 0;
 }
 
 template<typename T>
-template<typename S>
-void Buffer<T>::fromBuffer(const Buffer<S> &source,
-                           unsigned offset, unsigned count)
-{
-    unsigned channels = source.channels();
-    unsigned frames = source.frames() - offset;
-
-    if (count && count < frames) {
-        frames = count;
-    }
-
-    fromArray(source.data() + offset * channels * frames,
-              channels, frames);
-}
-
-template<typename T>
-T *Buffer<T>::ptr()
+T *Buffer<T>::data()
 {
     return reinterpret_cast<T *>(_samples.data());
 }
 
 template<typename T>
-const T *Buffer<T>::ptr() const
+const T *Buffer<T>::data() const
 {
     return reinterpret_cast<const T *>(_samples.data());
+}
+
+template<typename T>
+void Buffer<T>::nativeInt24(void *dest)
+{
+    typedef std::uint8_t Int24Parts[3];
+    union Int32Parts {
+        std::int32_t i32;
+        std::uint8_t i8[4];
+    };
+
+    const Int32Parts endiannessCheck = { 0x01020304 };
+    const bool isBigEndian = 0x01 == endiannessCheck.i8[3];
+
+    auto int24dest = reinterpret_cast<Int24Parts *>(dest);
+    auto ptr = _samples.data();
+
+    if (isBigEndian) {
+        for (unsigned i = 0; i < size(); i++) {
+            Int32Parts s = { std::int32_t(Sample<Sound::Int32>(ptr[i])) };
+            Int24Parts &d = int24dest[i];
+            d[0] = s.i8[0];
+            d[1] = s.i8[1];
+            d[2] = s.i8[2];
+        }
+    } else {
+        for (unsigned i = 0; i < size(); i++) {
+            Int32Parts s = { std::int32_t(Sample<Sound::Int32>(ptr[i])) };
+            Int24Parts &d = int24dest[i];
+            d[0] = s.i8[1];
+            d[1] = s.i8[2];
+            d[2] = s.i8[3];
+        }
+    }
 }
 
 template<typename T>
@@ -157,127 +208,63 @@ Buffer<T> Buffer<T>::resample(unsigned destRate, unsigned sourceRate,
                               Sound::Quality quality)
 {
     Buffer<T> result;
-    result.resample(*this, destRate, sourceRate, quality);
+    result.resample(cbegin(), cend(), destRate, sourceRate, quality);
     return result;
 }
 
 template<typename T>
-void Buffer<T>::resample(const Buffer<T> &source, unsigned destRate, unsigned sourceRate,
-                      Sound::Quality quality)
+void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
+                         unsigned destRate, unsigned sourceRate,
+                         Sound::Quality quality)
 {
-    double ratio = static_cast<double>(destRate) / static_cast<double>(sourceRate);
-    unsigned sourceFrames = source.frames();
-    unsigned channels = source.channels();
-    unsigned destFrames = unsigned(double(sourceFrames) * ratio);
+    double ratio = double(destRate) / double(sourceRate);
+    unsigned sframes = send - sbeg;
+    unsigned channels = sbeg.channels();
+    unsigned dframes = unsigned(double(sframes) * ratio);
+    auto resampler = PLUGIN_FACTORY(IResampler);
 
-    reallocate(channels, destFrames);
-    Converter::instance().resample(
-                data(), destFrames, source.data(), sourceFrames,
-                channels, ratio, Sample<T>::type(), quality);
-}
-
-template<typename T>
-void Buffer<T>::peekChannels(const Buffer<T> &source,
-                             unsigned count, bool mixdown)
-{
-    if (count == 0) {
-        throw std::range_error("Zero channlels slice required");
-    }
-
-    if (source._channels == count) {
-        this->fromBuffer(source);
-    }
-
-    if (1 == count) {
-        mono(source, mixdown);
-    }
-
-    if (2 == count) {
-        stereo(source, mixdown);
-    }
-
-    reallocate(count, frames());
-    silence();
-
-    unsigned copyCount = std::min(_channels, count);
-    auto rframe = begin();
-
-    for (auto frame = source.cbegin(); frame != source.cend();
-         ++frame, ++rframe)
-    {
-        for (unsigned i = 0; i < copyCount; i++) {
-            rframe.put(i, frame.at(i));
-        }
-    }
-}
-
-template<typename T>
-void Buffer<T>::mono(const Buffer<T> &source, bool mixdown)
-{
-    if (1 == _channels) {
-        fromBuffer(source);
-    }
-
-    reallocate(1, frames());
-    auto rframe = begin();
-
-    if (mixdown) {
-        for (auto frame = source.cbegin(); frame != source.cend();
-             ++frame, ++rframe)
-        {
-            double sum = 0.;
-
-            for (unsigned i = 0; i < _channels; i++) {
-                sum += double(T(frame.at(i)));
-            }
-
-            rframe.put(0, static_cast<T>(sum / double(_channels)));
-        }
+    if (this->type() == Sound::TypeFloat32) {
+        reallocate(channels, dframes);
+        resampler->simple(this->data(), frames(),
+                          sbeg.data(), sframes,
+                          channels, ratio, quality);
     } else {
-        for (auto frame = source.cbegin(); frame != source.cend();
-             ++frame, ++rframe)
-        {
-            rframe.put(0, frame.at(0));
-        }
+        Buffer<Sound::Float32> dtemp(channels, dframes);
+        Buffer<Sound::Float32> stemp(sbeg, send);
+        resampler->simple(dtemp.data(), dframes,
+                          stemp.data(), sframes,
+                          channels, ratio, quality);
+        assign(dtemp.cbegin(), dtemp.cend());
     }
+
 }
 
 template<typename T>
 void Buffer<T>::silence()
 {
-    memset(data(), 0, size() * sizeof(T));
+    silence(begin(), end());
+}
+
+template<typename T>
+void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
+{
+    auto myBegin = begin();
+    auto myEnd = end();
+
+    if (myBegin - dbeg < 0 || dbeg - myEnd < 0
+            || myBegin - dend < 0 || dend - myEnd < 0
+            || dend - dbeg < 0)
+    {
+        std::string message = "Frame out of buffer bounds";
+        LOG(ERROR, message);
+        throw std::out_of_range(message);
+    }
+
+    std::memset(dbeg.ptr(), 0, dend.ptr() - dbeg.ptr());
 }
 
 template<typename T>
 unsigned Buffer<T>::size() const
 {
     return _samples.size();
-}
-
-template<typename T>
-void Buffer<T>::stereo(const Buffer<T> &source, bool pullup)
-{
-    if (2 == _channels) {
-        fromBuffer(source);
-    }
-
-    reallocate(2, frames());
-    auto rframe = begin();
-
-    if (1 == _channels && pullup) {
-        for (auto frame = source.cbegin(); frame != source.cend();
-             ++frame, ++rframe)
-        {
-            auto sample = frame.at(0);
-            rframe.put(0, sample);
-            rframe.put(1, sample);
-        }
-    } else { // > 2
-        for (auto frame = source.cbegin(); frame != source.cend();
-             ++frame, ++rframe)
-        {
-            rframe.put(0, frame.at(0));
-            rframe.put(1, frame.at(1));
-        }
-    }
 }

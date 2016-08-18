@@ -6,10 +6,8 @@ CONFIG += staticlib c++11
 
 SOURCES += \
     chunk.cpp \
-    converter.cpp \
     driver.cpp \
-    basicstream.cpp \
-    ringbuffer.cpp
+    basicstream.cpp
 
 HEADERS += \
     buffer.h \
@@ -20,7 +18,6 @@ HEADERS += \
     config.h \
     constframe.h \
     constframe.tcc \
-    converter.h \
     driver.h \
     frame.h \
     frame.tcc \
@@ -45,6 +42,7 @@ HEADERS += \
     outputstream.tcc \
     iostream.h \
     iostream.tcc \
-    ringbuffer.h
+    ringbuffer.h \
+    ringbuffer.tcc
 
 INCLUDEPATH += .. ../../vendor
