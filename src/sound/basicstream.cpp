@@ -172,9 +172,7 @@ BasicOutputStream::~BasicOutputStream()
 void BasicOutputStream::write(const BasicStream::Compression& compression)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt to set compression data after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt to set compression data after output start");
     }
 
     _fi.compression = compression;
@@ -183,9 +181,7 @@ void BasicOutputStream::write(const BasicStream::Compression& compression)
 void BasicOutputStream::write(const Chunk& chunk)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt write chunk data after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt write chunk data after output start");
     }
 
     auto raw = chunk.toRaw();
@@ -203,18 +199,14 @@ void BasicOutputStream::write(const Chunk& chunk)
     } else if (dynamic_cast<const Cues*>(&chunk)) {
         _provider->setChunk(IAudioFile::ChunkCues, size, data);
     } else {
-        std::string message = "Unknown chunk type";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Unknown chunk type");
     }
 }
 
 void BasicOutputStream::write(const BasicStream::Format& format)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt to set file format after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt to set file format after output start");
     }
 
     _fi.format = format;
@@ -223,9 +215,7 @@ void BasicOutputStream::write(const BasicStream::Format& format)
 void BasicOutputStream::write(const BasicStream::Info& info)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt to set file sample info after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt to set file sample info after output start");
     }
 
     _fi.channels = info.channels;
@@ -237,9 +227,7 @@ void BasicOutputStream::write(const BasicStream::Info& info)
 void BasicOutputStream::write(const BasicStream::Strings& strings)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt to write strings data after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt to write strings data after output start");
     }
 
     for (unsigned i = 0; i < IAudioFile::StringEntryCount; i++) {
@@ -263,9 +251,7 @@ void BasicOutputStream::write(const BasicStream::RawChunks& rawChunks)
 void BasicOutputStream::write(const BasicStream::RawChunk& rawChunk)
 {
     if (_isOutputStarted) {
-        std::string message = "Attempt to add raw chunk after output start";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+        RUNTIME_ERROR("Attempt to add raw chunk after output start");
     }
 
     _rawChunks.push_back({ rawChunk.id.c_str(),

@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "resamplerlsr.h"
+#include "shared/log.h"
 
 int ResamplerLSR::_types[IResampler::QualityCount] = {
     SRC_SINC_FASTEST, // QualityFast
@@ -56,7 +57,7 @@ void ResamplerLSR::init(IResampler::Quality quality, unsigned channels,
     _state = src_new(_types[quality], int(channels), &error);
 
     if (error) {
-        throw std::runtime_error(src_strerror(error));
+        RUNTIME_ERROR(src_strerror(error));
     }
 
     setInputRate(rate);
@@ -77,7 +78,7 @@ unsigned ResamplerLSR::perform()
     int error = src_process(_state, &data);
 
     if (error) {
-        throw std::runtime_error(src_strerror(error));
+        RUNTIME_ERROR(src_strerror(error));
     }
 
     if (data.output_frames > data.output_frames_gen) {
@@ -106,7 +107,7 @@ void ResamplerLSR::reset()
         int error = src_reset(_state);
 
         if (error) {
-            throw std::runtime_error(src_strerror(error));
+            RUNTIME_ERROR(src_strerror(error));
         }
     }
 }
@@ -127,7 +128,7 @@ unsigned ResamplerLSR::simple(float* dest, unsigned dframes,
     int error = src_simple(&data, _types[quality], int(channels));
 
     if (error) {
-        throw std::runtime_error(src_strerror(error));
+        RUNTIME_ERROR(src_strerror(error));
     }
 
     return unsigned(data.output_frames_gen);

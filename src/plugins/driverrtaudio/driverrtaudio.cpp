@@ -1,11 +1,11 @@
+#include <RtAudio.h>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <memory>
 
-#include <RtAudio.h>
-
 #include "driverrtaudio.h"
+#include "shared/log.h"
 
 std::string DriverRtAudio::_names[] = {
     "<auto>",
@@ -30,14 +30,14 @@ DriverRtAudio::~DriverRtAudio()
     disconnect();
 }
 
-const IDriver::Api *DriverRtAudio::apiInfo(IDriver::ApiType type)
+const IDriver::Api* DriverRtAudio::apiInfo(IDriver::ApiType type)
 {
     std::shared_ptr<Api> api = _apiInfos[type];
 
     if (!api) {
-        auto deleteApi = [](Api *api) {
+        auto deleteApi = [](Api* api) {
             for (unsigned i = 0; i < api->deviceCount; i++) {
-                Device &device = api->devices[i];
+                Device& device = api->devices[i];
                 delete[] device.name;
 
                 if (device.sampleRates) {
@@ -68,7 +68,7 @@ const IDriver::Api *DriverRtAudio::apiInfo(IDriver::ApiType type)
         api->name = _names[api->type].c_str();
 
         for (unsigned i = 0; i < api->deviceCount; i++) {
-            Device &device = api->devices[i];
+            Device& device = api->devices[i];
             RtAudio::DeviceInfo info = rt.getDeviceInfo(i);
 
             device.channelsOutput = info.outputChannels;
@@ -82,7 +82,7 @@ const IDriver::Api *DriverRtAudio::apiInfo(IDriver::ApiType type)
             device.sampleRateCount = info.sampleRates.size();
             device.sampleRates = new unsigned[device.sampleRateCount];
             memcpy(device.sampleRates, info.sampleRates.data(),
-                   int(info.sampleRates.size() * sizeof(unsigned)));
+                int(info.sampleRates.size() * sizeof(unsigned)));
         }
 
         _apiInfos[type] = api;
@@ -91,14 +91,14 @@ const IDriver::Api *DriverRtAudio::apiInfo(IDriver::ApiType type)
     return _apiInfos.at(type).get();
 }
 
-unsigned DriverRtAudio::connect(const IDriver::ConnectOptions &options)
+unsigned DriverRtAudio::connect(const IDriver::ConnectOptions& options)
 {
     if (_rtaudio) {
-        throw std::runtime_error("Already connected");
+        RUNTIME_ERROR("Already connected");
     }
 
     _rtaudio = std::shared_ptr<RtAudio>(
-                new RtAudio(RtAudio::Api(options.apiType)));
+        new RtAudio(RtAudio::Api(options.apiType)));
 
     std::unique_ptr<RtAudio::StreamParameters> iparams, oparams;
 
@@ -122,16 +122,16 @@ unsigned DriverRtAudio::connect(const IDriver::ConnectOptions &options)
 
     unsigned bufferSize;
     _rtaudio->openStream(oparams.get(), iparams.get(),
-                         options.sampleFormat, options.sampleRate,
-                         &bufferSize, &DriverRtAudio::process,
-                         this, &so, &DriverRtAudio::error);
+        options.sampleFormat, options.sampleRate,
+        &bufferSize, &DriverRtAudio::process,
+        this, &so, &DriverRtAudio::error);
     return bufferSize;
 }
 
 void DriverRtAudio::control(IDriver::Control command)
 {
     if (!_rtaudio || !_rtaudio->isStreamOpen()) {
-        throw std::runtime_error("Attempt to control stream which is not opened");
+        RUNTIME_ERROR("Attempt to control stream which is not opened");
     }
 
     switch (command) {
@@ -165,7 +165,7 @@ void DriverRtAudio::disconnect()
     _streamInfo.reset();
 }
 
-const IDriver::DriverInfo *DriverRtAudio::driverInfo()
+const IDriver::DriverInfo* DriverRtAudio::driverInfo()
 {
     if (_driverInfo) {
         return _driverInfo.get();
@@ -174,7 +174,7 @@ const IDriver::DriverInfo *DriverRtAudio::driverInfo()
     std::vector<RtAudio::Api> apis;
     RtAudio::getCompiledApi(apis);
 
-    auto deleteDI = [](DriverInfo *di) {
+    auto deleteDI = [](DriverInfo* di) {
         delete[] di->apis;
         delete[] di->names;
         delete di;
@@ -183,12 +183,13 @@ const IDriver::DriverInfo *DriverRtAudio::driverInfo()
     _driverInfo = std::shared_ptr<DriverInfo>(new DriverInfo(), deleteDI);
     _driverInfo->apiCount = apis.size();
     _driverInfo->apis = new ApiType[_driverInfo->apiCount];
-    _driverInfo->names = new const char *[_driverInfo->apiCount];
+    _driverInfo->names = new const char*[_driverInfo->apiCount];
 
     for (unsigned i = 0; i < _driverInfo->apiCount; i++) {
         _driverInfo->apis[i] = ApiType(apis.at(i));
         _driverInfo->names[i] = _names[apis[i]].c_str();
     }
+
     memcpy(_driverInfo->apis, apis.data(), int(apis.size() * sizeof(ApiType)));
 
     RtAudio rt(RtAudio::UNSPECIFIED);
@@ -196,22 +197,23 @@ const IDriver::DriverInfo *DriverRtAudio::driverInfo()
     return _driverInfo.get();
 }
 
-void DriverRtAudio::setProcess(IDriver::Process callback)
+void DriverRtAudio::setProcess(IDriver::Process callback, void* object)
 {
     _process = callback;
+    _processObject = object;
 }
 
-const IDriver::StreamInfo *DriverRtAudio::streamInfo()
+const IDriver::StreamInfo* DriverRtAudio::streamInfo()
 {
     if (!_rtaudio) {
-        throw new std::runtime_error("Attempt to get stream info while not initialized");
+        RUNTIME_ERROR("Attempt to get stream info while not initialized");
     }
 
     if (!_streamInfo) {
         _streamInfo = std::shared_ptr<StreamInfo>(new StreamInfo());
         _streamInfo->isOpen = _rtaudio->isStreamOpen();
         _streamInfo->isRunning = _rtaudio->isStreamRunning();
-        _streamInfo->latency = _rtaudio->getStreamLatency();
+        _streamInfo->latency = unsigned(_rtaudio->getStreamLatency());
         _streamInfo->time = _rtaudio->getStreamTime();
         _streamInfo->sampleRate = _rtaudio->getStreamSampleRate();
     }
@@ -228,29 +230,32 @@ double DriverRtAudio::time() const
     return _rtaudio->getStreamTime();
 }
 
-void DriverRtAudio::error(RtAudioError::Type type, const std::string &errorText)
+void DriverRtAudio::error(RtAudioError::Type type, const std::string& errorText)
 {
-    if (type == RtAudioError::DEBUG_WARNING || type == RtAudioError::WARNING) {
-        std::cerr << errorText.c_str() << "\n";
+    if (type == RtAudioError::DEBUG_WARNING) {
+        LOG(DEBUG, errorText);
+    } else if (type == RtAudioError::WARNING) {
+        LOG(WARN, errorText);
     } else {
-        throw std::runtime_error(errorText);
+        RUNTIME_ERROR(errorText);
     }
 }
 
-int DriverRtAudio::process(void *output, void *input, unsigned frames,
-                            double time, RtAudioStreamStatus status,
-                            void *data)
+int DriverRtAudio::process(void* output, void* input, unsigned frames,
+    double time, RtAudioStreamStatus status,
+    void* data)
 {
-    auto pthis = reinterpret_cast<DriverRtAudio *>(data);
+    auto pthis = reinterpret_cast<DriverRtAudio*>(data);
 
     if (pthis->_process) {
-        const StreamInfo *info = pthis->streamInfo();
+        const StreamInfo* info = pthis->streamInfo();
         ProcessParams params = {
             info->input.channels,
             info->output.channels,
             frames,
             input,
             info->latency,
+            pthis->_processObject,
             output,
             info->sampleRate,
             status,

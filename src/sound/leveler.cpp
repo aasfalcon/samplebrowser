@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "leveler.h"
 #include "sample.h"
+#include "shared/log.h"
 
 using namespace Sound;
 
@@ -53,7 +54,7 @@ template <typename T>
 void Leveler<T>::setBalance(double value)
 {
     if (value < -1 || value > 1) {
-        throw std::out_of_range("Balance value out of range");
+        OUT_OF_RANGE("Balance value out of range");
     }
 
     _balance = value;
@@ -63,7 +64,7 @@ template <typename T>
 void Leveler<T>::setLevel(double value)
 {
     if (value < 0) {
-        throw std::out_of_range("Level value out of range");
+        OUT_OF_RANGE("Level value out of range");
     }
 
     _level = value;

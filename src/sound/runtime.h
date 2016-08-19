@@ -5,6 +5,7 @@
 
 #include "buffer.h"
 #include "processor.h"
+#include "shared/idriver.h"
 
 namespace Sound {
 
@@ -13,7 +14,7 @@ class Runtime : public Object<T> {
 public:
     Runtime(std::shared_ptr<Processor<T> > root,
         unsigned channels, unsigned frames,
-        unsigned latency, unsigned sampleRate);
+        unsigned latency, unsigned sampleRate, Type sampleType);
     ~Runtime();
 
     std::shared_ptr<Processor<T> > root()
@@ -21,10 +22,13 @@ public:
         return _root;
     }
 
+    static IDriver::Control process(const IDriver::ProcessParams &data);
+
 private:
     Buffer<T> _input;
     Buffer<T> _output;
     std::shared_ptr<Processor<T> > _root;
+    Type _sampleType;
 };
 
 SOUND_INSTANTIATION_DECLARE(Runtime);

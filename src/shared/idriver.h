@@ -1,17 +1,17 @@
 #ifndef IDRIVER_H
 #define IDRIVER_H
 
-#include "interface.h"
 #include "../sound/object.h"
+#include "interface.h"
 
-struct IDriver: Interface {
+struct IDriver : Interface {
     enum SampleFormat {
-        SampleInt8      = 0x01,
-        SampleInt16     = 0x02,
-        SampleInt24     = 0x04,
-        SampleInt32     = 0x08,
-        SampleFloat32   = 0x10,
-        SampleFloat64   = 0x20,
+        SampleInt8 = 0x01,
+        SampleInt16 = 0x02,
+        SampleInt24 = 0x04,
+        SampleInt32 = 0x08,
+        SampleFloat32 = 0x10,
+        SampleFloat64 = 0x20,
     };
 
     enum ApiType {
@@ -30,9 +30,9 @@ struct IDriver: Interface {
     };
 
     enum Status {
-        StatusOk                = 0x00,
-        StatusInputOverflow     = 0x01,
-        StatusOutputUnderflow   = 0x02,
+        StatusOk = 0x00,
+        StatusInputOverflow = 0x01,
+        StatusOutputUnderflow = 0x02,
     };
 
     enum Control {
@@ -43,28 +43,28 @@ struct IDriver: Interface {
     };
 
     struct Device {
-        char *name;
+        char* name;
         unsigned channelsDuplex;
         unsigned channelsInput;
         unsigned channelsOutput;
         unsigned sampleFormats; // SampleFormat flags
         unsigned sampleRateCount;
-        unsigned *sampleRates;
+        unsigned* sampleRates;
     };
 
     struct Api {
         unsigned deviceCount;
-        Device *devices;
+        Device* devices;
         unsigned defaultInput;
         unsigned defaultOutput;
-        const char *name;
+        const char* name;
         ApiType type;
     };
 
     struct DriverInfo {
         unsigned apiCount;
-        ApiType *apis;
-        const char **names;
+        ApiType* apis;
+        const char** names;
         ApiType defaultApi;
     };
 
@@ -79,9 +79,10 @@ struct IDriver: Interface {
         unsigned channelsInput;
         unsigned channelsOutput;
         unsigned frames;
-        void *input;
+        void* input;
         unsigned latency;
-        void *output;
+        void* object;
+        void* output;
         unsigned sampleRate;
         unsigned status; // StausXXX flags
         double time;
@@ -107,7 +108,7 @@ struct IDriver: Interface {
         bool isRealtime;
         bool isTested;
         ApiType apiType;
-        const char *name;
+        const char* name;
         unsigned outputChannels;
         unsigned outputDeviceId;
         int priority;
@@ -116,15 +117,15 @@ struct IDriver: Interface {
         bool isStoppingOnXrun;
     };
 
-    typedef Control (*Process)(const ProcessParams &data);
+    typedef Control (*Process)(const ProcessParams& data);
 
-    virtual const Api *apiInfo(ApiType type) = 0;
-    virtual unsigned connect(const ConnectOptions &options) = 0;
+    virtual const Api* apiInfo(ApiType type) = 0;
+    virtual unsigned connect(const ConnectOptions& options) = 0;
     virtual void control(Control task) = 0;
     virtual void disconnect() = 0;
-    virtual const DriverInfo *driverInfo() = 0;
-    virtual void setProcess(Process callback) = 0;
-    virtual const StreamInfo *streamInfo() = 0;
+    virtual const DriverInfo* driverInfo() = 0;
+    virtual void setProcess(Process callback, void* object) = 0;
+    virtual const StreamInfo* streamInfo() = 0;
     virtual double time() const = 0;
 };
 

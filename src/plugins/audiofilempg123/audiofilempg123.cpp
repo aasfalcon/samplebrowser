@@ -1,8 +1,15 @@
+#include <mpg123.h>
 #include <sstream>
 #include <stdexcept>
-#include <mpg123.h>
 
 #include "audiofilempg123.h"
+#include "shared/log.h"
+
+#define MPG123_ERROR_N(__message, __number) \
+    RUNTIME_ERROR(mpgError(__message, __number));
+
+#define MPG123_ERROR(__message) \
+    RUNTIME_ERROR(mpgError(__message));
 
 AudioFileMPG123::AudioFileMPG123()
 {
@@ -24,7 +31,7 @@ void AudioFileMPG123::close()
     AudioFileSndfile::close();
 }
 
-void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
+void AudioFileMPG123::open(const char* filename, IAudioFile::Mode mode)
 {
     _path = filename;
     std::string ext;
@@ -42,28 +49,28 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
     }
 
     if (mode == ModeWrite || mode == ModeReadWrite) {
-        throw std::runtime_error("Writing MPEG is not supported");
+        RUNTIME_ERROR("Writing MPEG is not supported");
     }
 
     int errorNumber;
     _mpghandle = mpg123_new(NULL, &errorNumber);
 
     if (!_mpghandle) {
-        throw std::runtime_error(mpgError("Error creating handle", errorNumber));
+        MPG123_ERROR_N("Error creating handle", errorNumber);
     }
 
     if (MPG123_OK != mpg123_open(_mpghandle, filename)) {
-        throw std::runtime_error(mpgError("Error opening file"));
+        MPG123_ERROR("Error opening file");
     }
 
     if (MPG123_OK != mpg123_scan(_mpghandle)) {
-        throw std::runtime_error(mpgError("Error scanning file"));
+        MPG123_ERROR("Error scanning file");
     }
 
     int length = mpg123_length(_mpghandle);
 
     if (MPG123_ERR == length) {
-        throw std::runtime_error(mpgError("Can't get file length"));
+        MPG123_ERROR("Can't get file length");
     }
 
     _info.frames = unsigned(length);
@@ -71,7 +78,7 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
     mpg123_frameinfo fi;
 
     if (MPG123_OK != mpg123_info(_mpghandle, &fi)) {
-        throw std::runtime_error(mpgError("Can't get frame info"));
+        MPG123_ERROR("Can't get frame info");
     }
 
     static FormatMajor layerMap[3] = {
@@ -84,11 +91,11 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
 
     static FormatMinor verMap[3][4] = {
         { MinorMPEG1_0_Stereo, MinorMPEG1_0_JointStereo,
-          MinorMPEG1_0_DualChannel, MinorMPEG1_0_Mono },
+            MinorMPEG1_0_DualChannel, MinorMPEG1_0_Mono },
         { MinorMPEG2_0_Stereo, MinorMPEG2_0_JointStereo,
-          MinorMPEG2_0_DualChannel, MinorMPEG2_0_Mono },
+            MinorMPEG2_0_DualChannel, MinorMPEG2_0_Mono },
         { MinorMPEG2_5_Stereo, MinorMPEG2_5_JointStereo,
-          MinorMPEG2_5_DualChannel, MinorMPEG2_5_Mono },
+            MinorMPEG2_5_DualChannel, MinorMPEG2_5_Mono },
     };
 
     _info.format.minor = verMap[fi.version][fi.mode];
@@ -100,8 +107,7 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
     };
 
     _info.compression.type = brMap[fi.vbr];
-    _info.compression.bitrate = unsigned (MPG123_CBR == fi.vbr ?
-                fi.bitrate : fi.abr_rate);
+    _info.compression.bitrate = unsigned(MPG123_CBR == fi.vbr ? fi.bitrate : fi.abr_rate);
     _info.channels = fi.mode == MPG123_M_MONO ? 1 : 2;
     _info.chunkFlags = 0;
     _info.seekable = true;
@@ -109,7 +115,7 @@ void AudioFileMPG123::open(const char *filename, IAudioFile::Mode mode)
     _info.sampleType = Sound::TypeFloat32;
 }
 
-unsigned AudioFileMPG123::read(void *buffer, Sound::Type type, unsigned frames)
+unsigned AudioFileMPG123::read(void* buffer, Sound::Type type, unsigned frames)
 {
     if (!_mpgmode) {
         return AudioFileSndfile::read(buffer, type, frames);
@@ -117,11 +123,11 @@ unsigned AudioFileMPG123::read(void *buffer, Sound::Type type, unsigned frames)
 
     int size = int(frames * _info.channels * sizeof(Sound::Float32));
     std::size_t sizeRead;
-    unsigned char *ptr = static_cast<unsigned char *>(buffer);
+    unsigned char* ptr = static_cast<unsigned char*>(buffer);
     int errorNumber = mpg123_read(_mpghandle, ptr, size, &sizeRead);
 
     if (MPG123_OK != errorNumber) {
-        throw std::runtime_error(mpgError("Error reading MPEG stream", errorNumber));
+        MPG123_ERROR_N("Error reading MPEG stream", errorNumber);
     }
 
     return unsigned(sizeRead);
@@ -142,19 +148,19 @@ unsigned AudioFileMPG123::seek(int pos, IAudioFile::SeekWhence sw, IAudioFile::S
     int result = mpg123_seek(_mpghandle, pos, whenceMap[sw]);
 
     if (result < 0) {
-        throw std::runtime_error(mpgError("Error seeking MPEG stream", result));
+        MPG123_ERROR_N("Error seeking MPEG stream", result);
     }
 
     return unsigned(result);
 }
 
-std::string AudioFileMPG123::mpgError(const std::string &userMessage,
-                                              int errorNumber)
+std::string AudioFileMPG123::mpgError(const std::string& userMessage,
+    int errorNumber)
 {
     std::ostringstream message;
     message << userMessage << '\n'
             << "File path: " << _path << '\n'
-            << "mpg123 error: ";
+            << "mpg123 message: ";
 
     if (errorNumber) {
         message << mpg123_plain_strerror(errorNumber);
@@ -164,4 +170,3 @@ std::string AudioFileMPG123::mpgError(const std::string &userMessage,
 
     return message.str();
 }
-

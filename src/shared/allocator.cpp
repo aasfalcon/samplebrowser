@@ -1,4 +1,5 @@
 #include "allocator.h"
+#include "shared/log.h"
 
 Allocator::Allocator()
 {
@@ -38,7 +39,7 @@ Interface *Allocator::create(const char *tag)
 void Allocator::destroy(Interface *object)
 {
     if (!isOwner(object)) {
-        throw std::runtime_error("Attempt to deallocate unknown object");
+        RUNTIME_ERROR("Attempt to deallocate unknown object");
     }
 
     _allocated.erase(object);

@@ -1,6 +1,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
@@ -8,6 +9,7 @@
 #include "object.h"
 #include "sample.h"
 #include "shared/iresampler.h"
+#include "shared/log.h"
 
 namespace Sound {
 
@@ -58,6 +60,7 @@ public:
     template <typename S>
     void assign(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
+        assert(send - sbeg >= 0);
         reallocate(sbeg.channels(), send - sbeg);
         copy(sbeg, send);
     }
@@ -85,10 +88,12 @@ public:
     template <typename S>
     Frame<T> copy(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
+        assert(send - sbeg >= 0);
+
         int count = send - sbeg;
 
-        if (_frames < unsigned(count)) {
-            throw std::out_of_range("Buffer overflow");
+        if (int(_frames) < count) {
+            OUT_OF_RANGE("Buffef overflow on copy");
         }
 
         Frame<T> dit = begin();
@@ -134,7 +139,8 @@ public:
         return _samples.data();
     }
 
-    void toInt24(void* dest);
+    void fromInt24(const void* dest);
+    void toInt24(void* dest) const;
     void reallocate(unsigned channels, unsigned frames);
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
         IResampler::Quality quality = IResampler::QualityBest);

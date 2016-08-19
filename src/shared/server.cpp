@@ -5,6 +5,7 @@
 #include "server.h"
 #include "version.h"
 #include "shared/iplugin.h"
+#include "shared/log.h"
 
 std::shared_ptr<Server> Server::_instance;
 
@@ -15,7 +16,7 @@ Server::Server()
 
 Server::~Server()
 {
-    //lt_dlexit();
+    lt_dlexit();
 }
 
 std::shared_ptr<Interface> Server::create(const std::string &interfaceName,
@@ -60,19 +61,19 @@ IPlugin *Server::findPlugin(const std::string &interfaceName,
         }
     }
 
-    std::ostringstream message;
-    message << "Can't find plugin";
+    std::ostringstream ss;
+    ss << "Can't find plugin";
 
     if (preference) {
-        message << " [" << preference->pluginName
+        ss << " [" << preference->pluginName
                 << Version::sign(preference->compare)
                 << preference->version.str() << ']';
     }
 
-    message << " providing interface "
+    ss << " providing interface "
             << '[' << interfaceName << ']'
             << " in path: " << _pluginsPath;
-    throw std::runtime_error(message.str());
+    RUNTIME_ERROR(ss.str());
 }
 
 std::shared_ptr<Server> Server::instance()

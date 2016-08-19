@@ -26,6 +26,7 @@ enum Type {
     TypeFloat64,
     TypeInt8,
     TypeInt16,
+    TypeInt24E, // emulated with Float32
     TypeInt32,
 };
 

@@ -8,12 +8,10 @@ using namespace Sound;
 Driver::Driver()
     : _provider(PLUGIN_FACTORY(IDriver))
 {
-
 }
 
 Driver::~Driver()
 {
-
 }
 
 void Driver::abort()
@@ -21,7 +19,7 @@ void Driver::abort()
     _provider->control(IDriver::ControlAbort);
 }
 
-const IDriver::Api &Driver::apiInfo(IDriver::ApiType type) const
+const IDriver::Api& Driver::apiInfo(IDriver::ApiType type) const
 {
     return *_provider->apiInfo(type);
 }
@@ -31,17 +29,18 @@ unsigned Driver::bufferFrames() const
     return _bufferFrames;
 }
 
-void Driver::connect(const IDriver::ConnectOptions &options)
+void Driver::connect(const IDriver::ConnectOptions& options)
 {
     _provider = PLUGIN_FACTORY(IDriver);
     _bufferFrames = _provider->connect(options);
 
     std::map<unsigned, Type> formatsMap = {
-        {IDriver::SampleFloat32, TypeFloat32},
-        {IDriver::SampleFloat64, TypeFloat64},
-        {IDriver::SampleInt8, TypeInt8},
-        {IDriver::SampleInt16, TypeInt16},
-        {IDriver::SampleInt32, TypeInt32},
+        { IDriver::SampleFloat32, TypeFloat32 },
+        { IDriver::SampleFloat64, TypeFloat64 },
+        { IDriver::SampleInt8, TypeInt8 },
+        { IDriver::SampleInt16, TypeInt16 },
+        { IDriver::SampleInt24, TypeInt24E },
+        { IDriver::SampleInt32, TypeInt32 },
     };
 
     _sampleType = formatsMap.at(options.sampleFormat);
@@ -53,7 +52,7 @@ void Driver::disconnect()
     _provider->disconnect();
 }
 
-const IDriver::DriverInfo &Driver::info() const
+const IDriver::DriverInfo& Driver::info() const
 {
     return *_provider->driverInfo();
 }
@@ -61,22 +60,19 @@ const IDriver::DriverInfo &Driver::info() const
 template <typename T>
 void Driver::init(std::shared_ptr<Processor<T> > root)
 {
-    if (sampleType() != Object<T>::type()) {
-        std::string message = "Wrong root processor sample format";
-        LOG(ERROR, message);
-        throw std::runtime_error(message);
+    if (sampleType() != TypeInt24E && sampleType() != Object<T>::type()) {
+        RUNTIME_ERROR("Wrong root processor sample format");
     }
 
     Runtime<T>* pruntime = new Runtime<T>(
-        std::shared_ptr<Processor<T> >(root),
-        _options->outputChannels, _bufferFrames,
-        latency(), sampleRate());
+        root, _options->outputChannels, _bufferFrames,
+        latency(), sampleRate(), sampleType());
 
     _runtime = std::shared_ptr<void>(pruntime, [](void* ptr) {
-        Runtime<T>* pruntime = reinterpret_cast<Runtime<T>*>(ptr);
-        delete pruntime;
+        delete reinterpret_cast<Runtime<T>*>(ptr);
     });
 
+    _provider->setProcess(&Runtime<T>::process, pruntime);
     LOG(TRACE, "Driver initialized");
 }
 

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -10,21 +11,40 @@
 
 using namespace Sound;
 
+typedef std::uint8_t Int24Parts[3];
+union Int32Parts {
+    std::int32_t i32;
+    std::uint8_t i8[4];
+};
+
+inline bool isBigEndian() {
+    static const Int32Parts endiannessCheck = { 0x01020304 };
+    return 0x01 == endiannessCheck.i8[3];
+}
+
 template <typename T>
-void Buffer<T>::toInt24(void* dest)
+void Buffer<T>::fromInt24(const void *source)
 {
-    typedef std::uint8_t Int24Parts[3];
-    union Int32Parts {
-        std::int32_t i32;
-        std::uint8_t i8[4];
-    };
+    auto int24source = reinterpret_cast<const Int24Parts*>(source);
+    auto ptr = _samples.data();
+    unsigned offset = unsigned(!isBigEndian());
 
-    const Int32Parts endiannessCheck = { 0x01020304 };
-    const bool isBigEndian = 0x01 == endiannessCheck.i8[3];
+    for (unsigned i = 0; i < size(); i++) {
+        const Int24Parts &s = int24source[i];
+        Int32Parts d = { 0 };
+        d.i8[0 + offset] = s[0];
+        d.i8[1 + offset] = s[1];
+        d.i8[2 + offset] = s[2];
+        ptr[i] = Sample<Int32>(d.i32);
+    }
+}
 
+template <typename T>
+void Buffer<T>::toInt24(void* dest) const
+{
     auto int24dest = reinterpret_cast<Int24Parts*>(dest);
     auto ptr = _samples.data();
-    unsigned offset = unsigned(!isBigEndian);
+    unsigned offset = unsigned(!isBigEndian());
 
     for (unsigned i = 0; i < size(); i++) {
         Sample<Int32> i32 = ptr[i];
@@ -92,6 +112,9 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
 template <typename T>
 void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
 {
+    assert(end() - dend >= 0);
+    assert(dbeg - begin() >= 0);
+
     if (dbeg != dend) {
         std::size_t count = unsigned(dend - dbeg) * dbeg.channels() * sizeof(T);
         std::memset(dbeg.ptr(), 0, count);
