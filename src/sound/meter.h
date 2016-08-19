@@ -1,7 +1,10 @@
 #ifndef METER_H
 #define METER_H
 
+#include "buffer.h"
 #include "processor.h"
+
+namespace Sound {
 
 template <typename T>
 class ConstFrame;
@@ -11,6 +14,7 @@ class Meter : public Processor<T> {
 public:
     Meter();
     ~Meter();
+
     ConstFrame<T> peaks() const;
     void process();
 
@@ -22,5 +26,6 @@ private:
 };
 
 SOUND_INSTANTIATION_DECLARE(Meter);
+}
 
 #endif // METER_H

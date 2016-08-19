@@ -8,143 +8,10 @@
 #include "shared/log.h"
 #include "shared/server.h"
 
-template <typename T>
-Buffer<T>::Buffer()
-    : _channels(0)
-    , _frames(0)
-    , _samples()
-{
-}
+using namespace Sound;
 
 template <typename T>
-template <typename S>
-Buffer<T>::Buffer(ConstFrame<S> sbeg, ConstFrame<S> send)
-    : Buffer<T>()
-{
-    assign(sbeg, send);
-}
-
-template <typename T>
-Buffer<T>::Buffer(unsigned channels, unsigned frames)
-    : _channels(channels)
-    , _frames(frames)
-    , _samples(channels * frames, static_cast<T>(0))
-{
-}
-
-template <typename T>
-template <typename S>
-void Buffer<T>::assign(ConstFrame<S> sbeg, ConstFrame<S> send)
-{
-    unsigned channels = sbeg.channels();
-    reallocate(channels, send - sbeg);
-    copy(sbeg, send);
-}
-
-template <typename T>
-template <typename S>
-void Buffer<T>::assign(const S* ptr, unsigned channels, unsigned frames)
-{
-    auto sbeg = ConstFrame<S>(channels, reinterpret_cast<const Sample<S>*>(ptr));
-    assign(sbeg, sbeg + frames);
-}
-
-template <typename T>
-Frame<T> Buffer<T>::begin()
-{
-    return Frame<T>(_channels, _samples.data());
-}
-
-template <typename T>
-template <typename S>
-Frame<T> Buffer<T>::copy(ConstFrame<S> sbeg, ConstFrame<S> send)
-{
-    if (sbeg.channels() != send.channels()) {
-        std::string message = "Begin and end frame channels count differs";
-        LOG(ERROR, message
-                << ". Begin channels: " << sbeg.channels()
-                << ", end channels: " << send.channels());
-        throw std::out_of_range(message);
-    }
-
-    int count = send - sbeg;
-
-    if (count < 0) {
-        std::string message = "End frame is before begin frame on copy";
-        LOG(ERROR, message);
-        throw std::out_of_range(message);
-    }
-
-    if (_frames < unsigned(count)) {
-        std::string message = "Buffer overflow";
-        LOG(ERROR, message
-                << ". Buffer frames: " << _frames << " vs " << count);
-        throw std::out_of_range(message);
-    }
-
-    if (this->type() == sbeg.type() && _channels == sbeg.channels()) {
-        std::memcpy(this->data(), sbeg.data(), count * _channels * sizeof(T));
-    } else {
-        Frame<T> dit = begin();
-
-        for (ConstFrame<S> sit = sbeg; sit != send; ++sit, ++dit) {
-            dit = sit;
-        }
-    }
-
-    return begin() + count;
-}
-
-template <typename T>
-ConstFrame<T> Buffer<T>::cbegin() const
-{
-    return ConstFrame<T>(_channels, &*_samples.cbegin());
-}
-
-template <typename T>
-ConstFrame<T> Buffer<T>::cend() const
-{
-    return ConstFrame<T>(_channels, &*_samples.cend());
-}
-
-template <typename T>
-unsigned Buffer<T>::channels() const
-{
-    return _channels;
-}
-
-template <typename T>
-Frame<T> Buffer<T>::end()
-{
-    return Frame<T>(_channels, _samples.data());
-}
-
-template <typename T>
-unsigned Buffer<T>::frames() const
-{
-    return _frames;
-}
-
-template <typename T>
-bool Buffer<T>::isEmpty() const
-{
-    return _frames == 0;
-}
-
-template <typename T>
-Sample<T>* Buffer<T>::data()
-{
-    return _samples.data();
-}
-
-template <typename T>
-const Sample<T>* Buffer<T>::data() const
-{
-    return _samples.data();
-}
-
-template <typename T>
-void Buffer<T>::nativeInt24(void* dest)
+void Buffer<T>::toInt24(void* dest)
 {
     typedef std::uint8_t Int24Parts[3];
     union Int32Parts {
@@ -160,7 +27,7 @@ void Buffer<T>::nativeInt24(void* dest)
     unsigned offset = unsigned(!isBigEndian);
 
     for (unsigned i = 0; i < size(); i++) {
-        Sample<Sound::Int32> i32 = ptr[i];
+        Sample<Int32> i32 = ptr[i];
         Int32Parts s = { i32 };
         Int24Parts& d = int24dest[i];
         d[0] = s.i8[0 + offset];
@@ -194,17 +61,17 @@ void Buffer<T>::resize(unsigned frames)
 
 template <typename T>
 Buffer<T> Buffer<T>::resample(unsigned destRate, unsigned sourceRate,
-    Sound::Quality quality)
+    IResampler::Quality quality)
 {
-    Buffer<T> result;
-    result.resample(cbegin(), cend(), destRate, sourceRate, quality);
-    return result;
+    Buffer<T> buffer;
+    buffer.resample(cbegin(), cend(), destRate, sourceRate, quality);
+    return buffer;
 }
 
 template <typename T>
 void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
     unsigned destRate, unsigned sourceRate,
-    Sound::Quality quality)
+    IResampler::Quality quality)
 {
     double ratio = double(destRate) / double(sourceRate);
     unsigned sframes = unsigned(send - sbeg);
@@ -212,20 +79,14 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
     unsigned dframes = unsigned(double(sframes) * ratio);
     auto resampler = PLUGIN_FACTORY(IResampler);
 
-    if (this->type() == Sound::TypeFloat32) {
-        Buffer<Sound::Float32> dtemp(channels, dframes);
-        Buffer<Sound::Float32> stemp(sbeg, send);
+    if (this->type() == TypeFloat32) {
+        Buffer<Float32> dtemp(channels, dframes);
+        Buffer<Float32> stemp(sbeg, send);
         resampler->simple(dtemp.begin().ptr(), dframes,
             stemp.begin().ptr(), sframes,
             channels, ratio, quality);
         assign(dtemp.cbegin(), dtemp.cend());
     }
-}
-
-template <typename T>
-void Buffer<T>::silence()
-{
-    silence(begin(), end());
 }
 
 template <typename T>
@@ -245,14 +106,4 @@ void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
     std::memset(dbeg.ptr(), 0, dend.ptr() - dbeg.ptr());
 }
 
-template <typename T>
-unsigned Buffer<T>::size() const
-{
-    return _samples.size();
-}
-
-#define BUFFER_COPY(__ttype, __mtype) \
-    template Frame<__ttype> Buffer<__ttype>::copy(ConstFrame<__mtype> sbeg, ConstFrame<__mtype> send);
-
-SOUND_INSTANTIATE_TEMPLATE_METHOD(BUFFER_COPY);
 SOUND_INSTANTIATE(Buffer);

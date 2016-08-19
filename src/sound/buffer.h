@@ -1,10 +1,15 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <cstring>
+#include <stdexcept>
 #include <vector>
 
+#include "object.h"
 #include "sample.h"
-#include "sound.h"
+#include "shared/iresampler.h"
+
+namespace Sound {
 
 template <typename T>
 class Frame;
@@ -13,44 +18,136 @@ template <typename T>
 class ConstFrame;
 
 template <typename T>
-class Buffer : public Sound::Object<T> {
+class Buffer : public Object<T> {
 public:
-    Buffer();
+    Buffer()
+        : _channels(0)
+        , _frames(0)
+        , _samples()
+    {
+    }
+
+    Buffer(unsigned channels, unsigned frames)
+        : _channels(channels)
+        , _frames(frames)
+        , _samples(channels * frames)
+    {
+    }
 
     template <typename S>
-    Buffer(ConstFrame<S> sbeg, ConstFrame<S> send);
-
-    Buffer(unsigned channels, unsigned frames);
-
-    template <typename S>
-    void assign(ConstFrame<S> sbeg, ConstFrame<S> send);
-
-    template <typename S>
-    void assign(const S* ptr, unsigned channels, unsigned frames);
-
-    Frame<T> begin();
-    ConstFrame<T> cbegin() const;
-    ConstFrame<T> cend() const;
-    unsigned channels() const;
+    Buffer(ConstFrame<S> sbeg, ConstFrame<S> send)
+        : Buffer<T>(sbeg.channels(), send - sbeg)
+    {
+        copy(sbeg, send);
+    }
 
     template <typename S>
-    Frame<T> copy(ConstFrame<S> sbeg, ConstFrame<S> send);
+    Buffer(unsigned channels, unsigned frames, const Sample<S>* psample)
+        : Buffer<T>(channels, frames)
+    {
+        auto sbeg = ConstFrame<S>(channels, psample);
+        assign(sbeg, sbeg + frames);
+    }
 
-    Frame<T> end();
-    unsigned frames() const;
-    bool isEmpty() const;
-    Sample<T>* data();
-    const Sample<T>* data() const;
-    void nativeInt24(void* dest);
+    template <typename S>
+    Buffer(unsigned channels, unsigned frames, const S* ptr)
+        : Buffer<T>(channels, frames, reinterpret_cast<const Sample<S>*>(ptr))
+    {
+    }
+
+    template <typename S>
+    void assign(ConstFrame<S> sbeg, ConstFrame<S> send)
+    {
+        reallocate(sbeg.channels(), send - sbeg);
+        copy(sbeg, send);
+    }
+
+    Frame<T> begin()
+    {
+        return Frame<T>(_channels, _samples.data());
+    }
+
+    ConstFrame<T> cbegin() const
+    {
+        return ConstFrame<T>(_channels, &*_samples.cbegin());
+    }
+
+    ConstFrame<T> cend() const
+    {
+        return ConstFrame<T>(_channels, &*_samples.cend());
+    }
+    unsigned channels() const
+    {
+        return _channels;
+    }
+
+    template <typename S>
+    Frame<T> copy(ConstFrame<S> sbeg, ConstFrame<S> send)
+    {
+        int count = send - sbeg;
+
+        if (_frames < unsigned(count)) {
+            throw std::out_of_range("Buffer overflow");
+        }
+
+        if (this->type() == sbeg.type() && _channels == sbeg.channels()) {
+            std::memcpy(this->data(), sbeg.data(), count * _channels * sizeof(T));
+        } else {
+            Frame<T> dit = begin();
+
+            for (ConstFrame<S> sit = sbeg; sit != send; ++sit, ++dit) {
+                dit = sit;
+            }
+        }
+
+        return begin() + count;
+    }
+
+    Frame<T> end()
+    {
+        return Frame<T>(_channels, _samples.data());
+    }
+
+    unsigned frames() const
+    {
+        return _frames;
+    }
+
+    bool isEmpty() const
+    {
+        return _frames == 0;
+    }
+
+    Sample<T>* data()
+    {
+        return _samples.data();
+    }
+
+    const Sample<T>* data() const
+    {
+        return _samples.data();
+    }
+
+    void toInt24(void* dest);
     void reallocate(unsigned channels, unsigned frames);
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
-        Sound::Quality quality = Sound::QualityBest);
+        IResampler::Quality quality = IResampler::QualityBest);
     void resize(unsigned frames);
-    void resample(ConstFrame<T> sbeg, ConstFrame<T> send, unsigned destRate, unsigned sourceRate,
-        Sound::Quality quality = Sound::QualityBest);
-    void silence();
+    void resample(ConstFrame<T> sbeg, ConstFrame<T> send,
+        unsigned destRate, unsigned sourceRate,
+        IResampler::Quality quality = IResampler::QualityBest);
+
+    void silence()
+    {
+        silence(begin(), end());
+    }
+
     void silence(Frame<T> dbeg, Frame<T> dend);
-    unsigned size() const;
+
+    unsigned size() const
+    {
+        return _samples.size();
+    }
 
 private:
     unsigned _channels;
@@ -59,5 +156,6 @@ private:
 };
 
 SOUND_INSTANTIATION_DECLARE(Buffer);
+}
 
 #endif // BUFFER_H

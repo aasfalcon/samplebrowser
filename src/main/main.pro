@@ -1,6 +1,6 @@
 QT += core gui widgets
 
-TARGET = wexplorer
+TARGET = samplebrowser
 TEMPLATE = app
 CONFIG += c++11
 

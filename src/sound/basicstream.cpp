@@ -2,6 +2,8 @@
 #include "shared/log.h"
 #include "shared/server.h"
 
+using namespace Sound;
+
 // BasicStream::Eof
 BasicStream::Eof::Eof(unsigned tail)
     : _tail(tail)
@@ -148,7 +150,7 @@ void BasicInputStream::read(RawChunks& rawChunks)
     }
 }
 
-void BasicInputStream::read(void* data, Sound::Type type, unsigned frames)
+void BasicInputStream::read(void* data, Type type, unsigned frames)
 {
     unsigned framesRead = _provider->read(data, type, frames);
 

@@ -10,6 +10,8 @@
 #include "chunk.h"
 #include "shared/iaudiofile.h"
 
+namespace Sound {
+
 class BasicStream {
 public:
     class Eof : public std::exception {
@@ -24,7 +26,7 @@ public:
     struct Info {
         unsigned channels;
         unsigned frames;
-        Sound::Type sampleType;
+        Type sampleType;
         unsigned sampleRate;
     };
 
@@ -76,7 +78,7 @@ protected:
     void read(Info& info);
     void read(Strings& strings);
     void read(RawChunks& rawChunks);
-    void read(void* data, Sound::Type type, unsigned frames);
+    void read(void* data, Type type, unsigned frames);
 };
 
 class BasicOutputStream : virtual protected BasicStream {
@@ -112,5 +114,6 @@ protected:
     BasicIOStream();
     ~BasicIOStream();
 };
+}
 
 #endif // BASICSTREAM_H

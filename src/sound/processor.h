@@ -1,28 +1,50 @@
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 
-#include "buffer.h"
-#include <map>
-#include <memory>
+#include "object.h"
+
+namespace Sound {
 
 template <typename T>
-class Processor : public Sound::Object<T> {
+class Buffer;
+
+template <typename T>
+class Processor : public Object<T> {
 public:
     Processor();
     ~Processor();
 
-    void kickIn(Buffer<T>* out,
-        Buffer<T>* in,
+    void kickIn(Buffer<T>& out, Buffer<T>& in,
         unsigned latency, unsigned sampleRate);
     virtual void process() = 0;
 
 protected:
-    Buffer<T>* in();
-    virtual void init();
-    unsigned latency() const;
-    Buffer<T>* out();
-    Sound::Type sampleFormat() const;
-    unsigned sampleRate() const;
+    Buffer<T>& in()
+    {
+        return *_in;
+    }
+
+    virtual void init() {}
+
+    unsigned latency() const
+    {
+        return _latency;
+    }
+
+    Buffer<T>& out()
+    {
+        return *_out;
+    }
+
+    Type sampleFormat() const
+    {
+        return this->type();
+    }
+
+    unsigned sampleRate() const
+    {
+        return _sampleRate;
+    }
 
 private:
     Buffer<T>* _in;
@@ -32,5 +54,6 @@ private:
 };
 
 SOUND_INSTANTIATION_DECLARE(Processor);
+}
 
 #endif // PROCESSOR_H

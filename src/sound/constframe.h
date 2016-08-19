@@ -1,35 +1,108 @@
 #ifndef CONSTFRAME_H
 #define CONSTFRAME_H
 
-#include "buffer.h"
 #include "frame.h"
-#include "sample.h"
-#include "sound.h"
+
+namespace Sound {
 
 template <typename T>
-class ConstFrame : public Sound::Object<T> {
+class ConstFrame : public Object<T> {
 public:
-    ConstFrame(unsigned channels, const Sample<T>* data);
-    ConstFrame(const ConstFrame& source);
-    ConstFrame(const Frame<T>& source);
+    ConstFrame(unsigned channels, const Sample<T>* data)
+        : _channels(channels)
+        , _data(data)
+    {
+    }
+
+    ConstFrame(const ConstFrame& source)
+        : _channels(source._channels)
+        , _data(source._data)
+    {
+    }
+
+    ConstFrame(const Frame<T>& source)
+        : _channels(source.channels())
+        , _data(source.data())
+    {
+    }
+
     ~ConstFrame() {}
 
-    Sample<T> at(unsigned channel) const;
-    unsigned channels() const;
-    const Sample<T>* data() const;
-    const T* ptr() const;
-    unsigned size() const;
+    Sample<T> at(unsigned channel) const
+    {
+        return _data[channel];
+    }
 
-    ConstFrame<T>& operator++();
-    ConstFrame<T>& operator--();
-    int operator-(ConstFrame<T> rht) const;
-    ConstFrame<T> operator+(int rht) const;
-    ConstFrame<T> operator-(int rht) const;
-    ConstFrame<T>& operator+=(int rht);
-    ConstFrame<T>& operator-=(int rht);
-    bool operator==(const ConstFrame<T>& rht) const;
-    bool operator!=(const ConstFrame<T>& rht) const;
-    Sample<T> operator[](unsigned channel) const;
+    unsigned channels() const
+    {
+        return _channels;
+    }
+
+    const Sample<T>* data() const
+    {
+        return _data;
+    }
+
+    const T* ptr() const
+    {
+        return reinterpret_cast<const T*>(_data);
+    }
+
+    unsigned size() const
+    {
+        return sizeof(T) * _channels;
+    }
+
+    ConstFrame<T>& operator++()
+    {
+        return operator+=(1);
+    }
+
+    ConstFrame<T>& operator--()
+    {
+        return operator+=(-1);
+    }
+
+    int operator-(ConstFrame<T> rht) const
+    {
+        return (_data - rht._data) / int(_channels);
+    }
+
+    ConstFrame<T> operator+(int rht) const
+    {
+        return ConstFrame<T>(_channels, _data + rht * int(_channels));
+    }
+
+    ConstFrame<T> operator-(int rht) const
+    {
+        return operator+(-rht);
+    }
+
+    ConstFrame<T>& operator+=(int rht)
+    {
+        _data += (rht * int(_channels));
+        return *this;
+    }
+
+    ConstFrame<T>& operator-=(int rht)
+    {
+        return operator+=(-rht);
+    }
+
+    bool operator==(const ConstFrame<T>& rht) const
+    {
+        return rht._data == _data;
+    }
+
+    bool operator!=(const ConstFrame<T>& rht) const
+    {
+        return rht._data != _data;
+    }
+
+    Sample<T> operator[](unsigned channel) const
+    {
+        return at(channel);
+    }
 
 private:
     unsigned _channels;
@@ -37,5 +110,6 @@ private:
 };
 
 SOUND_INSTANTIATION_DECLARE(ConstFrame);
+}
 
 #endif // CONSTFRAME_H

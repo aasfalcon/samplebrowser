@@ -2,7 +2,7 @@
 #define IDRIVER_H
 
 #include "interface.h"
-#include "../sound/sound.h"
+#include "../sound/object.h"
 
 struct IDriver: Interface {
     enum SampleFormat {

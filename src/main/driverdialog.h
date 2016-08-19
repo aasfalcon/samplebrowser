@@ -7,7 +7,7 @@
 #include <QMap>
 
 #include "shared/idriver.h"
-#include "sound/sound.h"
+#include "sound/object.h"
 
 class QAbstractButton;
 class QComboBox;
@@ -15,7 +15,9 @@ class QLabel;
 class QStatusBar;
 class QString;
 
+namespace Sound {
 class Driver;
+}
 
 namespace Ui {
 class DriverDialog;
@@ -46,7 +48,7 @@ private:
     static const unsigned DEFAULT_BUFFER_COUNT = 3;
 
     Ui::DriverDialog* ui;
-    std::shared_ptr<Driver> _driver;
+    std::shared_ptr<Sound::Driver> _driver;
     static QMap<IDriver::SampleFormat, QString> _formatMap;
     IDriver::ConnectOptions _model;
     bool _isUpdateLocked;

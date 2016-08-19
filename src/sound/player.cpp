@@ -1,4 +1,7 @@
+#include "inputstream.h"
 #include "player.h"
+
+using namespace Sound;
 
 template <typename T>
 Player<T>::Player()
@@ -17,21 +20,14 @@ void Player<T>::play(const std::string& path)
     _stream = std::make_shared<InputStream>(path);
     *_stream >> info;
 
-    auto feed = [](RingBuffer<Sound::Float32>& ring, bool& isEnough, void* ptr) {
+    auto feed = [](RingBuffer<Float32>& ring, bool& isEnough, void* ptr) {
         auto player = reinterpret_cast<Player<T>*>(ptr);
-        bool isEof = false;
-        auto& buf = player->_readBuffer;
 
         while (!ring.isFull()) {
-            try {
-                *player->_stream >> buf;
-            } catch (BasicStream::Eof eof) {
-                isEof = true;
-                buf.silence(buf.begin() + int(eof.tail()), buf.end());
-            }
+            bool isEof = player->fillBuffer(player->_readBuffer);
 
             player->_mutex.lock();
-            ring.push(buf.cbegin(), buf.cend());
+            ring.push(player->_readBuffer.cbegin(), player->_readBuffer.cend());
             isEnough = isEof;
             player->_mutex.unlock();
 
@@ -43,6 +39,22 @@ void Player<T>::play(const std::string& path)
 
     _readBuffer.reallocate(info.channels, this->feedFrames(info.sampleRate));
     this->start(info.channels, info.sampleRate, feed, this);
+}
+
+template <typename T>
+bool Player<T>::fillBuffer(Buffer<Float32> &buffer)
+{
+    bool stop = false;
+
+    try {
+        *_stream >> buffer;
+    } catch (BasicStream::Eof eof) {
+        stop = true;
+        auto silenceBegin = buffer.begin() + int(eof.tail());
+        buffer.silence(silenceBegin, buffer.end());
+    }
+
+    return stop;
 }
 
 SOUND_INSTANTIATE(Player);

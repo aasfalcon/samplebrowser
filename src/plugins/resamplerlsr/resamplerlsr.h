@@ -2,7 +2,7 @@
 #define RESAMPLERPROVIDERLSR_H
 
 #include "shared/iresampler.h"
-#include "sound/sound.h"
+#include "sound/object.h"
 
 struct SRC_STATE_tag;
 
@@ -12,7 +12,7 @@ public:
     ResamplerLSR();
     ~ResamplerLSR();
 
-    void init(Sound::Quality quality, unsigned channels,
+    void init(Quality quality, unsigned channels,
                       unsigned frames, double rate);
     float *output();
     unsigned process(const float *input, unsigned inputFramesMax);
@@ -21,7 +21,7 @@ public:
     unsigned simple(float *dest, unsigned dframes,
                     const float *source, unsigned sframes,
                     unsigned channels, double ratio,
-                    Sound::Quality quality);
+                    Quality quality);
 protected:
     unsigned perform();
 
@@ -34,7 +34,7 @@ private:
     float *_output;
     double _outputRate;
     SRC_STATE_tag *_state;
-    static int _types[Sound::QualityCount];
+    static int _types[QualityCount];
 };
 
 #endif // RESAMPLERPROVIDERLSR_H

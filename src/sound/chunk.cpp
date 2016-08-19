@@ -12,6 +12,8 @@
 #define BROADCAST_DATE_FORMAT "Y:m:d"
 #define BROADCAST_TIME_FORMAT "H:M:S"
 
+using namespace Sound;
+
 // Chunk
 void Chunk::copy(char *dest, const std::string &source, unsigned max)
 {

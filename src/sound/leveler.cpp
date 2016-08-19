@@ -1,9 +1,12 @@
 #include <stdexcept>
 
+#include "buffer.h"
 #include "constframe.h"
 #include "frame.h"
 #include "leveler.h"
 #include "sample.h"
+
+using namespace Sound;
 
 template <typename T>
 Leveler<T>::Leveler()
@@ -27,14 +30,13 @@ double Leveler<T>::level() const
 template <typename T>
 void Leveler<T>::process()
 {
-    auto& out = *this->out();
-    unsigned channels = out.channels();
+    auto& out = this->out();
 
     for (auto frame = out.begin(); frame != out.end(); ++frame) {
-        for (unsigned i = 0; i < channels; i++) {
+        for (unsigned i = 0; i < out.channels(); i++) {
             double level = _level;
 
-            if (_balance != 0. && channels == 2) {
+            if (_balance != 0. && out.channels() == 2) {
                 if (_balance > 0 && i == 0) {
                     level *= 1 - _balance;
                 } else if (_balance < 0 && i == 1) {
@@ -42,8 +44,7 @@ void Leveler<T>::process()
                 }
             }
 
-            T sample = frame[i];
-            frame[i] = T(double(sample) * level);
+            frame[i] = T(double(T(frame[i])) * level);
         }
     }
 }

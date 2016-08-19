@@ -3,6 +3,8 @@
 #include "shared/log.h"
 #include "shared/server.h"
 
+using namespace Sound;
+
 Driver::Driver()
     : _provider(PLUGIN_FACTORY(IDriver))
 {
@@ -34,12 +36,12 @@ void Driver::connect(const IDriver::ConnectOptions &options)
     _provider = PLUGIN_FACTORY(IDriver);
     _bufferFrames = _provider->connect(options);
 
-    std::map<unsigned, Sound::Type> formatsMap = {
-        {IDriver::SampleFloat32, Sound::TypeFloat32},
-        {IDriver::SampleFloat64, Sound::TypeFloat64},
-        {IDriver::SampleInt8, Sound::TypeInt8},
-        {IDriver::SampleInt16, Sound::TypeInt16},
-        {IDriver::SampleInt32, Sound::TypeInt32},
+    std::map<unsigned, Type> formatsMap = {
+        {IDriver::SampleFloat32, TypeFloat32},
+        {IDriver::SampleFloat64, TypeFloat64},
+        {IDriver::SampleInt8, TypeInt8},
+        {IDriver::SampleInt16, TypeInt16},
+        {IDriver::SampleInt32, TypeInt32},
     };
 
     _sampleType = formatsMap.at(options.sampleFormat);
@@ -59,7 +61,7 @@ const IDriver::DriverInfo &Driver::info() const
 template <typename T>
 void Driver::init(std::shared_ptr<Processor<T> > root)
 {
-    if (sampleType() != Sound::Object<T>::type()) {
+    if (sampleType() != Object<T>::type()) {
         std::string message = "Wrong root processor sample format";
         LOG(ERROR, message);
         throw std::runtime_error(message);
@@ -93,7 +95,7 @@ unsigned Driver::sampleRate() const
     return _provider->streamInfo()->sampleRate;
 }
 
-Sound::Type Driver::sampleType() const
+Type Driver::sampleType() const
 {
     return _sampleType;
 }

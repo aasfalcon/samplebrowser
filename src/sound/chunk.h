@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace Sound {
+
 struct Chunk {
     friend class BasicInputStream;
     friend class BasicOutputStream;
@@ -147,5 +149,6 @@ protected:
     void fromRaw(const RawData& data);
     RawData toRaw() const;
 };
+}
 
 #endif // CHUNK_H

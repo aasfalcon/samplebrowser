@@ -3,6 +3,8 @@
 
 #include "processor.h"
 
+namespace Sound {
+
 template <typename T>
 class Leveler : public Processor<T> {
 public:
@@ -20,5 +22,6 @@ private:
 };
 
 SOUND_INSTANTIATION_DECLARE(Leveler);
+}
 
 #endif // LEVELER_H

@@ -4,6 +4,8 @@
 #include "shared/idriver.h"
 #include <memory>
 
+namespace Sound {
+
 template <typename T>
 class Processor;
 
@@ -22,7 +24,7 @@ public:
     std::shared_ptr<IDriver::ConnectOptions> options() const;
 
     unsigned sampleRate() const;
-    Sound::Type sampleType() const;
+    Type sampleType() const;
 
     template <typename T>
     void init(std::shared_ptr<Processor<T> > root);
@@ -36,7 +38,8 @@ private:
     std::shared_ptr<IDriver::ConnectOptions> _options;
     std::shared_ptr<IDriver> _provider;
     std::shared_ptr<void> _runtime;
-    Sound::Type _sampleType;
+    Type _sampleType;
 };
+}
 
 #endif // DRIVER_H

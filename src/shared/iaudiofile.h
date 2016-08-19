@@ -2,7 +2,7 @@
 #define IAUDIOFILE_H
 
 #include "interface.h"
-#include "../sound/sound.h"
+#include "../sound/object.h"
 #include <sndfile.h>
 
 struct IAudioFile: Interface {

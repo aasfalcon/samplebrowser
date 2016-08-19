@@ -4,6 +4,8 @@
 #include "resampler.h"
 #include "shared/server.h"
 
+using namespace Sound;
+
 template <typename T>
 Resampler<T>::Resampler()
     : _feeder(nullptr)
@@ -42,12 +44,12 @@ void Resampler<T>::process()
         }
 
         unsigned count = _resampler->process(buffer.cbegin().ptr(), buffer.frames());
-        auto sptr = reinterpret_cast<const Sample<Sound::Float32>*>(_resampler->output());
-        ConstFrame<Sound::Float32> sbeg(buffer.channels(), sptr);
+        auto sptr = reinterpret_cast<const Sample<Float32>*>(_resampler->output());
+        ConstFrame<Float32> sbeg(buffer.channels(), sptr);
 
-        auto& out = *this->out();
-        auto tail = out.copy(sbeg, sbeg + int(count));
-        out.silence(tail, out.end());
+        auto& out = this->out();
+        auto silenceBegin = out.copy(sbeg, sbeg + int(count));
+        out.silence(silenceBegin, out.end());
     } catch (...) {
         _mutex.unlock();
         throw;
@@ -66,7 +68,7 @@ void Resampler<T>::start(unsigned channels, unsigned sampleRate,
     _resampler->setInputRate(_sampleRate);
     _resampler->reset();
 
-    _ring = std::make_shared<RingBuffer<Sound::Float32> >(channels,
+    _ring = std::make_shared<RingBuffer<Float32> >(channels,
         feedFrames(sampleRate));
     (*feeder)(*_ring, _isEnough, _userData = userData);
     _mutex.unlock();
@@ -84,15 +86,14 @@ template <typename T>
 unsigned Resampler<T>::feedFrames(unsigned sourceSampleRate)
 {
     double ratio = double(sourceSampleRate) / double(this->sampleRate());
-    return unsigned(ratio * double(this->out()->frames()));
+    return unsigned(ratio * double(this->out().frames()));
 }
 
 template <typename T>
 void Resampler<T>::init()
 {
-    auto& out = *this->out();
-    _resampler->init(Sound::QualityRealtime, out.channels(),
-        out.frames(), this->sampleRate());
+    _resampler->init(IResampler::QualityRealtime, this->out().channels(),
+        this->out().frames(), this->sampleRate());
 }
 
 SOUND_INSTANTIATE(Resampler);

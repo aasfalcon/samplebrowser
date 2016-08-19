@@ -8,29 +8,25 @@ SOURCES += \
     chunk.cpp \
     driver.cpp \
     basicstream.cpp \
-    sound.cpp \
     runtime.cpp \
     ringbuffer.cpp \
     resampler.cpp \
     processor.cpp \
     player.cpp \
-    outputstream.cpp \
     meter.cpp \
     leveler.cpp \
-    iostream.cpp \
-    inputstream.cpp \
     frame.cpp \
     constframe.cpp \
     chain.cpp \
     buffer.cpp \
-    sample.cpp
+    sample.cpp \
+    object.cpp
 
 HEADERS += \
     basicstream.h \
     buffer.h \
     chain.h \
     chunk.h \
-    config.h \
     constframe.h \
     driver.h \
     frame.h \
@@ -45,6 +41,6 @@ HEADERS += \
     ringbuffer.h \
     runtime.h \
     sample.h \
-    sound.h
+    object.h
 
 INCLUDEPATH += .. ../../vendor

@@ -30,7 +30,7 @@ QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
 DriverDialog::DriverDialog(QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::DriverDialog)
-    , _driver(new Driver)
+    , _driver(new Sound::Driver)
     , _isUpdateLocked(false)
     , _latencyText(new QLabel(this))
     , _statusBar(new QStatusBar(this))
@@ -191,8 +191,8 @@ void DriverDialog::modelApply()
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
 
-        auto player = std::make_shared<Player<Sound::Float32>>();
-        auto processor = std::static_pointer_cast<Processor<Sound::Float32>>(player);
+        auto player = std::make_shared<Sound::Player<Sound::Float32>>();
+        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Float32>>(player);
         _driver->init(processor);
 
         std::string path = testFilePath().toStdString();
