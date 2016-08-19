@@ -14,8 +14,10 @@ int main(int argc, char* argv[])
         result = app.run();
     } catch (std::exception e) {
         LOG(FATAL, QTR("Unhandled exception: ") << e.what());
+        throw;
     } catch (...) {
         LOG(FATAL, QTR("Unhandled unknown object thrown"));
+        throw;
     }
 
     lt_dlexit();

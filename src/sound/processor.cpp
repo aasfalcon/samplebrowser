@@ -1,5 +1,5 @@
-#include "buffer.h"
 #include "processor.h"
+#include "buffer.h"
 
 using namespace Sound;
 
@@ -26,6 +26,12 @@ void Processor<T>::kickIn(Buffer<T>& out, Buffer<T>& in,
     _latency = latency;
     _sampleRate = sampleRate;
     init();
+}
+
+template <typename T>
+void Processor<T>::process()
+{
+    this->out().silence();
 }
 
 SOUND_INSTANTIATE(Processor);

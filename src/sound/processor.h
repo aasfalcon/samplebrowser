@@ -16,7 +16,7 @@ public:
 
     void kickIn(Buffer<T>& out, Buffer<T>& in,
         unsigned latency, unsigned sampleRate);
-    virtual void process() = 0;
+    virtual void process();
 
 protected:
     Buffer<T>& in()

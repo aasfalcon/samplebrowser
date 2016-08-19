@@ -100,18 +100,27 @@ unsigned DriverRtAudio::connect(const IDriver::ConnectOptions& options)
     _rtaudio = std::shared_ptr<RtAudio>(
         new RtAudio(RtAudio::Api(options.apiType)));
 
-    std::unique_ptr<RtAudio::StreamParameters> iparams, oparams;
+    _streamInfo = std::make_shared<StreamInfo>();
 
-    if (options.outputChannels) {
-        oparams.reset(new RtAudio::StreamParameters());
-        oparams->deviceId = options.outputDeviceId;
-        oparams->nChannels = options.outputChannels;
-    }
+    RtAudio::StreamParameters isp, osp;
+    auto pisp = &isp, posp = &osp;
 
     if (options.inputChannels && options.isDuplex) {
-        iparams.reset(new RtAudio::StreamParameters());
-        iparams->deviceId = options.inputDeviceId;
-        iparams->nChannels = options.inputChannels;
+        isp.firstChannel = _streamInfo->input.channelFirst = 0;
+        isp.nChannels = _streamInfo->input.channels = options.inputChannels;
+        isp.deviceId = _streamInfo->input.deviceId = options.inputDeviceId;
+        _streamInfo->input.sampleRate = options.sampleRate;
+    } else {
+        pisp = nullptr;
+    }
+
+    if (options.outputChannels) {
+        osp.firstChannel = _streamInfo->output.channelFirst = 0;
+        osp.nChannels = _streamInfo->output.channels = options.outputChannels;
+        osp.deviceId = _streamInfo->output.deviceId = options.outputDeviceId;
+        _streamInfo->output.sampleRate = options.sampleRate;
+    } else {
+        posp = nullptr;
     }
 
     RtAudio::StreamOptions so;
@@ -121,10 +130,9 @@ unsigned DriverRtAudio::connect(const IDriver::ConnectOptions& options)
     so.streamName = options.name;
 
     unsigned bufferSize;
-    _rtaudio->openStream(oparams.get(), iparams.get(),
-        options.sampleFormat, options.sampleRate,
-        &bufferSize, &DriverRtAudio::process,
-        this, &so, &DriverRtAudio::error);
+    _rtaudio->openStream(posp, pisp, options.sampleFormat, options.sampleRate,
+        &bufferSize, &DriverRtAudio::process, this, &so, &DriverRtAudio::error);
+
     return bufferSize;
 }
 
@@ -205,19 +213,15 @@ void DriverRtAudio::setProcess(IDriver::Process callback, void* object)
 
 const IDriver::StreamInfo* DriverRtAudio::streamInfo()
 {
-    if (!_rtaudio) {
-        RUNTIME_ERROR("Attempt to get stream info while not initialized");
+    if (!_rtaudio || !_streamInfo) {
+        RUNTIME_ERROR("Attempt to get stream info while not connected");
     }
 
-    if (!_streamInfo) {
-        _streamInfo = std::shared_ptr<StreamInfo>(new StreamInfo());
-        _streamInfo->isOpen = _rtaudio->isStreamOpen();
-        _streamInfo->isRunning = _rtaudio->isStreamRunning();
-        _streamInfo->latency = unsigned(_rtaudio->getStreamLatency());
-        _streamInfo->time = _rtaudio->getStreamTime();
-        _streamInfo->sampleRate = _rtaudio->getStreamSampleRate();
-    }
-
+    _streamInfo->isOpen = _rtaudio->isStreamOpen();
+    _streamInfo->isRunning = _rtaudio->isStreamRunning();
+    _streamInfo->latency = unsigned(_rtaudio->getStreamLatency());
+    _streamInfo->time = _rtaudio->getStreamTime();
+    _streamInfo->sampleRate = _rtaudio->getStreamSampleRate();
     return _streamInfo.get();
 }
 

@@ -23,41 +23,29 @@ Resampler<T>::~Resampler()
 template <typename T>
 void Resampler<T>::process()
 {
-    if (!_mutex.try_lock()) {
-        return;
-    }
+    if (!_ring || _ring->isEmpty()) {
+        Processor<T>::process(); // silence
 
-    if (!_ring) {
-        _mutex.unlock();
-        return;
-    }
-
-    if (_ring->isEmpty()) {
-        _ring.reset();
-        _mutex.unlock();
-        return;
-    }
-
-    try {
-        auto& buffer = _ring->pop();
-
-        if (!_isEnough && _ring->isHalfEmpty()) {
-            std::thread([this]() { (*_feeder)(*_ring, _isEnough, _userData); });
+        if (_ring) {
+            _ring.reset();
         }
 
-        unsigned count = _resampler->process(buffer.cbegin().ptr(), buffer.frames());
-        auto sptr = reinterpret_cast<const Sample<Float32>*>(_resampler->output());
-        ConstFrame<Float32> sbeg(buffer.channels(), sptr);
-
-        auto& out = this->out();
-        auto silenceBegin = out.copy(sbeg, sbeg + int(count));
-        out.silence(silenceBegin, out.end());
-    } catch (...) {
-        _mutex.unlock();
-        throw;
+        return;
     }
 
-    _mutex.unlock();
+    auto& buffer = _ring->pop();
+
+    if (!_isEnough && _ring->isHalfEmpty()) {
+        (*_feeder)(*_ring, _isEnough, _userData);
+    }
+
+    unsigned count = _resampler->process(buffer.cbegin().ptr(), buffer.frames());
+    auto sptr = reinterpret_cast<const Sample<Float32>*>(_resampler->output());
+    ConstFrame<Float32> sbeg(buffer.channels(), sptr);
+
+    auto& out = this->out();
+    auto silenceBegin = out.copy(sbeg, sbeg + int(count));
+    out.silence(silenceBegin, out.end());
 }
 
 template <typename T>
@@ -72,16 +60,15 @@ void Resampler<T>::start(unsigned channels, unsigned sampleRate,
 
     _ring = std::make_shared<RingBuffer<Float32> >(channels,
         feedFrames(sampleRate));
-    (*feeder)(*_ring, _isEnough, _userData = userData);
     _mutex.unlock();
+    (*feeder)(*_ring, _isEnough, _userData = userData);
 }
 
 template <typename T>
 void Resampler<T>::stop()
 {
-    _mutex.lock();
+    std::lock_guard<std::mutex> lock(_mutex);
     _ring.reset();
-    _mutex.unlock();
 }
 
 template <typename T>

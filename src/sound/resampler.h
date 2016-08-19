@@ -26,14 +26,13 @@ public:
     void stop();
 
 protected:
-    std::mutex _mutex;
-
     unsigned feedFrames(unsigned sourceSampleRate);
     void init();
 
 private:
     Feeder _feeder;
     bool _isEnough;
+    std::mutex _mutex;
     std::shared_ptr<IResampler> _resampler;
     std::shared_ptr<RingBuffer<Float32> > _ring;
     unsigned _sampleRate;

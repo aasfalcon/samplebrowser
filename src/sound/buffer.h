@@ -6,18 +6,14 @@
 #include <stdexcept>
 #include <vector>
 
+#include "constframe.h"
+#include "frame.h"
 #include "object.h"
 #include "sample.h"
 #include "shared/iresampler.h"
 #include "shared/log.h"
 
 namespace Sound {
-
-template <typename T>
-class Frame;
-
-template <typename T>
-class ConstFrame;
 
 template <typename T>
 class Buffer : public Object<T> {
@@ -88,12 +84,11 @@ public:
     template <typename S>
     Frame<T> copy(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
-        assert(send - sbeg >= 0);
-
         int count = send - sbeg;
+        assert(count >= 0);
 
         if (int(_frames) < count) {
-            OUT_OF_RANGE("Buffef overflow on copy");
+            OUT_OF_RANGE("Buffer overflow on copy");
         }
 
         Frame<T> dit = begin();

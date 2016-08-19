@@ -1,3 +1,5 @@
+#include <mutex>
+
 #include "inputstream.h"
 #include "player.h"
 
@@ -22,14 +24,14 @@ void Player<T>::play(const std::string& path)
 
     auto feed = [](RingBuffer<Float32>& ring, bool& isEnough, void* ptr) {
         auto player = reinterpret_cast<Player<T>*>(ptr);
+        std::mutex references_mutex;
 
         while (!ring.isFull()) {
             bool isEof = player->fillBuffer(player->_readBuffer);
 
-            //player->_mutex.lock();
+            std::lock_guard<std::mutex> lock(references_mutex);
             ring.push(player->_readBuffer.cbegin(), player->_readBuffer.cend());
             isEnough = isEof;
-            //player->_mutex.unlock();
 
             if (isEof) {
                 break;
