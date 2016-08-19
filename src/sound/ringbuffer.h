@@ -31,7 +31,7 @@ public:
 
     bool isFull() const
     {
-        return _count == loaded();
+        return loaded() == _count - 1;
     }
 
     bool isHalfEmpty() const
@@ -41,12 +41,12 @@ public:
 
     unsigned loaded() const
     {
-        return (_end + 1) % _count - _begin - 1;
+        return (_count - _begin + _end) % _count;
     }
 
     unsigned space() const
     {
-        return _count - loaded();
+        return _count - 1 - loaded();
     }
 
     const Buffer<T>& pop()
@@ -61,7 +61,8 @@ public:
     void push(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
         Buffer<T>& dest = _ring.at(_end);
-        dest.silence(dest.copy(sbeg, send), dest.end());
+        auto last = dest.copy(sbeg, send);
+        dest.silence(last, dest.end());
 
         ++_end %= _count;
     }

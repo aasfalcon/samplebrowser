@@ -92,18 +92,10 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
 template <typename T>
 void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
 {
-    auto myBegin = begin();
-    auto myEnd = end();
-
-    if (myBegin - dbeg < 0 || dbeg - myEnd < 0
-        || myBegin - dend < 0 || dend - myEnd < 0
-        || dend - dbeg < 0) {
-        std::string message = "Frame out of buffer bounds";
-        LOG(ERROR, message);
-        throw std::out_of_range(message);
+    if (dbeg != dend) {
+        std::size_t count = unsigned(dend - dbeg) * dbeg.channels() * sizeof(T);
+        std::memset(dbeg.ptr(), 0, count);
     }
-
-    std::memset(dbeg.ptr(), 0, dend.ptr() - dbeg.ptr());
 }
 
 SOUND_INSTANTIATE(Buffer);

@@ -26,10 +26,10 @@ void Player<T>::play(const std::string& path)
         while (!ring.isFull()) {
             bool isEof = player->fillBuffer(player->_readBuffer);
 
-            player->_mutex.lock();
+            //player->_mutex.lock();
             ring.push(player->_readBuffer.cbegin(), player->_readBuffer.cend());
             isEnough = isEof;
-            player->_mutex.unlock();
+            //player->_mutex.unlock();
 
             if (isEof) {
                 break;

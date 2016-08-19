@@ -201,6 +201,7 @@ void DriverDialog::modelApply()
             player->play(path);
         }
 
+        _driver->start();
         //_driver->disconnect();
         _model.isTested = true;
         updateStatus();

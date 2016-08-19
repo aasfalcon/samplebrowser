@@ -69,13 +69,14 @@ public:
 
     ConstFrame<T> cbegin() const
     {
-        return ConstFrame<T>(_channels, &*_samples.cbegin());
+        return ConstFrame<T>(_channels, _samples.data());
     }
 
     ConstFrame<T> cend() const
     {
-        return ConstFrame<T>(_channels, &*_samples.cend());
+        return cbegin() + _frames;
     }
+
     unsigned channels() const
     {
         return _channels;
@@ -90,22 +91,27 @@ public:
             throw std::out_of_range("Buffer overflow");
         }
 
+        Frame<T> dit = begin();
+
         if (this->type() == sbeg.type() && _channels == sbeg.channels()) {
             std::memcpy(this->data(), sbeg.data(), count * _channels * sizeof(T));
+            dit += count;
         } else {
-            Frame<T> dit = begin();
+            ConstFrame<S> sit = sbeg;
 
-            for (ConstFrame<S> sit = sbeg; sit != send; ++sit, ++dit) {
+            while (sit != send) {
                 dit = sit;
+                ++dit;
+                ++sit;
             }
         }
 
-        return begin() + count;
+        return dit;
     }
 
     Frame<T> end()
     {
-        return Frame<T>(_channels, _samples.data());
+        return begin() + _frames;
     }
 
     unsigned frames() const

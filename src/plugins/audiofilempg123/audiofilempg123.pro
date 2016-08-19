@@ -13,7 +13,6 @@ SOURCES += \
     audiofilempg123.cpp
 
 LIBS += \
-    -L.. -laudiofilesndfile \
     -L../../vendor/libsndfile -lsndfile
 
 INCLUDEPATH += \

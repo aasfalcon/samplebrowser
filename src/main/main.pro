@@ -46,4 +46,4 @@ RESOURCES += \
 
 INCLUDEPATH += ../ ../../bundle ../../vendor/includes ../plugins
 
-PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../shared
+PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../shared ../plugins ../sound

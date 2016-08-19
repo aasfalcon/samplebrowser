@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "resampler.h"
+#include "shared/iresampler.h"
 #include "shared/server.h"
 
 using namespace Sound;
@@ -10,6 +11,7 @@ template <typename T>
 Resampler<T>::Resampler()
     : _feeder(nullptr)
     , _isEnough(false)
+    , _resampler(PLUGIN_FACTORY(IResampler))
 {
 }
 
