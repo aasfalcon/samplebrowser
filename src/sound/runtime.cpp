@@ -46,6 +46,8 @@ IDriver::Control Runtime<T>::process(const IDriver::ProcessParams& data)
             std::memcpy(data.output, runtime->_output.data(),
                 data.channelsOutput * data.frames * sizeof(T));
         }
+
+        runtime->_output.silence();
     }
 
     return IDriver::ControlContinue;

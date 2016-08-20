@@ -24,8 +24,6 @@ template <typename T>
 void Resampler<T>::process()
 {
     if (!_ring || _ring->isEmpty()) {
-        Processor<T>::process(); // silence
-
         if (_ring) {
             _ring.reset();
         }
