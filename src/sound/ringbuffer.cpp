@@ -12,11 +12,10 @@ template <typename T>
 RingBuffer<T>::RingBuffer(unsigned channels, unsigned frames, unsigned count)
     : _begin(0)
     , _channels(channels)
-    , _count(count
-             )
+    , _count(count)
     , _frames(frames)
     , _end(0)
-    , _ring(_count, Buffer<T>(channels, frames))
+    , _buffers(_count, Buffer<T>(channels, frames))
 {
     assert(count > 1 && channels && frames);
 }

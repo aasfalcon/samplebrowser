@@ -20,7 +20,8 @@ SOURCES += \
     chain.cpp \
     buffer.cpp \
     sample.cpp \
-    object.cpp
+    object.cpp \
+    ringfeeder.tcc
 
 HEADERS += \
     basicstream.h \
@@ -41,6 +42,7 @@ HEADERS += \
     ringbuffer.h \
     runtime.h \
     sample.h \
-    object.h
+    object.h \
+    ringfeeder.h
 
 INCLUDEPATH += .. ../../vendor

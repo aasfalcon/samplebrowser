@@ -7,6 +7,7 @@
 
 #include "processor.h"
 #include "ringbuffer.h"
+#include "ringfeeder.h"
 #include "shared/iresampler.h"
 
 namespace Sound {
@@ -14,15 +15,14 @@ namespace Sound {
 template <typename T>
 class Resampler : public Processor<T> {
 public:
-    typedef void (*Feeder)(RingBuffer<Float32>& ring,
-        bool& isEnough, void* userData);
+    typedef Float32 InternalFormat;
+    typedef typename RingFeeder<T, InternalFormat>::FeedFunc FeedFunc;
 
     Resampler();
     ~Resampler();
 
     void process();
-    void start(unsigned channels, unsigned sampleRate,
-        Feeder feeder, void* userData);
+    void start(unsigned channels, unsigned sampleRate, FeedFunc feed);
     void stop();
 
 protected:
@@ -30,13 +30,11 @@ protected:
     void init();
 
 private:
-    Feeder _feeder;
-    bool _isEnough;
+    std::shared_ptr<RingFeeder<T, InternalFormat> > _feeder;
     std::mutex _mutex;
     std::shared_ptr<IResampler> _resampler;
-    std::shared_ptr<RingBuffer<Float32> > _ring;
+    std::shared_ptr<RingBuffer<InternalFormat> > _ring;
     unsigned _sampleRate;
-    void* _userData;
 };
 
 SOUND_INSTANTIATION_DECLARE(Resampler);

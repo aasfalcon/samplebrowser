@@ -8,6 +8,12 @@ namespace Sound {
 template <typename T>
 class ConstFrame : public Object<T> {
 public:
+    ConstFrame()
+        : _channels(0)
+        , _data(nullptr)
+    {
+    }
+
     ConstFrame(unsigned channels, const Sample<T>* data)
         : _channels(channels)
         , _data(data)

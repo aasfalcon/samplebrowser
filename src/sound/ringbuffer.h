@@ -34,9 +34,9 @@ public:
         return loaded() == _count - 1;
     }
 
-    bool isHalfEmpty() const
+    bool isHalfFull() const
     {
-        return _count <= loaded() * 2;
+        return loaded() >= _count / 2;
     }
 
     unsigned loaded() const
@@ -51,7 +51,7 @@ public:
 
     const Buffer<T>& pop()
     {
-        auto& result = _ring[_begin];
+        auto& result = _buffers[_begin];
 
         ++_begin %= _count;
         return result;
@@ -60,7 +60,7 @@ public:
     template <typename S>
     void push(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
-        Buffer<T>& dest = _ring.at(_end);
+        Buffer<T>& dest = _buffers.at(_end);
         auto last = dest.copy(sbeg, send);
         dest.silence(last, dest.end());
 
@@ -73,7 +73,7 @@ private:
     unsigned _count;
     unsigned _frames;
     unsigned _end;
-    std::vector<Buffer<T> > _ring;
+    std::vector<Buffer<T> > _buffers;
 };
 
 SOUND_INSTANTIATION_DECLARE(RingBuffer);

@@ -19,10 +19,10 @@ public:
     void play(const std::string& path);
 
 protected:
-    virtual bool fillBuffer(Buffer<Float32> &buffer);
+    virtual bool feed(ConstFrame<T>& begRef, ConstFrame<T>& endRef);
 
 private:
-    Buffer<Float32> _readBuffer;
+    Buffer<T> _readBuffer;
     std::shared_ptr<InputStream> _stream;
 };
 

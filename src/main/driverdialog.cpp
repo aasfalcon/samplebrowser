@@ -191,8 +191,8 @@ void DriverDialog::modelApply()
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
 
-        auto player = std::make_shared<Sound::Player<Sound::Float32>>();
-        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Float32>>(player);
+        auto player = std::make_shared<Sound::Player<Sound::Int16>>();
+        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Int16>>(player);
         _driver->init(processor);
 
         std::string path = testFilePath().toStdString();

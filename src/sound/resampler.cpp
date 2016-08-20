@@ -9,8 +9,7 @@ using namespace Sound;
 
 template <typename T>
 Resampler<T>::Resampler()
-    : _feeder(nullptr)
-    , _isEnough(false)
+    : Processor<T>()
     , _resampler(PLUGIN_FACTORY(IResampler))
 {
 }
@@ -24,18 +23,10 @@ template <typename T>
 void Resampler<T>::process()
 {
     if (!_ring || _ring->isEmpty()) {
-        if (_ring) {
-            _ring.reset();
-        }
-
         return;
     }
 
     auto& buffer = _ring->pop();
-
-    if (!_isEnough && _ring->isHalfEmpty()) {
-        (*_feeder)(*_ring, _isEnough, _userData);
-    }
 
     unsigned count = _resampler->process(buffer.cbegin().ptr(), buffer.frames());
     auto sptr = reinterpret_cast<const Sample<Float32>*>(_resampler->output());
@@ -47,25 +38,28 @@ void Resampler<T>::process()
 }
 
 template <typename T>
-void Resampler<T>::start(unsigned channels, unsigned sampleRate,
-    Resampler<T>::Feeder feeder, void* userData)
+void Resampler<T>::start(unsigned channels, unsigned sampleRate, FeedFunc feed)
 {
     _mutex.lock();
-    _feeder = feeder;
     _sampleRate = sampleRate;
     _resampler->setInputRate(_sampleRate);
     _resampler->reset();
 
-    _ring = std::make_shared<RingBuffer<Float32> >(channels,
-        feedFrames(sampleRate));
+    unsigned bufferFrames = feedFrames(sampleRate);
+    _ring = std::make_shared<RingBuffer<InternalFormat> >(channels, bufferFrames);
+
+    unsigned usleep = bufferFrames * 1000 * _ring->count() / sampleRate / 3;
+    _feeder = std::make_shared<RingFeeder<T, InternalFormat> >(*_ring);
+    _feeder->start(feed, usleep);
+
     _mutex.unlock();
-    (*feeder)(*_ring, _isEnough, _userData = userData);
 }
 
 template <typename T>
 void Resampler<T>::stop()
 {
     std::lock_guard<std::mutex> lock(_mutex);
+    _feeder.reset();
     _ring.reset();
 }
 
