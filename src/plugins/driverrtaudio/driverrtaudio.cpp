@@ -243,6 +243,8 @@ void DriverRtAudio::error(RtAudioError::Type type, const std::string& errorText)
     } else {
         RUNTIME_ERROR(errorText);
     }
+
+    throw std::runtime_error(errorText);
 }
 
 int DriverRtAudio::process(void* output, void* input, unsigned frames,

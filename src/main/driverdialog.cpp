@@ -191,14 +191,18 @@ void DriverDialog::modelApply()
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
 
-        auto player = std::make_shared<Sound::Player<Sound::Int16>>();
-        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Int16>>(player);
-        _driver->init(processor);
+//        auto player = std::make_shared<Sound::Player<Sound::Int16> >();
+//        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Int16> >(player);
+//        _driver->init(processor);
 
         std::string path = testFilePath().toStdString();
 
         if (!path.empty()) {
-            player->play(path);
+            Sound::ProcessorManager manager(_driver);
+            unsigned playerId = manager->add(0, "Player");
+            manager->set(playerId, Sound::Player::PropertyFilename, path);
+            manager->command(playerId, Sound::Player::CommandPlay);
+//            player->play(path);
         }
 
         _driver->start();
@@ -323,7 +327,7 @@ void DriverDialog::modelLoad()
     }
 
 #define GET_FIELD(__name, __variant, __type) \
-    _model.__name = __type(settings.value(#__name, _model.__name).to##__variant());
+    _model.__name = processorClass(settings.value(#__name, _model.__name).to##__variant());
 
     GET_FIELD(bufferCount, Int, unsigned);
     GET_FIELD(bufferSize, Int, unsigned);

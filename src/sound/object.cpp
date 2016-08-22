@@ -2,4 +2,4 @@
 
 using namespace Sound;
 
-SOUND_INSTANTIATE(Object);
+SOUND_INSTANTIATE(Sound::Object);

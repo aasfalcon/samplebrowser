@@ -1,5 +1,5 @@
-#ifndef INPUTSTREAM_H
-#define INPUTSTREAM_H
+#ifndef SOUND_INPUTSTREAM_H
+#define SOUND_INPUTSTREAM_H
 
 #include "basicstream.h"
 #include "buffer.h"
@@ -76,4 +76,4 @@ protected:
 };
 }
 
-#endif // INPUTSTREAM_H
+#endif // SOUND_INPUTSTREAM_H

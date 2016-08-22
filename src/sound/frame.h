@@ -1,5 +1,5 @@
-#ifndef FRAME_H
-#define FRAME_H
+#ifndef SOUND_FRAME_H
+#define SOUND_FRAME_H
 
 #include "object.h"
 #include "sample.h"
@@ -44,6 +44,31 @@ public:
     Sample<T>* data()
     {
         return _data;
+    }
+
+    template <typename S>
+    void mix(ConstFrame<S> rht, double level)
+    {
+        unsigned rchannels = rht.channels();
+
+        if (_channels <= rchannels) {
+            for (unsigned i = 0; i < _channels; i++) {
+                _data[i] = rht[i] * level;
+            }
+        } else if (_channels == 2) {
+            _data[1] = _data[0] = rht[0] * level;
+        } else {
+            unsigned i = 0;
+
+            while (i < rchannels) {
+                _data[i] = rht[i] * level;
+                ++i;
+            }
+
+            while(i < _channels) {
+                _data[i++] = 0;
+            }
+        }
     }
 
     const T* ptr() const
@@ -157,4 +182,4 @@ private:
 SOUND_INSTANTIATION_DECLARE(Frame);
 }
 
-#endif // FRAME_H
+#endif // SOUND_FRAME_H

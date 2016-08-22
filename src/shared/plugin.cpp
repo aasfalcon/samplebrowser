@@ -21,13 +21,19 @@ Plugin::~Plugin()
 const IPlugin::Info *Plugin::info()
 {
     if (!_info.interfaces) {
-        auto names = tags();
-        _info.interfaceCount = names.size();
+        if (!_tags) {
+            _tags = std::make_shared<std::list<std::string> >(tags());
+        }
+
+        _info.interfaceCount = _tags->size();
 
         if (_info.interfaceCount) {
             _info.interfaces = new const char *[_info.interfaceCount];
-            memcpy(_info.interfaces, names.data(),
-                   int(_info.interfaceCount * sizeof(const char *)));
+            unsigned index = 0;
+
+            for (auto it = _tags->begin(); it != _tags->end(); it++) {
+                _info.interfaces[index++] = it->c_str();
+            }
         }
     }
 

@@ -1,10 +1,10 @@
-#ifndef RUNTIME_H
-#define RUNTIME_H
+#ifndef SOUND_RUNTIME_H
+#define SOUND_RUNTIME_H
 
 #include <memory>
 
 #include "buffer.h"
-#include "processor.h"
+#include "processor/processor.h"
 #include "shared/idriver.h"
 
 namespace Sound {
@@ -34,4 +34,4 @@ private:
 SOUND_INSTANTIATION_DECLARE(Runtime);
 }
 
-#endif // RUNTIME_H
+#endif // SOUND_RUNTIME_H

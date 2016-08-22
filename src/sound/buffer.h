@@ -1,5 +1,5 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef SOUND_BUFFER_H
+#define SOUND_BUFFER_H
 
 #include <cassert>
 #include <cstring>
@@ -109,21 +109,6 @@ public:
         return dit;
     }
 
-    Frame<T> end()
-    {
-        return begin() + _frames;
-    }
-
-    unsigned frames() const
-    {
-        return _frames;
-    }
-
-    bool isEmpty() const
-    {
-        return _frames == 0;
-    }
-
     Sample<T>* data()
     {
         return _samples.data();
@@ -134,7 +119,45 @@ public:
         return _samples.data();
     }
 
+    Frame<T> end()
+    {
+        return begin() + _frames;
+    }
+
+    unsigned frames() const
+    {
+        return _frames;
+    }
+
     void fromInt24(const void* dest);
+
+    bool isEmpty() const
+    {
+        return _frames == 0;
+    }
+
+    template <typename S>
+    Frame<T> mix(ConstFrame<S> sbeg, ConstFrame<S> send, double level)
+    {
+        int count = send - sbeg;
+        assert(count >= 0);
+
+        if (int(_frames) < count) {
+            OUT_OF_RANGE("Buffer overflow on copy");
+        }
+
+        Frame<T> dframe = begin();
+        ConstFrame<S> sframe = sbeg;
+
+        while (sframe != send) {
+            dframe.mix(sframe, level);
+            ++dframe;
+            ++sframe;
+        }
+
+        return dframe;
+    }
+
     void toInt24(void* dest) const;
     void reallocate(unsigned channels, unsigned frames);
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
@@ -165,4 +188,4 @@ private:
 SOUND_INSTANTIATION_DECLARE(Buffer);
 }
 
-#endif // BUFFER_H
+#endif // SOUND_BUFFER_H

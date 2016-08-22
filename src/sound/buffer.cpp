@@ -121,4 +121,4 @@ void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
     }
 }
 
-SOUND_INSTANTIATE(Buffer);
+SOUND_INSTANTIATE(Sound::Buffer);

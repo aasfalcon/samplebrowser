@@ -6,15 +6,15 @@
 using namespace Sound;
 
 template <typename T>
-Runtime<T>::Runtime(std::shared_ptr<Processor<T> > root,
+Runtime<T>::Runtime(const std::__cxx11::string &rootProcessorClass,
     unsigned channels, unsigned frames,
     unsigned latency, unsigned sampleRate, Type sampleType)
     : _input(channels, frames)
     , _output(channels, frames)
-    , _root(root)
+    , _root(rootProcessorClass)
     , _sampleType(sampleType)
 {
-    assert(channels && frames && root);
+    assert(channels && frames && rootProcessorClass);
     _root->kickIn(_output, _input, latency, sampleRate);
 }
 
@@ -37,7 +37,7 @@ IDriver::Control Runtime<T>::process(const IDriver::ProcessParams& data)
         }
     }
 
-    runtime->_root->process();
+    runtime->_root->commandProcess();
 
     if (data.output) {
         if (TypeInt24E == runtime->_sampleType) {
@@ -53,4 +53,4 @@ IDriver::Control Runtime<T>::process(const IDriver::ProcessParams& data)
     return IDriver::ControlContinue;
 }
 
-SOUND_INSTANTIATE(Runtime);
+SOUND_INSTANTIATE(Sound::Runtime);

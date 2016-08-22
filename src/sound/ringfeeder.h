@@ -1,5 +1,5 @@
-#ifndef RINGFEEDER_H
-#define RINGFEEDER_H
+#ifndef SOUND_RINGFEEDER_H
+#define SOUND_RINGFEEDER_H
 
 #include "ringbuffer.h"
 #include <functional>
@@ -30,4 +30,4 @@ private:
 
 #include "ringfeeder.tcc"
 
-#endif // RINGFEEDER_H
+#endif // SOUND_RINGFEEDER_H

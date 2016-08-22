@@ -1,5 +1,5 @@
-#ifndef CHUNK_H
-#define CHUNK_H
+#ifndef SOUND_CHUNK_H
+#define SOUND_CHUNK_H
 
 #include <ctime>
 #include <list>
@@ -151,4 +151,4 @@ protected:
 };
 }
 
-#endif // CHUNK_H
+#endif // SOUND_CHUNK_H

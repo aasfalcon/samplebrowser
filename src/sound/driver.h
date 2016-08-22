@@ -1,5 +1,5 @@
-#ifndef DRIVER_H
-#define DRIVER_H
+#ifndef SOUND_DRIVER_H
+#define SOUND_DRIVER_H
 
 #include "shared/idriver.h"
 #include <memory>
@@ -42,4 +42,4 @@ private:
 };
 }
 
-#endif // DRIVER_H
+#endif // SOUND_DRIVER_H

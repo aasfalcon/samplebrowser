@@ -1,5 +1,5 @@
-#ifndef CONSTFRAME_H
-#define CONSTFRAME_H
+#ifndef SOUND_CONSTFRAME_H
+#define SOUND_CONSTFRAME_H
 
 #include "frame.h"
 
@@ -118,4 +118,4 @@ private:
 SOUND_INSTANTIATION_DECLARE(ConstFrame);
 }
 
-#endif // CONSTFRAME_H
+#endif // SOUND_CONSTFRAME_H

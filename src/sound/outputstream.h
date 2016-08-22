@@ -1,5 +1,5 @@
-#ifndef OUTPUTSTREAM_H
-#define OUTPUTSTREAM_H
+#ifndef SOUND_OUTPUTSTREAM_H
+#define SOUND_OUTPUTSTREAM_H
 
 #include "basicstream.h"
 #include "buffer.h"
@@ -77,4 +77,4 @@ protected:
 };
 }
 
-#endif // OUTPUTSTREAM_H
+#endif // SOUND_OUTPUTSTREAM_H

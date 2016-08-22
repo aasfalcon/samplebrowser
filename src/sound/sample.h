@@ -1,5 +1,5 @@
-#ifndef SAMPLE_H
-#define SAMPLE_H
+#ifndef SOUND_SAMPLE_H
+#define SOUND_SAMPLE_H
 
 #include <cmath>
 
@@ -136,4 +136,4 @@ INT_FROM_INT(Int32, Int16, << 16);
 #undef INT_FROM_INT
 }
 
-#endif // SAMPLE_H
+#endif // SOUND_SAMPLE_H

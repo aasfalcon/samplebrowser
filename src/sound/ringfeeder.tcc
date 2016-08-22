@@ -1,3 +1,6 @@
+#ifndef SOUND_RINGFEEDER_TCC
+#define SOUND_RINGFEEDER_TCC
+
 #include "ringfeeder.h"
 
 namespace Sound {
@@ -34,10 +37,9 @@ template <typename T, typename D>
 void RingFeeder<T, D>::loop(FeedFunc feed, unsigned usleep)
 {
     _isStopping = false;
+    ConstFrame<T> beg, end;
 
     do {
-        ConstFrame<T> beg, end;
-
         if (!_ring.isHalfFull()) {
             do {
                 _isStopping = feed(beg, end);
@@ -54,3 +56,5 @@ void RingFeeder<T, D>::loop(FeedFunc feed, unsigned usleep)
     } while (!_isStopping);
 }
 }
+
+#endif // SOUND_RINGFEEDER_TCC

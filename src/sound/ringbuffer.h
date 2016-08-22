@@ -1,5 +1,5 @@
-#ifndef RINGBUFFER_H
-#define RINGBUFFER_H
+#ifndef SOUND_RINGBUFFER_H
+#define SOUND_RINGBUFFER_H
 
 #include <vector>
 
@@ -69,14 +69,14 @@ public:
 
 private:
     unsigned _begin;
+    std::vector<Buffer<T> > _buffers;
     unsigned _channels;
     unsigned _count;
     unsigned _frames;
     unsigned _end;
-    std::vector<Buffer<T> > _buffers;
 };
 
 SOUND_INSTANTIATION_DECLARE(RingBuffer);
 }
 
-#endif // RINGBUFFER_H
+#endif // SOUND_RINGBUFFER_H

@@ -81,13 +81,7 @@ unsigned ResamplerLSR::perform()
         RUNTIME_ERROR(src_strerror(error));
     }
 
-    if (data.output_frames > data.output_frames_gen) {
-        int offset = data.output_frames_gen * int(_channels);
-        int frames = data.output_frames - data.output_frames_gen;
-        std::memset(data.data_out + offset, 0, frames * _channels * sizeof(float));
-    }
-
-    return unsigned(data.input_frames_used);
+    return unsigned(data.output_frames_gen);
 }
 unsigned ResamplerLSR::process(const float* input, unsigned inputFramesMax)
 {

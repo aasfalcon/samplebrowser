@@ -1,5 +1,5 @@
-#ifndef BASICSTREAM_H
-#define BASICSTREAM_H
+#ifndef SOUND_BASICSTREAM_H
+#define SOUND_BASICSTREAM_H
 
 #include <map>
 #include <memory>
@@ -116,4 +116,4 @@ protected:
 };
 }
 
-#endif // BASICSTREAM_H
+#endif // SOUND_BASICSTREAM_H

@@ -1,39 +1,77 @@
 #ifndef ALLOCATOR_H
 #define ALLOCATOR_H
 
+#include <list>
 #include <map>
 #include <memory>
-#include <list>
+#include <string>
 #include <vector>
 
-#include "shared/iplugin.h"
+#include "log.h"
 
-class Allocator: public IPlugin
-{
+template <typename T>
+class Allocator {
 public:
-    typedef Interface *(*Create)();
-    typedef void (*Destroy)(Interface *);
+    typedef T* (*Constructor)();
+    typedef void (*Destructor)(T*);
 
-    Allocator();
-    ~Allocator();
-
-    Interface *create(const char *tag);
-    void destroy(Interface *object);
-    void destroyAll();
-    bool isOwner(Interface *object) const;
-
-protected:
-    void addTag(const std::string &tag, Create create, Destroy destroy);
-    std::vector<const char *> tags() const;
-
-private:
     struct Record {
-        Create create;
-        Destroy destroy;
+        Constructor create;
+        Destructor destroy;
     };
 
-    std::map<Interface *, std::shared_ptr<Interface>> _allocated;
+    Allocator() {}
+    Allocator(const std::map<std::string, Record>& initializer)
+        : _records(initializer)
+    {
+    }
+
+    virtual ~Allocator() {}
+
+    void addTag(const std::string& tag,
+        Constructor create, Destructor destroy = nullptr)
+    {
+        _records[tag] = { create, destroy };
+    }
+
+    virtual T* create(const std::string& tag)
+    {
+        auto& record = _records.at(tag);
+        T* object = (*record.create)();
+        _allocated[object] = std::shared_ptr<T>(object, record.destroy);
+        return object;
+    }
+
+    void destroy(T* object)
+    {
+        if (!isOwner(object)) {
+            RUNTIME_ERROR("Attempt to deallocate unknown object");
+        }
+
+        _allocated.erase(object);
+    }
+
+    bool isOwner(T* object) const
+    {
+        return _allocated.find(object) != _allocated.end();
+    }
+
+protected:
     std::map<std::string, Record> _records;
+
+    std::list<std::string> tags() const
+    {
+        std::list<std::string> result;
+
+        for (auto it = _records.cbegin(); it != _records.cend(); ++it) {
+            result.push_back(it->first);
+        }
+
+        return result;
+    }
+
+private:
+    std::map<T*, std::shared_ptr<T> > _allocated;
 };
 
 #endif // ALLOCATOR_H

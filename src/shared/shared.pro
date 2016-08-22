@@ -12,7 +12,6 @@ SOURCES +=\
     version.cpp \
     server.cpp \
     plugin.cpp \
-    allocator.cpp \
     interface.cpp
 
 HEADERS +=\
@@ -28,4 +27,5 @@ HEADERS +=\
     iresampler.h \
     iserver.h \
     pluginmacros.h \
-    log.h
+    log.h \
+    any.h

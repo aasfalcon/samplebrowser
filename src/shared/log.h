@@ -13,6 +13,9 @@
     LOG(ERROR, message);                             \
     throw std::__exception(message);
 
+#define LOGIC_ERROR(__message) \
+    _LOG_ERROR_AND_THROW(__message, logic_error);
+
 #define RUNTIME_ERROR(__message) \
     _LOG_ERROR_AND_THROW(__message, runtime_error);
 

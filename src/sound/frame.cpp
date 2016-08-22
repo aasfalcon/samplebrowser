@@ -5,4 +5,4 @@
 
 using namespace Sound;
 
-SOUND_INSTANTIATE(Frame);
+SOUND_INSTANTIATE(Sound::Frame);

@@ -1,3 +1,5 @@
 #include "constframe.h"
 
-SOUND_INSTANTIATE(ConstFrame);
+using namespace Sound;
+
+SOUND_INSTANTIATE(Sound::ConstFrame);

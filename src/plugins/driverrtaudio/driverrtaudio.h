@@ -36,7 +36,7 @@ private:
     std::shared_ptr<RtAudio> _rtaudio;
     std::shared_ptr<StreamInfo> _streamInfo;
 
-    static void error(RtAudioError::Type type, const std::string& errorText);
+    static void error[[noreturn]](RtAudioError::Type type, const std::string& errorText);
     static int process(void* output, void* input, unsigned frames,
         double time, RtAudioStreamStatus status, void* data);
 };

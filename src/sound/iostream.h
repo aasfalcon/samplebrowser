@@ -1,5 +1,5 @@
-#ifndef IOStream_H
-#define IOStream_H
+#ifndef SOUND_IOStream_H
+#define SOUND_IOStream_H
 
 #include "inputstream.h"
 #include "outputstream.h"
@@ -109,4 +109,4 @@ public:
 };
 }
 
-#endif // IOStream_H
+#endif // SOUND_IOStream_H
