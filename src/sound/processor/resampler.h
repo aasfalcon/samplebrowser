@@ -13,11 +13,11 @@
 
 namespace Sound {
 
-SOUND_COMMANDS(Resampler, Processor,
+SOUND_PROCESSOR_COMMANDS(Resampler, Processor,
     Start,
     Stop);
 
-SOUND_PROPERTIES(Resampler, Processor,
+SOUND_PROCESSOR_PROPERTIES(Resampler, Processor,
     Callback_Sound_Processor_Resampler_Feed,
     Library_Sound_Processor_ResamplerLibrary,
     Quality_IResampler_Quality,

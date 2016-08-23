@@ -8,11 +8,11 @@
 
 namespace Sound {
 
-SOUND_COMMANDS(Processor, Base,
+SOUND_PROCESSOR_COMMANDS(Processor, Base,
     Init,
     Process);
 
-SOUND_PROPERTIES(Processor, Base,
+SOUND_PROCESSOR_PROPERTIES(Processor, Base,
     Bypass_bool,
     ChildrenParallel_bool,
     ChildrenAfter_bool,

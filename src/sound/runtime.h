@@ -12,7 +12,7 @@ namespace Sound {
 template <typename T>
 class Runtime : public Object<T> {
 public:
-    Runtime(std::shared_ptr<Processor<T> > root,
+    Runtime(const std::string &rootProcessorClass,
         unsigned channels, unsigned frames,
         unsigned latency, unsigned sampleRate, Type sampleType);
     ~Runtime();
@@ -22,7 +22,7 @@ public:
         return _root;
     }
 
-    static IDriver::Control process(const IDriver::ProcessParams &data);
+    static IDriver::Control process(const IDriver::ProcessParams& data);
 
 private:
     Buffer<T> _input;

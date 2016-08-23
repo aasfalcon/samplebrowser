@@ -39,7 +39,7 @@ std::shared_ptr<Base> Base::allocate(
     return processor;
 }
 
-void Base::call(unsigned commandId)
+void Base::callCommand(unsigned commandId)
 {
     auto handler = this->_handlers.at(commandId);
     (this->*handler)();
@@ -62,11 +62,6 @@ void Base::commandInit()
     }
 }
 
-Any Base::get(unsigned propertyId) const
-{
-    return _properties.at(propertyId);
-}
-
 bool Base::hasInternalBuffer()
 {
     Base *parent = this->get(Property::Processor::Parent_Sound_Processor_Base);
@@ -80,7 +75,12 @@ unsigned Base::id() const
     return _id;
 }
 
-void Base::set(unsigned propertyId, const Any& value)
+Any Base::property(unsigned propertyId) const
+{
+    return _properties.at(propertyId);
+}
+
+void Base::setProperty(unsigned propertyId, const Any& value)
 {
     _properties[propertyId] = value;
 }

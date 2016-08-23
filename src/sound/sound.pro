@@ -22,7 +22,8 @@ SOURCES += \
     ringfeeder.tcc \
     runtime.cpp \
     sample.cpp \
-    processor/silence.cpp
+    processor/silence.cpp \
+    processor/test.cpp
 
 HEADERS += \
     basicstream.h \

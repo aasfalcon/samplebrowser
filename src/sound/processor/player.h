@@ -10,7 +10,7 @@ namespace Sound {
 
 class InputStream;
 
-SOUND_COMMANDS(Player, Resampler,
+SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     FastForward,
     Pause,
     Play,
@@ -20,7 +20,7 @@ SOUND_COMMANDS(Player, Resampler,
     SkipToStart,
     Stop);
 
-SOUND_PROPERTIES(Player, Resampler,
+SOUND_PROCESSOR_PROPERTIES(Player, Resampler,
     Loop_bool,
     Repeat_bool,
     Path_std_string);
