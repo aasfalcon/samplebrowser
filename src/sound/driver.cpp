@@ -57,8 +57,7 @@ const IDriver::DriverInfo& Driver::info() const
     return *_provider->driverInfo();
 }
 
-template <typename T>
-void Driver::init(std::shared_ptr<Processor<T> > root)
+void Driver::init(std::shared_ptr<Processor::Base> root)
 {
     if (sampleType() != TypeInt24E && sampleType() != root->type()) {
         RUNTIME_ERROR("Wrong root processor sample format");

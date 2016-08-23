@@ -1,6 +1,7 @@
 #define PROCESSOR Processor
 
 #include "processor.h"
+#include "shared/version.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
@@ -8,15 +9,18 @@ using namespace Sound::Processor;
 template <typename T>
 Processor<T>::Processor()
 {
+    USE_PARAMETERS;
     COMMAND(Init);
-    COMMAND(Process);
 
-    PROPERTY(bool, ChildrenParallel, false);
-    PROPERTY(bool, ChildrenAfter, false);
-    PROPERTY(unsigned, Latency, 0);
-    PROPERTY(Base*, Parent, nullptr);
-    PROPERTY(Sound::Type, SampleFormat, this->type());
-    PROPERTY(unsigned, SampleRate, 0);
+    PROPERTY(std::string, Name, "Processor");
+    PROPERTY(Version, Version, "1.0.0");
+
+    PARAMETER(bool, ChildrenParallel, false);
+    PARAMETER(bool, ChildrenAfter, false);
+    PARAMETER(unsigned, Latency, 0);
+    PARAMETER(Base*, Parent, nullptr);
+    PARAMETER(Sound::Type, SampleFormat, this->type());
+    PARAMETER(unsigned, SampleRate, 0);
 }
 
 template <typename T>
@@ -46,15 +50,19 @@ void Processor<T>::commandInit()
 }
 
 template <typename T>
-void Processor<T>::commandProcess()
+void Processor<T>::entryPoint()
 {
-    bool isBypassed = this->get(Property::Processor::Bypass);
+    if (!_mutex.try_lock()) {
+        return;
+    }
+
+    bool isBypassed = this->get(Parameter::Processor::Bypass);
 
     if (isBypassed) {
         return;
     }
 
-    bool isChildrenAfter = this->get(Property::Processor::ChildrenAfter);
+    bool isChildrenAfter = this->get(Parameter::Processor::ChildrenAfter);
 
     if (isChildrenAfter) {
         this->process();
@@ -63,13 +71,13 @@ void Processor<T>::commandProcess()
     if (!this->empty()) {
         auto beg = this->begin();
         auto end = this->end();
-        bool isParallel = this->get(Property::Processor::ChildrenParallel);
+        bool isParallel = this->get(Parameter::Processor::ChildrenParallel);
 
         if (isParallel) {
             for (auto it = beg; it != end; ++it) {
                 auto child = std::dynamic_pointer_cast<Processor<T> >(*it);
                 child->_buffer.copy(this->_buffer.cbegin(), this->_buffer.cend());
-                child->commandProcess();
+                child->entryPoint();
             }
 
             _buffer.silence();
@@ -90,7 +98,7 @@ void Processor<T>::commandProcess()
                     child->_buffer.copy(prevBuffer.cbegin(), prevBuffer.cend());
                 }
 
-                child->commandProcess();
+                child->entryPoint();
 
                 if (hasInternal) {
                     prevBuffer = child->_buffer;
@@ -106,12 +114,14 @@ void Processor<T>::commandProcess()
     if (!isChildrenAfter) {
         this->process();
     }
+
+    _mutex.unlock();
 }
 
 template <typename T>
 Processor<T>* Processor<T>::parent() const
 {
-    return get(Property::Processor::Parent);
+    return get(Parameter::Processor::Parent);
 }
 
 INSTANTIATE;

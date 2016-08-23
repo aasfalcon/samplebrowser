@@ -1,13 +1,12 @@
 #ifndef SOUND_DRIVER_H
 #define SOUND_DRIVER_H
 
-#include "shared/idriver.h"
 #include <memory>
 
-namespace Sound {
+#include "processor/base.h"
+#include "shared/idriver.h"
 
-template <typename T>
-class Processor;
+namespace Sound {
 
 class Driver {
 public:
@@ -26,8 +25,7 @@ public:
     unsigned sampleRate() const;
     Type sampleType() const;
 
-    template <typename T>
-    void init(std::shared_ptr<Processor<T> > root);
+    void init(std::shared_ptr<Processor::Base> root);
 
     void start();
     void stop();

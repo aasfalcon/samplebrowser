@@ -1,6 +1,9 @@
 #include "base.h"
 #include "processor.h"
 
+using namespace Sound;
+using namespace Sound::Processor;
+
 std::map<Command::Index, Base::Handler> Base::_handlers;
 unsigned Base::_nextId = 0;
 
@@ -22,14 +25,14 @@ void Base::call(Command::ID commandId)
 void Base::commandInit()
 {
     if (!empty()) {
-        unsigned latency = get(Property::Processor::Latency);
-        unsigned sampleRate = get(Property::Processor::SampleRate);
+        unsigned latency = get(Parameter::Processor::Latency);
+        unsigned sampleRate = get(Parameter::Processor::SampleRate);
 
         for (auto it = this->begin(); it != this->end(); it++) {
             auto& child = *it;
-            child->set(Property::Processor::Latency, latency);
-            child->set(Property::Processor::SampleRate, sampleRate);
-            child->set(Property::Processor::Parent, this);
+            child->set(Parameter::Processor::Latency, latency);
+            child->set(Parameter::Processor::SampleRate, sampleRate);
+            child->set(Parameter::Processor::Parent, this);
 
             child->call(Command::Processor::Init);
         }
@@ -38,10 +41,15 @@ void Base::commandInit()
 
 bool Base::hasInternalBuffer()
 {
-    Base* parent = this->get(Property::Processor::Parent);
+    Base* parent = this->get(Parameter::Processor::Parent);
     return !parent
         || !this->empty()
-        || bool(parent->get(Property::Processor::ChildrenParallel_bool));
+            || bool(parent->get(Parameter::Processor::ChildrenParallel));
+}
+
+void Base::setParameterCount(unsigned count)
+{
+    _parameters.resize(count);
 }
 
 unsigned Base::id() const
@@ -49,7 +57,7 @@ unsigned Base::id() const
     return _id;
 }
 
-void Base::set(Property::ID id, const Any& value)
+void Base::setProperty(Property::ID id, const Any& value)
 {
     if (!_properties[id].like(value)) {
         LOG(INFO, "Initialized with "
@@ -60,4 +68,16 @@ void Base::set(Property::ID id, const Any& value)
     }
 
     _properties[id] = value;
+}
+
+RealtimeAny Base::get(Parameter::ID id) const
+{
+    unsigned index = id.as<unsigned>();
+    return _parameters.at(index);
+}
+
+void Base::set(Parameter::ID id, RealtimeAny value)
+{
+    unsigned index = id.as<unsigned>();
+    _parameters.assign(index, value);
 }

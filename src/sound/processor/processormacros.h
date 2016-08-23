@@ -44,6 +44,9 @@
 #define SOUND_PROCESSOR_COMMANDS(a_scope, a_base, ...) \
     SOUND_ENUM(Command, a_scope, a_base, __VA_ARGS__)
 
+#define SOUND_PROCESSOR_PARAMETERS(a_scope, a_base, ...) \
+    SOUND_ENUM(Parameter, a_scope, a_base, __VA_ARGS__)
+
 #define SOUND_PROCESSOR_PROPERTIES(a_scope, a_base, ...) \
     SOUND_ENUM(Property, a_scope, a_base, __VA_ARGS__)
 
@@ -53,24 +56,27 @@
         &a_class<T>::command##a_command);
 
 #define SOUND_REGISTER_PROPERTY(a_class, a_type, a_name, a_value) \
-    this->set(Property::a_class::a_name, static_cast<a_type>(a_value));
+    this->setProperty(Property::a_class::a_name, static_cast<a_type>(a_value));
+
+#define SOUND_REGISTER_PARAMETER(a_class, a_type, a_name, a_value) \
+    this->set(Parameter::a_class::a_name, static_cast<a_type>(a_value));
 
 #ifdef PROCESSOR
-namespace Sound {
-namespace Processor {
-}
-}
-using namespace Sound;
-using namespace Sound::Processor;
-
 #define PROPERTY(a_type, a_name, a_value) \
     SOUND_REGISTER_PROPERTY(PROCESSOR, a_type, a_name, a_value)
+
+#define PARAMETER(a_type, a_name, a_value) \
+    SOUND_REGISTER_PARAMETER(PROCESSOR, a_type, a_name, a_value)
 
 #define COMMAND(a_command) \
     SOUND_REGISTER_COMMAND(PROCESSOR, a_command)
 
 #define INSTANTIATE \
     SOUND_INSTANTIATE(Sound::Processor::PROCESSOR)
+
+#define USE_PARAMETERS \
+    this->setParameterCount(unsigned(Parameter::PROCESSOR::_End));
+
 #endif
 
 #endif // SOUND_PROCESSOR_PROCESSORMACROS_H

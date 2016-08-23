@@ -20,9 +20,12 @@ SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     SkipToStart,
     Stop);
 
-SOUND_PROCESSOR_PROPERTIES(Player, Resampler,
+SOUND_PROCESSOR_PARAMETERS(Player, Resampler,
     Loop, // bool
     Repeat, // bool
+    );
+
+SOUND_PROCESSOR_PROPERTIES(Player, Resampler,
     Path // std::string
     );
 

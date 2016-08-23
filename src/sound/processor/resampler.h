@@ -54,7 +54,6 @@ namespace Processor {
 
     private:
         std::shared_ptr<RingFeeder<T, InternalFormat> > _feeder;
-        std::mutex _mutex;
         std::shared_ptr<IResampler> _resampler;
         std::shared_ptr<RingBuffer<InternalFormat> > _ring;
     };

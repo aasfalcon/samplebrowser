@@ -22,7 +22,9 @@ SOURCES += \
     ringfeeder.tcc \
     runtime.cpp \
     sample.cpp \
-    processor/silence.cpp
+    processor/silence.cpp \
+    processor/root.cpp \
+    processor/realtimeany.tcc
 
 HEADERS += \
     basicstream.h \
@@ -48,6 +50,8 @@ HEADERS += \
     soundmacros.h \
     processor/silence.h \
     id.h \
-    processor/processormacros.h
+    processor/processormacros.h \
+    processor/root.h \
+    processor/realtimeany.h
 
 INCLUDEPATH += .. ../../vendor

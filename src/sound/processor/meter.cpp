@@ -3,6 +3,9 @@
 #include "meter.h"
 #include "constframe.h"
 
+using namespace Sound;
+using namespace Sound::Processor;
+
 template <typename T>
 Meter<T>::Meter()
 {
@@ -17,9 +20,10 @@ Meter<T>::~Meter()
 template <typename T>
 void Meter<T>::commandInit()
 {
+    std::lock_guard<std::mutex> lock(this->_mutex);
     Processor<T>::commandInit();
     _peaks.reallocate(this->buffer().channels(), 1);
-    this->set(Property::Meter::Peaks, _peaks.cbegin());
+    this->setProperty(Property::Meter::Peaks, _peaks.cbegin());
 }
 
 template <typename T>

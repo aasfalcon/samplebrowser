@@ -2,6 +2,7 @@
 #define SOUND_PROCESSOR_PROCESSOR_H
 
 #include <list>
+#include <mutex>
 
 #include "base.h"
 #include "buffer.h"
@@ -9,17 +10,22 @@
 namespace Sound {
 
 SOUND_PROCESSOR_COMMANDS(Processor, Base,
-    Init,
-    Process);
+    Init);
 
-SOUND_PROCESSOR_PROPERTIES(Processor, Base,
+SOUND_PROCESSOR_PARAMETERS(Processor, Base,
     Bypass, // bool
     ChildrenParallel, // bool
     ChildrenAfter, // bool
     Latency, // bool
     Parent, // Base *
     SampleFormat, // Sound::Type
-    SampleRate); // Unsigned
+    SampleRate // unsigned
+    );
+
+SOUND_PROCESSOR_PROPERTIES(Processor, Base,
+    Name, // std::string
+    Version // Version
+    );
 
 namespace Processor {
 
@@ -31,10 +37,12 @@ namespace Processor {
         ~Processor() override;
 
     protected:
+        std::mutex _mutex;
+
         Buffer<T>& buffer();
 
         virtual void commandInit() override;
-        virtual void commandProcess() final;
+        virtual void entryPoint() final;
 
         Processor<T>* parent() const;
 

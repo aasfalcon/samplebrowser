@@ -6,14 +6,19 @@
 #include "inputstream.h"
 #include "player.h"
 
+using namespace Sound;
+using namespace Sound::Processor;
+
 template <typename T>
 Player<T>::Player()
 {
+    USE_PARAMETERS;
     COMMAND(Play);
 
-    PROPERTY(bool, Loop, false);
-    PROPERTY(bool, Repeat, false);
     PROPERTY(std::string, Path, "");
+
+    PARAMETER(bool, Loop, false);
+    PARAMETER(bool, Repeat, false);
 }
 
 template <typename T>

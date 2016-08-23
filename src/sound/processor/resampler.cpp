@@ -7,6 +7,9 @@
 #include "shared/iresampler.h"
 #include "shared/server.h"
 
+using namespace Sound;
+using namespace Sound::Processor;
+
 template <typename T>
 Resampler<T>::Resampler()
     : _resampler(PLUGIN_FACTORY(IResampler))
@@ -29,8 +32,6 @@ Resampler<T>::~Resampler()
 template <typename T>
 void Resampler<T>::process()
 {
-    Silence<T>::process();
-
     if (!_ring || _ring->isEmpty()) {
         return;
     }
@@ -42,14 +43,16 @@ void Resampler<T>::process()
     ConstFrame<Float32> sbeg(source.channels(), sptr);
 
     auto& buffer = this->buffer();
-    buffer.copy(sbeg, sbeg + int(count));
+    auto silenceBegin = buffer.copy(sbeg, sbeg + int(count));
+    buffer.silence(silenceBegin, buffer.end());
 }
 
 template <typename T>
 void Resampler<T>::commandInit()
 {
+    std::lock_guard<std::mutex> lock(this->_mutex);
     Silence<T>::commandInit();
-    unsigned sampleRate = this->get(Property::Processor::SampleRate);
+    unsigned sampleRate = this->get(Parameter::Processor::SampleRate);
     _resampler->init(IResampler::QualityRealtime, this->buffer().channels(),
         this->buffer().frames(), sampleRate);
 }
@@ -57,11 +60,11 @@ void Resampler<T>::commandInit()
 template <typename T>
 void Resampler<T>::commandStart()
 {
-    unsigned channels = this->get(Property::Resampler::SourceChannels);
-    unsigned srate = this->get(Property::Resampler::SourceSampleRate);
-    FeedFunc feed = this->get(Property::Resampler::Feed);
+    std::lock_guard<std::mutex> lock(this->_mutex);
+    unsigned channels = this->property(Property::Resampler::SourceChannels);
+    unsigned srate = this->property(Property::Resampler::SourceSampleRate);
+    FeedFunc feed = this->property(Property::Resampler::Feed);
 
-    _mutex.lock();
     _resampler->setInputRate(srate);
     _resampler->reset();
 
@@ -71,14 +74,12 @@ void Resampler<T>::commandStart()
     unsigned usleep = bufferFrames * 1000 * _ring->count() / srate / 3;
     _feeder = std::make_shared<RingFeeder<T, InternalFormat> >(*_ring);
     _feeder->start(feed, usleep);
-
-    _mutex.unlock();
 }
 
 template <typename T>
 void Resampler<T>::commandStop()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(this->_mutex);
     _feeder.reset();
     _ring.reset();
 }
@@ -86,7 +87,7 @@ void Resampler<T>::commandStop()
 template <typename T>
 unsigned Resampler<T>::feedFrames(unsigned sourceSampleRate)
 {
-    unsigned sampleRate = this->get(Property::Processor::SampleRate);
+    unsigned sampleRate = this->get(Parameter::Processor::SampleRate);
     double ratio = double(sourceSampleRate) / double(sampleRate);
     return unsigned(ratio * double(this->buffer().frames()));
 }
