@@ -12,7 +12,7 @@ namespace Processor {
         void process() override;
     };
 
-    SOUND_INSTANTIATION_DECLARE(Silence);
+    SOUND_PROCESSOR_FACTORY(Silence);
 }
 }
 

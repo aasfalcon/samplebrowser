@@ -46,7 +46,6 @@ HEADERS += \
     runtime.h \
     sample.h \
     soundmacros.h \
-    processor/register.h \
     processor/silence.h \
     id.h \
     processor/processormacros.h

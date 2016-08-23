@@ -28,7 +28,7 @@ namespace Processor {
         Buffer<double> _peaks;
     };
 
-    SOUND_INSTANTIATION_DECLARE(Meter);
+    SOUND_PROCESSOR_FACTORY(Meter);
 }
 }
 

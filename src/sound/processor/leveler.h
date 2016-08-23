@@ -20,7 +20,7 @@ namespace Processor {
         virtual void process() override;
     };
 
-    SOUND_INSTANTIATION_DECLARE(Leveler);
+    SOUND_PROCESSOR_FACTORY(Leveler);
 }
 }
 

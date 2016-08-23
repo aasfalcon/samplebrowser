@@ -3,6 +3,25 @@
 
 #include "id.h"
 
+#define ONE_SOUND_PROCESSOR_FACTORY(a_type, a_class)                \
+    []() -> ::Sound::Processor::Base* {                             \
+        return new ::Sound::Processor::a_class< ::Sound::a_type>(); \
+    },
+
+#define SOUND_PROCESSOR_FACTORY(a_class)                                   \
+    SOUND_INSTANTIATION_DECLARE(a_class);                                  \
+    namespace Factory {                                                    \
+    struct a_class {                                                       \
+        static ::Sound::Processor::Base* create(Type type)                 \
+        {                                                                  \
+            static ::Sound::Processor::Base* (*ctors[TYPE_COUNT])() = {    \
+                SOUND_ENUMERATE_TYPE(ONE_SOUND_PROCESSOR_FACTORY, a_class) \
+            };                                                             \
+            return (*ctors[type])();                                       \
+        }                                                                  \
+    };                                                                     \
+    }
+
 #define SOUND_ENUM_NAMESPACE(a_ns) \
     namespace a_ns {               \
     enum class Base : unsigned {   \

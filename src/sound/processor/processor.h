@@ -37,6 +37,7 @@ namespace Processor {
         virtual void commandProcess() final;
 
         Processor<T>* parent() const;
+
     private:
         Buffer<T> _buffer;
     };

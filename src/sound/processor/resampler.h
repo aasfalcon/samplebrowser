@@ -59,7 +59,7 @@ namespace Processor {
         std::shared_ptr<RingBuffer<InternalFormat> > _ring;
     };
 
-    SOUND_INSTANTIATION_DECLARE(Resampler);
+    SOUND_PROCESSOR_FACTORY(Resampler);
 }
 }
 

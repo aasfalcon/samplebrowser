@@ -1,7 +1,5 @@
 #include "base.h"
-
-using namespace Sound;
-using namespace Sound::Processor;
+#include "processor.h"
 
 std::map<Command::Index, Base::Handler> Base::_handlers;
 unsigned Base::_nextId = 0;
@@ -13,30 +11,6 @@ Base::Base()
 
 Base::~Base()
 {
-}
-
-#define REGISTER_ONE(a_type, a_class)          \
-    _allocators[Type##a_type].addTag(#a_class, \
-        []() -> Base* { return new a_class<a_type>(); });
-
-#define REGISTER(a_class) \
-    SOUND_ENUMERATE_TYPE(REGISTER_ONE, a_class)
-
-#include "register.h"
-
-std::shared_ptr<Base> Base::allocate(
-    const std::string& className, Type format)
-{
-    if (_allocators.empty()) {
-        _allocators.resize(TYPE_COUNT);
-
-        SOUND_REGISTER_PROCESSORS;
-    }
-
-    auto processor = std::shared_ptr<Base>(
-        _allocators[format].create(className));
-
-    return processor;
 }
 
 void Base::call(Command::ID commandId)

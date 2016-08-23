@@ -42,7 +42,7 @@ namespace Processor {
         std::shared_ptr<InputStream> _stream;
     };
 
-    SOUND_INSTANTIATION_DECLARE(Player);
+    SOUND_PROCESSOR_FACTORY(Player);
 }
 }
 

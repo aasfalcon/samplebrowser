@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "object.h"
+#include "processormacros.h"
 #include "shared/allocator.h"
 #include "shared/any.h"
-#include "processormacros.h"
 
 namespace Sound {
 
@@ -24,8 +24,6 @@ namespace Processor {
         virtual ~Base();
 
         void call(Command::ID commandId);
-        static std::shared_ptr<Base> allocate(
-            const std::string& className, Type format);
         Any get(Property::ID propertyId) const;
         unsigned id() const;
         void set(Property::ID propertyId, const Any& value);
@@ -52,6 +50,7 @@ namespace Processor {
         static unsigned _nextId;
         std::map<Property::Index, Any> _properties;
     };
+
 }
 }
 
