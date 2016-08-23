@@ -4,6 +4,8 @@
 #include <climits>
 #include <cstdint>
 
+#include "soundmacros.h"
+
 namespace Sound {
 
 typedef std::int8_t Int8;
@@ -56,10 +58,8 @@ constexpr Type Object<T>::type()
     return TypeFloat32;
 }
 
-#include "soundmacros.h"
-
 #define SOUND_SPECIALIZE_OBJECT_TYPE(__type) \
-    template <>                               \
+    template <>                              \
     constexpr Type Object<__type>::type() { return Type##__type; }
 
 SOUND_INSTANTIATE_METHOD(SOUND_SPECIALIZE_OBJECT_TYPE);

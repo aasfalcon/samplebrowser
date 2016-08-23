@@ -12,19 +12,8 @@
 
 namespace Sound {
 
-namespace Command {
-    enum class Base : unsigned {
-        _Begin,
-        _End = _Begin,
-    };
-}
-
-namespace Property {
-    enum class Base : unsigned {
-        _Begin,
-        _End = _Begin,
-    };
-}
+SOUND_ENUM_NAMESPACE(Command);
+SOUND_ENUM_NAMESPACE(Property);
 
 namespace Processor {
 
@@ -32,31 +21,12 @@ namespace Processor {
     public:
         virtual ~Base();
 
-        template <class E>
-        void call(E commandId)
-        {
-            static_assert(E::_Begin != E::_End, "Wrong command ID type");
-            callCommand(static_cast<unsigned>(commandId));
-        }
-
+        void call(Command::ID commandId);
         static std::shared_ptr<Base> allocate(
             const std::string& className, Type format);
-
-        template <class E>
-        Any get(E propertyId) const
-        {
-            static_assert(E::_Begin != E::_End, "Wrong property ID type");
-            return property(static_cast<unsigned>(propertyId));
-        }
-
+        Any get(Property::ID propertyId) const;
         unsigned id() const;
-
-        template <class E>
-        void set(E propertyId, const Any& value)
-        {
-            static_assert(E::_Begin != E::_End, "Wrong property ID type");
-            setProperty(static_cast<unsigned>(propertyId), value);
-        }
+        void set(Property::ID propertyId, const Any& value);
 
     protected:
         typedef void (Base::*Handler)();
@@ -67,24 +37,18 @@ namespace Processor {
         bool hasInternalBuffer();
         virtual void process() = 0;
 
-        template <typename E, typename D>
-        static void addCommand(E commandId, void (D::*handler)())
+        template <typename D>
+        static void addCommand(Command::ID commandId, void (D::*handler)())
         {
-            static_assert(E::_Begin != E::_End, "Wrong command ID type");
-            _handlers[static_cast<unsigned>(commandId)]
-                = static_cast<Handler>(handler);
+            _handlers[commandId] = static_cast<Handler>(handler);
         }
 
     private:
         static std::vector<Allocator<Base> > _allocators;
-        static std::map<unsigned, Handler> _handlers;
+        static std::map<Command::Index, Handler> _handlers;
         unsigned _id;
         static unsigned _nextId;
-        std::map<unsigned, Any> _properties;
-
-        void callCommand(unsigned commandId);
-        Any property(unsigned propertyId) const;
-        void setProperty(unsigned propertyId, const Any& value);
+        std::map<Property::Index, Any> _properties;
     };
 }
 }

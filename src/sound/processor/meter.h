@@ -2,13 +2,15 @@
 #define SOUND_PROCESSOR_METER_H
 
 #include "buffer.h"
-#include "constframe.h"
 #include "processor.h"
 
 namespace Sound {
 
-SOUND_PROPERTIES(Meter, Processor,
+SOUND_PROCESSOR_PROPERTIES(Meter, Processor,
     Peaks_Sound_Processor_PeaksFrame);
+
+template <typename T>
+class ConstFrame;
 
 namespace Processor {
     typedef ConstFrame<double> PeaksFrame;

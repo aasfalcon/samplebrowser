@@ -3,7 +3,7 @@
 using namespace Sound;
 using namespace Sound::Processor;
 
-std::map<unsigned, Base::Handler> Base::_handlers;
+std::map<Command::Index, Base::Handler> Base::_handlers;
 unsigned Base::_nextId = 0;
 
 Base::Base()
@@ -39,7 +39,7 @@ std::shared_ptr<Base> Base::allocate(
     return processor;
 }
 
-void Base::callCommand(unsigned commandId)
+void Base::call(Command::ID commandId)
 {
     auto handler = this->_handlers.at(commandId);
     (this->*handler)();
@@ -70,17 +70,17 @@ bool Base::hasInternalBuffer()
             || bool(parent->get(Property::Processor::ChildrenParallel_bool));
 }
 
+Any Base::get(Property::ID propertyId) const
+{
+    return _properties.at(propertyId);
+}
+
 unsigned Base::id() const
 {
     return _id;
 }
 
-Any Base::property(unsigned propertyId) const
-{
-    return _properties.at(propertyId);
-}
-
-void Base::setProperty(unsigned propertyId, const Any& value)
+void Base::set(Property::ID propertyId, const Any& value)
 {
     _properties[propertyId] = value;
 }

@@ -48,6 +48,7 @@ HEADERS += \
     sample.h \
     soundmacros.h \
     processor/register.h \
-    processor/silence.h
+    processor/silence.h \
+    id.h
 
 INCLUDEPATH += .. ../../vendor

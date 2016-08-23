@@ -5,7 +5,7 @@
 
 namespace Sound {
 
-SOUND_PROPERTIES(Leveler, Processor,
+SOUND_PROCESSOR_PROPERTIES(Leveler, Processor,
     Balance_double,
     Level_double);
 
