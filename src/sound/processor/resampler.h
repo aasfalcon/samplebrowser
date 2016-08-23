@@ -18,11 +18,12 @@ SOUND_PROCESSOR_COMMANDS(Resampler, Processor,
     Stop);
 
 SOUND_PROCESSOR_PROPERTIES(Resampler, Processor,
-    Callback_Sound_Processor_Resampler_Feed,
-    Library_Sound_Processor_ResamplerLibrary,
-    Quality_IResampler_Quality,
-    SourceChannels_unsigned,
-    SourceSampleRate_unsigned);
+    Feed, // Resampler::FeedFunc
+    Library, // ResamplerLibrary
+    Quality, // IResampler::Quality
+    SourceChannels, // unsigned
+    SourceSampleRate // unsigned
+    );
 
 namespace Processor {
 
@@ -38,7 +39,7 @@ namespace Processor {
     class Resampler : public Silence<T> {
     public:
         typedef Float32 InternalFormat;
-        typedef typename RingFeeder<T, InternalFormat>::FeedFunc Feed;
+        typedef typename RingFeeder<T, InternalFormat>::FeedFunc FeedFunc;
 
         Resampler();
         ~Resampler() override;

@@ -1,3 +1,5 @@
+#define PROCESSOR Processor
+
 #include "processor.h"
 
 using namespace Sound;
@@ -6,9 +8,15 @@ using namespace Sound::Processor;
 template <typename T>
 Processor<T>::Processor()
 {
-    SOUND_REGISTER_COMMAND(Processor, Init);
-    SOUND_REGISTER_COMMAND(Processor, Process);
-    set(Property::Processor::SampleFormat_Sound_Type, this->type());
+    COMMAND(Init);
+    COMMAND(Process);
+
+    PROPERTY(bool, ChildrenParallel, false);
+    PROPERTY(bool, ChildrenAfter, false);
+    PROPERTY(unsigned, Latency, 0);
+    PROPERTY(Base*, Parent, nullptr);
+    PROPERTY(Sound::Type, SampleFormat, this->type());
+    PROPERTY(unsigned, SampleRate, 0);
 }
 
 template <typename T>
@@ -40,13 +48,13 @@ void Processor<T>::commandInit()
 template <typename T>
 void Processor<T>::commandProcess()
 {
-    bool isBypassed = this->get(Property::Processor::Bypass_bool);
+    bool isBypassed = this->get(Property::Processor::Bypass);
 
     if (isBypassed) {
         return;
     }
 
-    bool isChildrenAfter = this->get(Property::Processor::ChildrenAfter_bool);
+    bool isChildrenAfter = this->get(Property::Processor::ChildrenAfter);
 
     if (isChildrenAfter) {
         this->process();
@@ -55,7 +63,7 @@ void Processor<T>::commandProcess()
     if (!this->empty()) {
         auto beg = this->begin();
         auto end = this->end();
-        bool isParallel = this->get(Property::Processor::ChildrenParallel_bool);
+        bool isParallel = this->get(Property::Processor::ChildrenParallel);
 
         if (isParallel) {
             for (auto it = beg; it != end; ++it) {
@@ -101,9 +109,9 @@ void Processor<T>::commandProcess()
 }
 
 template <typename T>
-Processor<T> *Processor<T>::parent()
+Processor<T>* Processor<T>::parent() const
 {
-    return get(Property::Processor::Parent_Sound_Processor_Base);
+    return get(Property::Processor::Parent);
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Processor);
+INSTANTIATE;

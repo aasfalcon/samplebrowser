@@ -21,9 +21,10 @@ SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     Stop);
 
 SOUND_PROCESSOR_PROPERTIES(Player, Resampler,
-    Loop_bool,
-    Repeat_bool,
-    Path_std_string);
+    Loop, // bool
+    Repeat, // bool
+    Path // std::string
+    );
 
 namespace Processor {
 

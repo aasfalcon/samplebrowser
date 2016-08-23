@@ -13,13 +13,13 @@ SOUND_PROCESSOR_COMMANDS(Processor, Base,
     Process);
 
 SOUND_PROCESSOR_PROPERTIES(Processor, Base,
-    Bypass_bool,
-    ChildrenParallel_bool,
-    ChildrenAfter_bool,
-    Latency_unsigned,
-    Parent_Sound_Processor_Base,
-    SampleFormat_Sound_Type,
-    SampleRate_unsigned);
+    Bypass, // bool
+    ChildrenParallel, // bool
+    ChildrenAfter, // bool
+    Latency, // bool
+    Parent, // Base *
+    SampleFormat, // Sound::Type
+    SampleRate); // Unsigned
 
 namespace Processor {
 
@@ -36,8 +36,7 @@ namespace Processor {
         virtual void commandInit() override;
         virtual void commandProcess() final;
 
-        Processor<T>* parent();
-
+        Processor<T>* parent() const;
     private:
         Buffer<T> _buffer;
     };

@@ -1,7 +1,6 @@
-#include "silence.h"
+#define PROCESSOR Silence
 
-using namespace Sound;
-using namespace Sound::Processor;
+#include "silence.h"
 
 template <typename T>
 void Silence<T>::process()
@@ -10,4 +9,4 @@ void Silence<T>::process()
     buffer.silence();
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Silence);
+INSTANTIATE;

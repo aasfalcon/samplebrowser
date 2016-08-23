@@ -4,11 +4,13 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <typeinfo>
 #include <vector>
 
 #include "object.h"
 #include "shared/allocator.h"
 #include "shared/any.h"
+#include "processormacros.h"
 
 namespace Sound {
 

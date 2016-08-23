@@ -22,8 +22,7 @@ SOURCES += \
     ringfeeder.tcc \
     runtime.cpp \
     sample.cpp \
-    processor/silence.cpp \
-    processor/test.cpp
+    processor/silence.cpp
 
 HEADERS += \
     basicstream.h \
@@ -49,6 +48,7 @@ HEADERS += \
     soundmacros.h \
     processor/register.h \
     processor/silence.h \
-    id.h
+    id.h \
+    processor/processormacros.h
 
 INCLUDEPATH += .. ../../vendor

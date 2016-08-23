@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <utility>
 
+#include "log.h"
+
 template <class T>
 using StorageType = typename std::decay<T>::type;
 
@@ -51,9 +53,33 @@ struct Any {
         return dynamic_cast<Wrapper<StorageType<V> >*>(_ptr);
     }
 
+    bool like(const Any& that)
+    {
+        return !_ptr || !that._ptr
+            || _ptr->type_info() == that._ptr->type_info();
+    }
+
+    bool like(const Any&& that)
+    {
+        return !_ptr || !that._ptr
+            || _ptr->type_info() == that._ptr->type_info();
+    }
+
     template <typename V>
     StorageType<V>& as()
     {
+        bool strict = true;
+
+        if (strict) {
+            if (_ptr->type_info() != typeid(V)) {
+                LOG(ERROR, "Strict type is "
+                        << _ptr->type_info().name()
+                        << ", attempted to get: "
+                        << typeid(V).name());
+                LOGIC_ERROR("Trying to get value of wrong type");
+            }
+        }
+
         auto derived = dynamic_cast<Wrapper<StorageType<V> >*>(_ptr);
 
         if (!derived) {
@@ -61,6 +87,15 @@ struct Any {
         }
 
         return derived->value;
+    }
+
+    const std::type_info& type_info() const
+    {
+        if (!_ptr) {
+            return typeid(nullptr);
+        }
+
+        return _ptr->type_info();
     }
 
     template <typename V>
@@ -99,21 +134,28 @@ private:
         virtual ~WrapperBase() {}
 
         virtual WrapperBase* clone() const = 0;
+        virtual const std::type_info& type_info() const = 0;
     };
 
     template <typename T>
     struct Wrapper : WrapperBase {
+        T value;
+
         template <typename V>
         Wrapper(V&& value)
             : value(std::forward<V>(value))
+
         {
         }
 
-        T value;
-
-        WrapperBase* clone() const
+        WrapperBase* clone() const override
         {
             return new Wrapper<T>(value);
+        }
+
+        const std::type_info& type_info() const override
+        {
+            return typeid(T);
         }
     };
 

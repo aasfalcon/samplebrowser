@@ -1,19 +1,24 @@
 #include <cstring>
 #include <thread>
 
+#define PROCESSOR Resampler
+
 #include "resampler.h"
 #include "shared/iresampler.h"
 #include "shared/server.h"
-
-using namespace Sound;
-using namespace Sound::Processor;
 
 template <typename T>
 Resampler<T>::Resampler()
     : _resampler(PLUGIN_FACTORY(IResampler))
 {
-    SOUND_REGISTER_COMMAND(Resampler, Start);
-    SOUND_REGISTER_COMMAND(Resampler, Stop);
+    COMMAND(Start);
+    COMMAND(Stop);
+
+    PROPERTY(FeedFunc, Feed, nullptr);
+    PROPERTY(ResamplerLibrary, Library, LibraryDefault);
+    PROPERTY(IResampler::Quality, Quality, IResampler::QualityRealtime);
+    PROPERTY(unsigned, SourceChannels, 0);
+    PROPERTY(unsigned, SourceSampleRate, 0);
 }
 
 template <typename T>
@@ -44,7 +49,7 @@ template <typename T>
 void Resampler<T>::commandInit()
 {
     Silence<T>::commandInit();
-    unsigned sampleRate = this->get(Property::Processor::SampleRate_unsigned);
+    unsigned sampleRate = this->get(Property::Processor::SampleRate);
     _resampler->init(IResampler::QualityRealtime, this->buffer().channels(),
         this->buffer().frames(), sampleRate);
 }
@@ -52,9 +57,9 @@ void Resampler<T>::commandInit()
 template <typename T>
 void Resampler<T>::commandStart()
 {
-    unsigned channels = this->get(Property::Resampler::SourceChannels_unsigned);
-    unsigned srate = this->get(Property::Resampler::SourceSampleRate_unsigned);
-    Feed feed = this->get(Property::Resampler::Callback_Sound_Processor_Resampler_Feed);
+    unsigned channels = this->get(Property::Resampler::SourceChannels);
+    unsigned srate = this->get(Property::Resampler::SourceSampleRate);
+    FeedFunc feed = this->get(Property::Resampler::Feed);
 
     _mutex.lock();
     _resampler->setInputRate(srate);
@@ -81,9 +86,9 @@ void Resampler<T>::commandStop()
 template <typename T>
 unsigned Resampler<T>::feedFrames(unsigned sourceSampleRate)
 {
-    unsigned sampleRate = this->get(Property::Processor::SampleRate_unsigned);
+    unsigned sampleRate = this->get(Property::Processor::SampleRate);
     double ratio = double(sourceSampleRate) / double(sampleRate);
     return unsigned(ratio * double(this->buffer().frames()));
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Resampler);
+INSTANTIATE;

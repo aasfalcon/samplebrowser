@@ -1,13 +1,12 @@
+#define PROCESSOR Meter
+
 #include "meter.h"
 #include "constframe.h"
-
-using namespace Sound;
-using namespace Sound::Processor;
 
 template <typename T>
 Meter<T>::Meter()
 {
-    this->set(Property::Meter::Peaks_Sound_Processor_PeaksFrame, _peaks.cbegin());
+    PROPERTY(ConstFrame<double>, Peaks, _peaks.cbegin());
 }
 
 template <typename T>
@@ -20,6 +19,7 @@ void Meter<T>::commandInit()
 {
     Processor<T>::commandInit();
     _peaks.reallocate(this->buffer().channels(), 1);
+    this->set(Property::Meter::Peaks, _peaks.cbegin());
 }
 
 template <typename T>
@@ -48,4 +48,4 @@ void Meter<T>::process()
     }
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Meter);
+INSTANTIATE;

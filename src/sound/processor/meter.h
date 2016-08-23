@@ -7,14 +7,12 @@
 namespace Sound {
 
 SOUND_PROCESSOR_PROPERTIES(Meter, Processor,
-    Peaks_Sound_Processor_PeaksFrame);
+    Peaks); // ConstFrame<double> *
 
 template <typename T>
 class ConstFrame;
 
 namespace Processor {
-    typedef ConstFrame<double> PeaksFrame;
-
     template <typename T>
     class Meter : public Processor<T> {
     public:

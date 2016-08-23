@@ -1,13 +1,12 @@
-#include "leveler.h"
+#define PROCESSOR Leveler
 
-using namespace Sound;
-using namespace Sound::Processor;
+#include "leveler.h"
 
 template <typename T>
 Leveler<T>::Leveler()
 {
-    this->set(Property::Leveler::Balance_double, double(0));
-    this->set(Property::Leveler::Level_double, double(1));
+    PROPERTY(double, Balance, 0);
+    PROPERTY(double, Level, 1);
 }
 
 template <typename T>
@@ -19,8 +18,8 @@ template <typename T>
 void Leveler<T>::process()
 {
     auto& buffer = this->buffer();
-    double balance = this->get(Property::Leveler::Balance_double);
-    double level = this->get(Property::Leveler::Level_double);
+    double balance = this->get(Property::Leveler::Balance);
+    double level = this->get(Property::Leveler::Level);
     unsigned channels = buffer.channels();
 
     for (auto frame = buffer.begin(); frame != buffer.end(); ++frame) {
@@ -39,4 +38,4 @@ void Leveler<T>::process()
     }
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Leveler);
+INSTANTIATE;

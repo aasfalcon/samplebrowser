@@ -6,8 +6,8 @@
 namespace Sound {
 
 SOUND_PROCESSOR_PROPERTIES(Leveler, Processor,
-    Balance_double,
-    Level_double);
+    Balance, // double
+    Level); // double
 
 namespace Processor {
     template <typename T>

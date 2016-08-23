@@ -1,16 +1,19 @@
 #include <functional>
 #include <mutex>
 
+#define PROCESSOR Player
+
 #include "inputstream.h"
 #include "player.h"
-
-using namespace Sound;
-using namespace Sound::Processor;
 
 template <typename T>
 Player<T>::Player()
 {
-    SOUND_REGISTER_COMMAND(Player, Play);
+    COMMAND(Play);
+
+    PROPERTY(bool, Loop, false);
+    PROPERTY(bool, Repeat, false);
+    PROPERTY(std::string, Path, "");
 }
 
 template <typename T>
@@ -21,14 +24,14 @@ Player<T>::~Player()
 template <typename T>
 void Player<T>::commandPlay()
 {
-    std::string path = this->get(Property::Player::Path_std_string);
+    std::string path = this->get(Property::Player::Path);
 
     _stream = std::make_shared<InputStream>(path);
     BasicStream::Info info;
     *_stream >> info;
     _readBuffer.reallocate(info.channels, this->feedFrames(info.sampleRate));
 
-    auto feedLambda = [this](ConstFrame<T>& begRef, ConstFrame<T>& endRef) -> bool {
+    auto feed = [this](ConstFrame<T>& begRef, ConstFrame<T>& endRef) -> bool {
         bool isStopping = false;
 
         try {
@@ -44,11 +47,11 @@ void Player<T>::commandPlay()
         return isStopping;
     };
 
-    this->set(Property::Resampler::Callback_Sound_Processor_Resampler_Feed, feedLambda);
-    this->set(Property::Resampler::SourceChannels_unsigned, info.channels);
-    this->set(Property::Resampler::SourceSampleRate_unsigned, info.sampleRate);
+    this->set(Property::Resampler::Feed, feed);
+    this->set(Property::Resampler::SourceChannels, info.channels);
+    this->set(Property::Resampler::SourceSampleRate, info.sampleRate);
 
     this->call(Command::Resampler::Start);
 }
 
-SOUND_INSTANTIATE(Sound::Processor::Player);
+INSTANTIATE;

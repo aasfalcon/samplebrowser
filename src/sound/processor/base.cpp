@@ -15,12 +15,12 @@ Base::~Base()
 {
 }
 
-#define SOUND_REGISTER_PROCESSOR_ONE(a_type, a_class) \
-    _allocators[Type##a_type].addTag(#a_class,        \
-    []() -> Base* { return new a_class<a_type>(); });
+#define REGISTER_ONE(a_type, a_class)          \
+    _allocators[Type##a_type].addTag(#a_class, \
+        []() -> Base* { return new a_class<a_type>(); });
 
-#define SOUND_REGISTER_PROCESSOR(a_class) \
-    SOUND_ENUMERATE_TYPE(SOUND_REGISTER_PROCESSOR_ONE, a_class)
+#define REGISTER(a_class) \
+    SOUND_ENUMERATE_TYPE(REGISTER_ONE, a_class)
 
 #include "register.h"
 
@@ -48,14 +48,14 @@ void Base::call(Command::ID commandId)
 void Base::commandInit()
 {
     if (!empty()) {
-        unsigned latency = get(Property::Processor::Latency_unsigned);
-        unsigned sampleRate = get(Property::Processor::SampleRate_unsigned);
+        unsigned latency = get(Property::Processor::Latency);
+        unsigned sampleRate = get(Property::Processor::SampleRate);
 
         for (auto it = this->begin(); it != this->end(); it++) {
             auto& child = *it;
-            child->set(Property::Processor::Latency_unsigned, latency);
-            child->set(Property::Processor::SampleRate_unsigned, sampleRate);
-            child->set(Property::Processor::Parent_Sound_Processor_Base, this);
+            child->set(Property::Processor::Latency, latency);
+            child->set(Property::Processor::SampleRate, sampleRate);
+            child->set(Property::Processor::Parent, this);
 
             child->call(Command::Processor::Init);
         }
@@ -64,15 +64,10 @@ void Base::commandInit()
 
 bool Base::hasInternalBuffer()
 {
-    Base *parent = this->get(Property::Processor::Parent_Sound_Processor_Base);
+    Base* parent = this->get(Property::Processor::Parent);
     return !parent
-            || !this->empty()
-            || bool(parent->get(Property::Processor::ChildrenParallel_bool));
-}
-
-Any Base::get(Property::ID propertyId) const
-{
-    return _properties.at(propertyId);
+        || !this->empty()
+        || bool(parent->get(Property::Processor::ChildrenParallel_bool));
 }
 
 unsigned Base::id() const
@@ -80,7 +75,15 @@ unsigned Base::id() const
     return _id;
 }
 
-void Base::set(Property::ID propertyId, const Any& value)
+void Base::set(Property::ID id, const Any& value)
 {
-    _properties[propertyId] = value;
+    if (!_properties[id].like(value)) {
+        LOG(INFO, "Initialized with "
+                << _properties[id].type_info().name()
+                << " but attempted to replace with "
+                << value.type_info().name());
+        LOGIC_ERROR("Setting invalid property type");
+    }
+
+    _properties[id] = value;
 }
