@@ -8,8 +8,8 @@ using namespace Sound::Processor;
 template <typename T>
 void Silence<T>::process()
 {
-    auto& buffer = this->buffer();
-    buffer.silence();
+    auto& out = this->output();
+    out.silence();
 }
 
 INSTANTIATE;

@@ -2,7 +2,8 @@
 
 TARGET = sound
 TEMPLATE = lib
-CONFIG += staticlib c++11
+CONFIG += staticlib c++11 precompile_header
+PRECOMPILED_HEADER = stable.h
 
 SOURCES += \
     basicstream.cpp \
@@ -20,11 +21,11 @@ SOURCES += \
     processor/resampler.cpp \
     ringbuffer.cpp \
     ringfeeder.tcc \
-    runtime.cpp \
     sample.cpp \
     processor/silence.cpp \
     processor/root.cpp \
-    processor/realtimeany.tcc
+    processor/realtimeany.tcc \
+    processor/messagebus.cpp
 
 HEADERS += \
     basicstream.h \
@@ -45,13 +46,13 @@ HEADERS += \
     processor/resampler.h \
     ringbuffer.h \
     ringfeeder.h \
-    runtime.h \
     sample.h \
     soundmacros.h \
     processor/silence.h \
-    id.h \
     processor/processormacros.h \
     processor/root.h \
-    processor/realtimeany.h
+    processor/realtimeany.h \
+    processor/messagebus.h \
+    config.h
 
 INCLUDEPATH += .. ../../vendor

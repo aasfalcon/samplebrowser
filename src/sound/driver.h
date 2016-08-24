@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "processor/base.h"
+#include "processor/messagebus.h"
 #include "shared/idriver.h"
 
 namespace Sound {
@@ -21,22 +21,24 @@ public:
     const IDriver::DriverInfo& info() const;
     unsigned latency() const;
     std::shared_ptr<IDriver::ConnectOptions> options() const;
-
+    Processor::Base* root() const;
     unsigned sampleRate() const;
     Type sampleType() const;
-
-    void init(std::shared_ptr<Processor::Base> root);
-
     void start();
     void stop();
     double time() const;
 
 private:
     unsigned _bufferFrames;
+    Processor::MessageBus _messageBus;
     std::shared_ptr<IDriver::ConnectOptions> _options;
     std::shared_ptr<IDriver> _provider;
-    std::shared_ptr<void> _runtime;
+    std::shared_ptr<Processor::Base> _root;
+    Processor::RuntimeInfo _runtime;
     Type _sampleType;
+
+    void init();
+    static IDriver::Control process(const IDriver::ProcessParams& data);
 };
 }
 

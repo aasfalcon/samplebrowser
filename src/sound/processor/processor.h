@@ -1,25 +1,26 @@
 #ifndef SOUND_PROCESSOR_PROCESSOR_H
 #define SOUND_PROCESSOR_PROCESSOR_H
 
-#include <list>
 #include <mutex>
 
 #include "base.h"
 #include "buffer.h"
+#include "processormacros.h"
 
 namespace Sound {
 
 SOUND_PROCESSOR_COMMANDS(Processor, Base,
     Init);
 
+SOUND_PROCESSOR_SIGNALS(Processor, Base,
+    Error // const char *
+    );
+
 SOUND_PROCESSOR_PARAMETERS(Processor, Base,
     Bypass, // bool
     ChildrenParallel, // bool
     ChildrenAfter, // bool
-    Latency, // bool
-    Parent, // Base *
-    SampleFormat, // Sound::Type
-    SampleRate // unsigned
+    Runtime // Driver::RuntimeInfo *
     );
 
 SOUND_PROCESSOR_PROPERTIES(Processor, Base,
@@ -37,17 +38,18 @@ namespace Processor {
         ~Processor() override;
 
     protected:
-        std::mutex _mutex;
+        virtual Buffer<T>& input();
+        Buffer<T>& output();
 
-        Buffer<T>& buffer();
+        void commandInit() override;
 
-        virtual void commandInit() override;
-        virtual void entryPoint() final;
+        void processChildrenParallel() override final;
+        void processChildrenSerial() override final;
 
         Processor<T>* parent() const;
 
     private:
-        Buffer<T> _buffer;
+        Buffer<T> _output;
     };
 
     SOUND_INSTANTIATION_DECLARE(Processor);

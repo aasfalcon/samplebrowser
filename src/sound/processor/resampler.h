@@ -3,7 +3,6 @@
 
 #include <map>
 #include <memory>
-#include <mutex>
 #include <thread>
 
 #include "ringbuffer.h"

@@ -56,7 +56,7 @@ void Player<T>::commandPlay()
     this->set(Property::Resampler::SourceChannels, info.channels);
     this->set(Property::Resampler::SourceSampleRate, info.sampleRate);
 
-    this->call(Command::Resampler::Start);
+    this->perform(Command::Resampler::Start);
 }
 
 INSTANTIATE;

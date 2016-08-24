@@ -1,6 +1,7 @@
 #define PROCESSOR Processor
 
 #include "processor.h"
+#include "driver.h"
 #include "shared/version.h"
 
 using namespace Sound;
@@ -9,29 +10,21 @@ using namespace Sound::Processor;
 template <typename T>
 Processor<T>::Processor()
 {
-    USE_PARAMETERS;
     COMMAND(Init);
 
     PROPERTY(std::string, Name, "Processor");
     PROPERTY(Version, Version, "1.0.0");
 
+    USE_PARAMETERS;
+    PARAMETER(bool, Bypass, false);
     PARAMETER(bool, ChildrenParallel, false);
     PARAMETER(bool, ChildrenAfter, false);
-    PARAMETER(unsigned, Latency, 0);
-    PARAMETER(Base*, Parent, nullptr);
-    PARAMETER(Sound::Type, SampleFormat, this->type());
-    PARAMETER(unsigned, SampleRate, 0);
+    PARAMETER(RuntimeInfo *, Runtime, nullptr);
 }
 
 template <typename T>
 Processor<T>::~Processor()
 {
-}
-
-template <typename T>
-Buffer<T>& Processor<T>::buffer()
-{
-    return hasInternalBuffer() ? _buffer : parent()->_buffer;
 }
 
 template <typename T>
@@ -41,8 +34,8 @@ void Processor<T>::commandInit()
         auto parent = this->parent();
 
         if (parent) {
-            auto& parentBuffer = parent->buffer();
-            _buffer.reallocate(parentBuffer.channels(), parentBuffer.frames());
+            auto& info = this->runtime();
+            _output.reallocate(info.channelsOutput, info.frames);
         }
     }
 
@@ -50,78 +43,68 @@ void Processor<T>::commandInit()
 }
 
 template <typename T>
-void Processor<T>::entryPoint()
+void Processor<T>::processChildrenParallel()
 {
-    if (!_mutex.try_lock()) {
-        return;
+    const auto beg = this->begin();
+    const auto end = this->end();
+
+    for (auto it = beg; it != end; ++it) {
+        auto child = static_cast<Processor<T>*>((*it).get());
+        child->_output.copy(_output.cbegin(), _output.cend());
+        child->processEntryPoint();
     }
 
-    bool isBypassed = this->get(Parameter::Processor::Bypass);
+    _output.silence();
+    double level = 1.0 / double(this->size());
 
-    if (isBypassed) {
-        return;
+    for (auto it = beg; it != end; ++it) {
+        auto child = static_cast<Processor<T>*>((*it).get());
+        _output.mix(child->_output.cbegin(), child->_output.cend(), level);
     }
+}
 
-    bool isChildrenAfter = this->get(Parameter::Processor::ChildrenAfter);
+template <typename T>
+void Processor<T>::processChildrenSerial()
+{
+    Buffer<T>* prev = &_output;
 
-    if (isChildrenAfter) {
-        this->process();
-    }
+    for (auto it = this->begin(); it != this->end(); ++it) {
+        auto child = static_cast<Processor<T>*>((*it).get());
 
-    if (!this->empty()) {
-        auto beg = this->begin();
-        auto end = this->end();
-        bool isParallel = this->get(Parameter::Processor::ChildrenParallel);
-
-        if (isParallel) {
-            for (auto it = beg; it != end; ++it) {
-                auto child = std::dynamic_pointer_cast<Processor<T> >(*it);
-                child->_buffer.copy(this->_buffer.cbegin(), this->_buffer.cend());
-                child->entryPoint();
-            }
-
-            _buffer.silence();
-
-            for (auto it = beg; it != end; ++it) {
-                auto child = std::dynamic_pointer_cast<Processor<T> >(*it);
-                _buffer.mix(child->_buffer.cbegin(), child->_buffer.cend(),
-                    1.0 / double(this->size()));
-            }
+        if (child->hasInternalBuffer()) {
+            child->_output.copy(prev->cbegin(), prev->cend());
+            child->processEntryPoint();
+            prev = &child->_output;
         } else {
-            auto& prevBuffer = this->_buffer;
-
-            for (auto it = beg; it != end; ++it) {
-                auto child = std::dynamic_pointer_cast<Processor<T> >(*it);
-                bool hasInternal = child->hasInternalBuffer();
-
-                if (hasInternal) {
-                    child->_buffer.copy(prevBuffer.cbegin(), prevBuffer.cend());
-                }
-
-                child->entryPoint();
-
-                if (hasInternal) {
-                    prevBuffer = child->_buffer;
-                }
-            }
-
-            if (&prevBuffer != &this->_buffer) {
-                this->_buffer.copy(prevBuffer.cbegin(), prevBuffer.cend());
-            }
+            child->processEntryPoint();
         }
     }
 
-    if (!isChildrenAfter) {
-        this->process();
+    if (prev != &this->_output) {
+        this->_output.copy(prev->cbegin(), prev->cend());
+    }
+}
+
+template <typename T>
+Buffer<T>& Processor<T>::input()
+{
+    return parent()->input();
+}
+
+template <typename T>
+Buffer<T>& Processor<T>::output()
+{
+    if (this->hasInternalBuffer()) {
+        return _output;
     }
 
-    _mutex.unlock();
+    return parent()->output();
 }
 
 template <typename T>
 Processor<T>* Processor<T>::parent() const
 {
-    return get(Parameter::Processor::Parent);
+    return static_cast<Processor<T>*>(Base::parent());
 }
 
 INSTANTIATE;

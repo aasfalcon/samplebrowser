@@ -9,7 +9,8 @@ using namespace Sound::Processor;
 template <typename T>
 Meter<T>::Meter()
 {
-    PROPERTY(ConstFrame<double>, Peaks, _peaks.cbegin());
+    PROPERTY(ConstFrame<double>, PeaksInput, _peaksInput.cbegin());
+    PROPERTY(ConstFrame<double>, PeaksOutput, _peaksOutput.cbegin());
 }
 
 template <typename T>
@@ -20,36 +21,49 @@ Meter<T>::~Meter()
 template <typename T>
 void Meter<T>::commandInit()
 {
-    std::lock_guard<std::mutex> lock(this->_mutex);
     Processor<T>::commandInit();
-    _peaks.reallocate(this->buffer().channels(), 1);
-    this->setProperty(Property::Meter::Peaks, _peaks.cbegin());
+
+    _peaksInput.reallocate(this->input().channels(), 1);
+    _peaksInput.silence();
+    this->setProperty(Property::Meter::PeaksInput, _peaksInput.cbegin());
+
+    _peaksOutput.reallocate(this->output().channels(), 1);
+    _peaksOutput.silence();
+    this->setProperty(Property::Meter::PeaksOutput, _peaksOutput.cbegin());
 }
 
 template <typename T>
 void Meter<T>::process()
 {
-    auto& buffer = this->buffer();
-    Frame<double> peaksFrame = _peaks.begin();
-    unsigned channels = buffer.channels();
+    auto& info = this->runtime();
 
-    _peaks.silence();
+    if (info.channelsOutput) {
+        auto& out = this->output();
+        Frame<double> peaksFrame = _peaksOutput.begin();
 
-    for (auto frame = buffer.begin(); frame != buffer.end(); ++frame) {
-        for (unsigned i = 0; i < channels; i++) {
-            T value = frame.at(i);
+        _peaksOutput.silence();
 
-            if (value < 0) {
-                value = -value;
-            }
+        for (auto frame = out.begin(); frame != out.end(); ++frame) {
+            for (unsigned i = 0; i < info.channelsOutput; i++) {
+                T value = frame.at(i);
 
-            Sample<double> sample = value;
+                if (value < 0) {
+                    value = -value;
+                }
 
-            if (double(sample) > double(peaksFrame[i])) {
-                peaksFrame[i] = sample;
+                Sample<double> sample = Sample<T>(value);
+
+                if (double(sample) > double(peaksFrame[i])) {
+                    peaksFrame[i] = sample;
+                }
             }
         }
     }
+
+    peaksFrame = _peaksInput.begin();
+    _peaksInput.silence();
+    _peaksOutput.silence();
+
 }
 
 INSTANTIATE;

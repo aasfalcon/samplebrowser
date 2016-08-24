@@ -28,4 +28,7 @@ HEADERS +=\
     iserver.h \
     pluginmacros.h \
     log.h \
-    any.h
+    any.h \
+    stable.h \
+    ring.h \
+    id.h

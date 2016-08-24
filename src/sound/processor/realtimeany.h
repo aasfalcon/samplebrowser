@@ -29,6 +29,12 @@ public:
         return reinterpret_cast<T>(_value.vPointer);
     }
 
+    void assign(RealtimeAny that)
+    {
+        assert(*_type == *that._type);
+        _value = that._value;
+    }
+
     template <typename T>
     void put(T value)
     {

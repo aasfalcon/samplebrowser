@@ -50,17 +50,15 @@ void Resampler<T>::process()
 template <typename T>
 void Resampler<T>::commandInit()
 {
-    std::lock_guard<std::mutex> lock(this->_mutex);
     Silence<T>::commandInit();
     unsigned sampleRate = this->get(Parameter::Processor::SampleRate);
-    _resampler->init(IResampler::QualityRealtime, this->buffer().channels(),
-        this->buffer().frames(), sampleRate);
+    _resampler->init(IResampler::QualityRealtime, this->output().channels(),
+        this->output().frames(), sampleRate);
 }
 
 template <typename T>
 void Resampler<T>::commandStart()
 {
-    std::lock_guard<std::mutex> lock(this->_mutex);
     unsigned channels = this->property(Property::Resampler::SourceChannels);
     unsigned srate = this->property(Property::Resampler::SourceSampleRate);
     FeedFunc feed = this->property(Property::Resampler::Feed);
@@ -79,7 +77,6 @@ void Resampler<T>::commandStart()
 template <typename T>
 void Resampler<T>::commandStop()
 {
-    std::lock_guard<std::mutex> lock(this->_mutex);
     _feeder.reset();
     _ring.reset();
 }

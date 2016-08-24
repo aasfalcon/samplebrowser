@@ -7,7 +7,9 @@
 namespace Sound {
 
 SOUND_PROCESSOR_PROPERTIES(Meter, Processor,
-    Peaks); // ConstFrame<double> *
+    PeaksInput, // ConstFrame<double> *
+    PeaksOutput // ConstFrame<double> *
+    );
 
 template <typename T>
 class ConstFrame;
@@ -25,7 +27,8 @@ namespace Processor {
         void process() override;
 
     private:
-        Buffer<double> _peaks;
+        Buffer<double> _peaksInput;
+        Buffer<double> _peaksOutput;
     };
 
     SOUND_PROCESSOR_FACTORY(Meter);

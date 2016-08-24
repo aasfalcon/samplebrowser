@@ -8,21 +8,24 @@
     LOG4CPLUS_##severity(log4cplus::Logger::getInstance(APPLICATION_NAME), \
         logEvent)
 
-#define _LOG_ERROR_AND_THROW(__message, __exception) \
-    auto message = __message;                        \
+#define LOG_ERROR_AND_THROW(a_message, a_exception) \
+    auto message = a_message;                        \
     LOG(ERROR, message);                             \
-    throw std::__exception(message);
+    throw std::a_exception(message);
 
-#define LOGIC_ERROR(__message) \
-    _LOG_ERROR_AND_THROW(__message, logic_error);
+#define LOGIC_ERROR(a_message) \
+    LOG_ERROR_AND_THROW(a_message, logic_error);
 
-#define RUNTIME_ERROR(__message) \
-    _LOG_ERROR_AND_THROW(__message, runtime_error);
+#define RUNTIME_ERROR(a_message) \
+    LOG_ERROR_AND_THROW(a_message, runtime_error);
 
-#define OUT_OF_RANGE(__message) \
-    _LOG_ERROR_AND_THROW(__message, out_of_range);
+#define OUT_OF_RANGE(a_message) \
+    LOG_ERROR_AND_THROW(a_message, out_of_range);
 
-#define QTR(__text) \
-    QObject::tr(__text).toStdString()
+#define OVERFLOW_ERROR(a_message) \
+    LOG_ERROR_AND_THROW(a_message, overflow_error);
+
+#define QTR(a_text) \
+    QObject::tr(a_text).toStdString()
 
 #endif // LOG_H

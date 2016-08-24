@@ -95,6 +95,11 @@ public:
         return operator+=(-rht);
     }
 
+    bool operator !() const
+    {
+        return !_data;
+    }
+
     bool operator==(const ConstFrame<T>& rht) const
     {
         return rht._data == _data;

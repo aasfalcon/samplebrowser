@@ -1,5 +1,5 @@
 #include "driver.h"
-#include "runtime.h"
+#include "processor/root.h"
 #include "shared/log.h"
 #include "shared/server.h"
 
@@ -7,6 +7,7 @@ using namespace Sound;
 
 Driver::Driver()
     : _provider(PLUGIN_FACTORY(IDriver))
+    , _root(nullptr)
 {
 }
 
@@ -57,21 +58,29 @@ const IDriver::DriverInfo& Driver::info() const
     return *_provider->driverInfo();
 }
 
-void Driver::init(std::shared_ptr<Processor::Base> root)
+void Driver::init()
 {
-    if (sampleType() != TypeInt24E && sampleType() != root->type()) {
-        RUNTIME_ERROR("Wrong root processor sample format");
+    _runtime.bus = &_messageBus;
+    _runtime.channelsInput = _options->inputChannels;
+    _runtime.channelsOutput = _options->outputChannels;
+    _runtime.frames = _bufferFrames;
+    _runtime.latency = latency();
+    _runtime.sampleRate = sampleRate();
+    _runtime.status = 0;
+    _runtime.rawInput = nullptr;
+    _runtime.rawOutput = nullptr;
+
+    _runtime.rawSampleFormat = _runtime.sampleFormat = sampleType();
+
+    if (TypeInt24E == _runtime.sampleFormat) {
+        _runtime.sampleFormat = TypeFloat32;
     }
 
-    Runtime<T>* pruntime = new Runtime<T>(
-        root, _options->outputChannels, _bufferFrames,
-        latency(), sampleRate(), sampleType());
+    _root = std::shared_ptr<Processor::Base>(
+        Processor::Factory::Root::create(_runtime.sampleFormat));
+    _root->set(Parameter::Processor::Runtime, &_runtime);
 
-    _runtime = std::shared_ptr<void>(pruntime, [](void* ptr) {
-        delete reinterpret_cast<Runtime<T>*>(ptr);
-    });
-
-    _provider->setProcess(&Runtime<T>::process, pruntime);
+    _provider->setProcess(&Driver::process, this);
     LOG(TRACE, "Driver initialized");
 }
 
@@ -83,6 +92,26 @@ unsigned Driver::latency() const
 std::shared_ptr<IDriver::ConnectOptions> Driver::options() const
 {
     return _options;
+}
+
+IDriver::Control Driver::process(const IDriver::ProcessParams& data)
+{
+    Driver* driver = reinterpret_cast<Driver*>(data.object);
+    driver->_runtime.rawInput = data.input;
+    driver->_runtime.rawOutput = data.output;
+    driver->_runtime.status = data.status;
+    driver->_runtime.time = data.time;
+    driver->_root->processEntryPoint();
+    return IDriver::ControlContinue;
+}
+
+Processor::Base* Driver::root() const
+{
+    if (!_root) {
+        LOGIC_ERROR("Trying to get root processor while driver is not initialized");
+    }
+
+    return _root.get();
 }
 
 unsigned Driver::sampleRate() const
@@ -97,7 +126,17 @@ Type Driver::sampleType() const
 
 void Driver::start()
 {
-    _provider->control(IDriver::ControlStart);
+    auto si = _provider->streamInfo();
+
+    if (!si->isRunning) {
+        if (!si->isOpen) {
+            LOGIC_ERROR("Attempt to start driver while not open");
+        }
+
+        this->init();
+        _root->perform(Command::Processor::Init);
+        _provider->control(IDriver::ControlStart);
+    }
 }
 
 void Driver::stop()
@@ -109,8 +148,3 @@ double Driver::time() const
 {
     return _provider->time();
 }
-
-#define DRIVER_INIT(__type) \
-    template void Driver::init<__type>(std::shared_ptr<Processor<__type> > root);
-
-SOUND_INSTANTIATE_METHOD(DRIVER_INIT);

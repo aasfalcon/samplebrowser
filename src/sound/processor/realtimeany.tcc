@@ -1,6 +1,6 @@
 #include "realtimeany.h"
 
-using namespace Sound;
+namespace Sound {
 
 template <>
 void RealtimeAny::assign<bool>(bool value)
@@ -65,4 +65,5 @@ unsigned RealtimeAny::as<unsigned>() const
 {
     assert(&typeid(unsigned) == _type);
     return _value.vUnsigned;
+}
 }

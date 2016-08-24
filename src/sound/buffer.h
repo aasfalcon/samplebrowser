@@ -3,7 +3,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <stdexcept>
 #include <vector>
 
 #include "constframe.h"
@@ -11,7 +10,6 @@
 #include "object.h"
 #include "sample.h"
 #include "shared/iresampler.h"
-#include "shared/log.h"
 
 namespace Sound {
 
@@ -22,6 +20,13 @@ public:
         : _channels(0)
         , _frames(0)
         , _samples()
+    {
+    }
+
+    Buffer(const Buffer<T>& that)
+        : _channels(that._channels)
+        , _frames(that._frames)
+        , _samples(that._samples)
     {
     }
 
@@ -86,10 +91,7 @@ public:
     {
         int count = send - sbeg;
         assert(count >= 0);
-
-        if (int(_frames) < count) {
-            OUT_OF_RANGE("Buffer overflow on copy");
-        }
+        assert(int(_frames) < count);
 
         Frame<T> dit = begin();
 
@@ -107,6 +109,29 @@ public:
         }
 
         return dit;
+    }
+
+    template <typename S>
+    Frame<T> copyTo(Frame<S> dbeg, Frame<S> dend)
+    {
+        int count = dend - dbeg;
+        assert(count >= 0);
+        assert(int(_frames) < count);
+
+        ConstFrame<T> sit = cbegin();
+
+        if (this->type() == dbeg.type() && _channels == dbeg.channels()) {
+            std::memcpy(dbeg.data(), sit.data(), count * _channels * sizeof(T));
+            sit += count;
+        } else {
+            while (sit != dend) {
+                sit = sit;
+                ++sit;
+                ++sit;
+            }
+        }
+
+        return sit;
     }
 
     Sample<T>* data()
@@ -129,7 +154,7 @@ public:
         return _frames;
     }
 
-    void fromInt24(const void* dest);
+    void fromInt24(const void* source);
 
     bool isEmpty() const
     {
@@ -141,10 +166,7 @@ public:
     {
         int count = send - sbeg;
         assert(count >= 0);
-
-        if (int(_frames) < count) {
-            OUT_OF_RANGE("Buffer overflow on copy");
-        }
+        assert(int(_frames) < count);
 
         Frame<T> dframe = begin();
         ConstFrame<S> sframe = sbeg;

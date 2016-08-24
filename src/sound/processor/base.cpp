@@ -1,14 +1,18 @@
 #include "base.h"
+#include "driver.h"
+#include "messagebus.h"
 #include "processor.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
 
-std::map<Command::Index, Base::Handler> Base::_handlers;
+std::vector<Base::Handler> Base::_handlers;
 unsigned Base::_nextId = 0;
 
 Base::Base()
     : _id(++_nextId)
+    , _isInitialized(false)
+    , _parent(nullptr)
 {
 }
 
@@ -16,35 +20,102 @@ Base::~Base()
 {
 }
 
-void Base::call(Command::ID commandId)
+void Base::perform(Command::ID id)
 {
-    auto handler = this->_handlers.at(commandId);
+    auto handler = this->_handlers.at(id.toUInt());
     (this->*handler)();
 }
 
 void Base::commandInit()
 {
     if (!empty()) {
-        unsigned latency = get(Parameter::Processor::Latency);
-        unsigned sampleRate = get(Parameter::Processor::SampleRate);
-
         for (auto it = this->begin(); it != this->end(); it++) {
             auto& child = *it;
-            child->set(Parameter::Processor::Latency, latency);
-            child->set(Parameter::Processor::SampleRate, sampleRate);
-            child->set(Parameter::Processor::Parent, this);
+            child->_parent = this;
+            child->set(Parameter::Processor::Runtime, &runtime());
+            child->commandInit();
+        }
+    }
 
-            child->call(Command::Processor::Init);
+    _isInitialized = true;
+}
+
+void Base::emit(Signal::ID id, RealtimeAny value)
+{
+    this->runtime().bus->realtimeEmitSignal(this->id(), id, value);
+}
+
+Base* Base::parent() const
+{
+    assert(_isInitialized);
+    return _parent;
+}
+
+void Base::processEntryPoint()
+{
+    assert(_isInitialized);
+
+    try {
+        bool isBypassed = this->get(Parameter::Processor::Bypass);
+
+        if (!isBypassed) {
+            this->processPre();
+            this->process();
+            this->processPost();
+        }
+    } catch (std::exception e) {
+        this->emit(Signal::Processor::Error, e.what());
+    } catch (...) {
+        this->emit(Signal::Processor::Error, "Unknown exception");
+    }
+}
+
+void Base::processPost()
+{
+    if (this->size()) {
+        bool childrenAfter = this->get(Parameter::Processor::ChildrenAfter);
+
+        if (childrenAfter) {
+            bool childrenParallel = this->get(Parameter::Processor::ChildrenParallel);
+
+            if (childrenParallel) {
+                processChildrenParallel();
+            } else {
+                processChildrenSerial();
+            }
+        }
+    }
+}
+
+const RuntimeInfo& Base::runtime()
+{
+    RuntimeInfo* result = get(Parameter::Processor::Runtime);
+    return *result;
+}
+
+void Base::processPre()
+{
+    if (this->size()) {
+        bool childrenAfter = this->get(Parameter::Processor::ChildrenAfter);
+
+        if (!childrenAfter) {
+            bool childrenParallel = this->get(Parameter::Processor::ChildrenParallel);
+
+            if (childrenParallel) {
+                processChildrenParallel();
+            } else {
+                processChildrenSerial();
+            }
         }
     }
 }
 
 bool Base::hasInternalBuffer()
 {
-    Base* parent = this->get(Parameter::Processor::Parent);
-    return !parent
+    assert(_isInitialized);
+    return !_parent
         || !this->empty()
-            || bool(parent->get(Parameter::Processor::ChildrenParallel));
+        || bool(_parent->get(Parameter::Processor::ChildrenParallel));
 }
 
 void Base::setParameterCount(unsigned count)
@@ -59,25 +130,28 @@ unsigned Base::id() const
 
 void Base::setProperty(Property::ID id, const Any& value)
 {
-    if (!_properties[id].like(value)) {
+    unsigned index = id.toUInt();
+
+    if (!_properties[index].like(value)) {
         LOG(INFO, "Initialized with "
-                << _properties[id].type_info().name()
+                << _properties[index].type_info().name()
                 << " but attempted to replace with "
                 << value.type_info().name());
         LOGIC_ERROR("Setting invalid property type");
     }
 
-    _properties[id] = value;
+    _properties[index] = value;
 }
 
 RealtimeAny Base::get(Parameter::ID id) const
 {
-    unsigned index = id.as<unsigned>();
+    unsigned index = id.toUInt();
     return _parameters.at(index);
 }
 
 void Base::set(Parameter::ID id, RealtimeAny value)
 {
-    unsigned index = id.as<unsigned>();
-    _parameters.assign(index, value);
+    unsigned index = id.toUInt();
+    assert(index < _parameters.size());
+    _parameters.at(index).assign(value);
 }

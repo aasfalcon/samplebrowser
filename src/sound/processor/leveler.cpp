@@ -21,12 +21,12 @@ Leveler<T>::~Leveler()
 template <typename T>
 void Leveler<T>::process()
 {
-    auto& buffer = this->buffer();
+    auto& out = this->output();
     double balance = this->get(Parameter::Leveler::Balance);
     double level = this->get(Parameter::Leveler::Level);
-    unsigned channels = buffer.channels();
+    unsigned channels = out.channels();
 
-    for (auto frame = buffer.begin(); frame != buffer.end(); ++frame) {
+    for (auto frame = out.begin(); frame != out.end(); ++frame) {
         for (unsigned i = 0; i < channels; i++) {
 
             if (balance != 0. && channels == 2) {
