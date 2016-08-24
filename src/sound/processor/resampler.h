@@ -16,13 +16,18 @@ SOUND_PROCESSOR_COMMANDS(Resampler, Processor,
     Start,
     Stop);
 
-SOUND_PROCESSOR_PROPERTIES(Resampler, Processor,
-    Feed, // Resampler::FeedFunc
-    Library, // ResamplerLibrary
+SOUND_PROCESSOR_PARAMETERS(Resampler, Processor,
     Quality, // IResampler::Quality
     SourceChannels, // unsigned
     SourceSampleRate // unsigned
     );
+
+SOUND_PROCESSOR_PROPERTIES(Resampler, Processor,
+    Feed, // Resampler::FeedFunc
+    Library // ResamplerLibrary
+    );
+
+SOUND_PROCESSOR_SIGNALS(Resampler, Processor, Void);
 
 namespace Processor {
 

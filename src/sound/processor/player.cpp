@@ -1,10 +1,8 @@
-#include <functional>
-#include <mutex>
+#include "player.h"
+#include "stream/inputstream.h"
 
 #define PROCESSOR Player
-
-#include "inputstream.h"
-#include "player.h"
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
@@ -29,7 +27,7 @@ Player<T>::~Player()
 template <typename T>
 void Player<T>::commandPlay()
 {
-    std::string path = this->get(Property::Player::Path);
+    const char* path = this->get(Property::Player::Path);
 
     _stream = std::make_shared<InputStream>(path);
     BasicStream::Info info;
@@ -52,9 +50,9 @@ void Player<T>::commandPlay()
         return isStopping;
     };
 
-    this->set(Property::Resampler::Feed, feed);
-    this->set(Property::Resampler::SourceChannels, info.channels);
-    this->set(Property::Resampler::SourceSampleRate, info.sampleRate);
+    this->setProperty(Property::Resampler::Feed, feed);
+    this->set(Parameter::Resampler::SourceChannels, info.channels);
+    this->set(Parameter::Resampler::SourceSampleRate, info.sampleRate);
 
     this->perform(Command::Resampler::Start);
 }

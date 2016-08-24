@@ -8,8 +8,6 @@
 
 namespace Sound {
 
-class InputStream;
-
 SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     FastForward,
     Pause,
@@ -20,14 +18,21 @@ SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     SkipToStart,
     Stop);
 
-SOUND_PROCESSOR_PARAMETERS(Player, Resampler,
+SOUND_PROCESSOR_PARAMETERS(Player, Processor,
     Loop, // bool
-    Repeat, // bool
+    Repeat // bool
     );
 
 SOUND_PROCESSOR_PROPERTIES(Player, Resampler,
-    Path // std::string
+    Path // const char *
     );
+
+SOUND_PROCESSOR_SIGNALS(Player, Resampler,
+    EndOfFile, // bool
+    Position // double
+    )
+
+class InputStream;
 
 namespace Processor {
 

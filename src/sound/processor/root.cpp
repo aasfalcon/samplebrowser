@@ -1,7 +1,8 @@
-#define PROCESSOR Root
-
 #include "root.h"
 #include "buffer.h"
+
+#define PROCESSOR Root
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;

@@ -5,10 +5,15 @@
 
 namespace Sound {
 
+SOUND_PROCESSOR_COMMANDS(Leveler, Processor, Void);
+
 SOUND_PROCESSOR_PARAMETERS(Leveler, Processor,
     Balance, // double
     Level // double
     );
+
+SOUND_PROCESSOR_PROPERTIES(Leveler, Processor, Void);
+SOUND_PROCESSOR_SIGNALS(Leveler, Processor, Void);
 
 namespace Processor {
     template <typename T>

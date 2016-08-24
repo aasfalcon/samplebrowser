@@ -3,6 +3,7 @@ build/
 Makefile
 *.o
 *.a
+*.so
 *.autosave
 moc_*.*
 qrc_*.*

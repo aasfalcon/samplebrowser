@@ -1,6 +1,7 @@
-#define PROCESSOR Silence
-
 #include "silence.h"
+
+#define PROCESSOR Silence
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;

@@ -1,6 +1,7 @@
-#define PROCESSOR Leveler
-
 #include "leveler.h"
+
+#define PROCESSOR Leveler
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;

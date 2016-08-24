@@ -1,8 +1,9 @@
-#define PROCESSOR Processor
-
 #include "processor.h"
 #include "driver.h"
 #include "shared/version.h"
+
+#define PROCESSOR Processor
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
@@ -19,7 +20,7 @@ Processor<T>::Processor()
     PARAMETER(bool, Bypass, false);
     PARAMETER(bool, ChildrenParallel, false);
     PARAMETER(bool, ChildrenAfter, false);
-    PARAMETER(RuntimeInfo *, Runtime, nullptr);
+    PARAMETER(RuntimeInfo*, Runtime, nullptr);
 }
 
 template <typename T>

@@ -6,7 +6,11 @@
 
 namespace Sound {
 
-SOUND_PROCESSOR_PROPERTIES(Meter, Processor,
+SOUND_PROCESSOR_PARAMETERS(Meter, Processor,
+    PassFrames // unsigned
+    );
+
+SOUND_PROCESSOR_SIGNALS(Meter, Processor,
     PeaksInput, // ConstFrame<double> *
     PeaksOutput // ConstFrame<double> *
     );
@@ -27,8 +31,13 @@ namespace Processor {
         void process() override;
 
     private:
-        Buffer<double> _peaksInput;
-        Buffer<double> _peaksOutput;
+        Buffer<T> _peaksInput;
+        Buffer<double> _peaksInputExposed;
+        Buffer<T> _peaksOutput;
+        Buffer<double> _peaksOutputExposed;
+        ConstFrame<double> _peaksInputFrame;
+        ConstFrame<double> _peaksOutputFrame;
+        unsigned _counter;
     };
 
     SOUND_PROCESSOR_FACTORY(Meter);

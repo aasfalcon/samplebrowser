@@ -1,16 +1,19 @@
-#define PROCESSOR Meter
-
 #include "meter.h"
 #include "constframe.h"
+#include "config.h"
+
+#define PROCESSOR Meter
+#include "shortcuts.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
 
 template <typename T>
 Meter<T>::Meter()
+    : _counter(0)
 {
-    PROPERTY(ConstFrame<double>, PeaksInput, _peaksInput.cbegin());
-    PROPERTY(ConstFrame<double>, PeaksOutput, _peaksOutput.cbegin());
+    USE_PARAMETERS;
+    PARAMETER(unsigned, PassFrames, SOUND_PROCESSOR_METER_PASS_FRAMES);
 }
 
 template <typename T>
@@ -22,26 +25,30 @@ template <typename T>
 void Meter<T>::commandInit()
 {
     Processor<T>::commandInit();
-
-    _peaksInput.reallocate(this->input().channels(), 1);
+    auto& info = this->runtime();
+    _peaksInput.reallocate(info.channelsInput, 1);
     _peaksInput.silence();
-    this->setProperty(Property::Meter::PeaksInput, _peaksInput.cbegin());
-
-    _peaksOutput.reallocate(this->output().channels(), 1);
+    _peaksInputExposed.reallocate(info.channelsInput, 1);
+    _peaksInputExposed.silence();
+    _peaksOutput.reallocate(info.channelsOutput, 1);
     _peaksOutput.silence();
-    this->setProperty(Property::Meter::PeaksOutput, _peaksOutput.cbegin());
+    _peaksOutputExposed.reallocate(info.channelsOutput, 1);
+    _peaksOutputExposed.silence();
+
+    _peaksInputFrame = _peaksInputExposed.cbegin();
+    _peaksOutputFrame = _peaksOutputExposed.cbegin();
 }
 
 template <typename T>
 void Meter<T>::process()
 {
     auto& info = this->runtime();
+    unsigned passFrames = this->get(Parameter::Meter::PassFrames);
+    unsigned counter = _counter;
 
     if (info.channelsOutput) {
         auto& out = this->output();
-        Frame<double> peaksFrame = _peaksOutput.begin();
-
-        _peaksOutput.silence();
+        Frame<T> peaksFrame = _peaksOutput.begin();
 
         for (auto frame = out.begin(); frame != out.end(); ++frame) {
             for (unsigned i = 0; i < info.channelsOutput; i++) {
@@ -51,19 +58,46 @@ void Meter<T>::process()
                     value = -value;
                 }
 
-                Sample<double> sample = Sample<T>(value);
-
-                if (double(sample) > double(peaksFrame[i])) {
-                    peaksFrame[i] = sample;
+                if (peaksFrame.at(i) < value) {
+                    peaksFrame[i] = value;
                 }
+            }
+
+            if (++counter >= passFrames) {
+                _peaksOutputExposed.copy(_peaksOutput.cbegin(), _peaksOutput.cend());
+                this->emit(Signal::Meter::PeaksOutput, &_peaksOutputFrame);
+                counter = 0;
             }
         }
     }
 
-    peaksFrame = _peaksInput.begin();
-    _peaksInput.silence();
-    _peaksOutput.silence();
+    if (info.channelsInput) {
+        auto& in = this->input();
+        Frame<T> peaksFrame = _peaksInput.begin();
+        counter = _counter;
 
+        for (auto frame = in.begin(); frame != in.end(); ++frame) {
+            for (unsigned i = 0; i < info.channelsInput; i++) {
+                T value = frame.at(i);
+
+                if (value < 0) {
+                    value = -value;
+                }
+
+                if (peaksFrame.at(i) < value) {
+                    peaksFrame[i] = value;
+                }
+            }
+
+            if (++counter >= passFrames) {
+                _peaksInputExposed.copy(_peaksInput.cbegin(), _peaksInput.cend());
+                this->emit(Signal::Meter::PeaksInput, &_peaksInputFrame);
+                counter = 0;
+            }
+        }
+    }
+
+    _counter = counter;
 }
 
 INSTANTIATE;
