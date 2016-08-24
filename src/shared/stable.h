@@ -5,6 +5,7 @@
 #include "allocator.h"
 #include "any.h"
 #include "iaudiofile.h"
+#include "id.h"
 #include "idriver.h"
 #include "interface.h"
 #include "iplugin.h"
@@ -12,6 +13,7 @@
 #include "iserver.h"
 #include "log.h"
 #include "plugin.h"
+#include "ring.h"
 #include "server.h"
 #include "version.h"
 #endif

@@ -2,7 +2,8 @@ QT += core gui widgets
 
 TARGET = samplebrowser
 TEMPLATE = app
-CONFIG += c++11
+CONFIG += c++11 precompile_header
+PRECOMPILED_HEADER = stable.h
 
 SOURCES += \
     main.cpp \
@@ -44,6 +45,6 @@ RESOURCES += \
     assets/icons.qrc \
     assets/themes.qrc
 
-INCLUDEPATH += ../ ../../bundle ../../vendor/includes ../plugins
+INCLUDEPATH += ../ ../../bundle ../../vendor/includes ../plugins ../sound
 
 PRE_TARGETDEPS += ../../bundle ../engine ../widgets ../shared ../plugins ../sound

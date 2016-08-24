@@ -16,7 +16,7 @@
 #include "config.h"
 #include "shared/log.h"
 #include "sound/driver.h"
-#include "sound/player.h"
+#include "sound/processor/player.h"
 
 QMap<IDriver::SampleFormat, QString> DriverDialog::_formatMap = {
     { IDriver::SampleInt8, tr("8 bit") },
@@ -198,10 +198,10 @@ void DriverDialog::modelApply()
         std::string path = testFilePath().toStdString();
 
         if (!path.empty()) {
-            Sound::ProcessorManager manager(_driver);
-            unsigned playerId = manager->add(0, "Player");
-            manager->set(playerId, Sound::Player::PropertyFilename, path);
-            manager->command(playerId, Sound::Player::CommandPlay);
+//            Sound::ProcessorManager manager(_driver);
+//            unsigned playerId = manager->add(0, "Player");
+//            manager->set(playerId, Sound::Player::PropertyFilename, path);
+//            manager->command(playerId, Sound::Player::CommandPlay);
 //            player->play(path);
         }
 
@@ -326,8 +326,8 @@ void DriverDialog::modelLoad()
         }
     }
 
-#define GET_FIELD(__name, __variant, __type) \
-    _model.__name = processorClass(settings.value(#__name, _model.__name).to##__variant());
+#define GET_FIELD(a_name, a_variant, a_type) \
+    _model.a_name = a_type(settings.value(#a_name, _model.a_name).to##a_variant());
 
     GET_FIELD(bufferCount, Int, unsigned);
     GET_FIELD(bufferSize, Int, unsigned);

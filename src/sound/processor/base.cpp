@@ -40,7 +40,7 @@ void Base::commandInit()
     _isInitialized = true;
 }
 
-void Base::emit(Signal::ID id, RealtimeAny value)
+void Base::send(Signal::ID id, RealtimeAny value)
 {
     this->runtime().bus->realtimeEmitSignal(this->id(), id, value);
 }
@@ -64,9 +64,9 @@ void Base::processEntryPoint()
             this->processPost();
         }
     } catch (std::exception e) {
-        this->emit(Signal::Processor::Error, e.what());
+        this->send(Signal::Processor::Error, e.what());
     } catch (...) {
-        this->emit(Signal::Processor::Error, "Unknown exception");
+        this->send(Signal::Processor::Error, "Unknown exception");
     }
 }
 

@@ -54,7 +54,7 @@ namespace Processor {
 
         bool hasInternalBuffer();
         virtual void commandInit();
-        void emit(Signal::ID id, RealtimeAny value);
+        void send(Signal::ID id, RealtimeAny value);
 
         Base* parent() const;
         virtual void process() = 0;

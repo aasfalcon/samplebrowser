@@ -20,8 +20,8 @@
             : Plugin(STRINGIFY(PLUGIN_NAME), PLUGIN_VERSION, PLUGIN_DESCRIPTION) \
         { \
             LOG(TRACE, "Creating plugin object"); \
-            Create create; \
-            Destroy destroy;
+            Constructor create; \
+            Destructor destroy;
 
 #define PLUGIN_PROVIDES(__interface, __provider) \
             create = []() -> Interface * { \

@@ -5,7 +5,9 @@ VERSION = 1.0.0
 
 QT =
 TEMPLATE = lib
-CONFIG += staticlib c++11
+CONFIG += staticlib c++11 precompile_header
+PRECOMPILED_HEADER = stable.h
+
 INCLUDEPATH += .. ../../vendor
 
 SOURCES +=\
@@ -19,7 +21,6 @@ HEADERS +=\
     server.h \
     plugin.h \
     allocator.h \
-    \
     iaudiofile.h \
     interface.h \
     idriver.h \
@@ -29,6 +30,5 @@ HEADERS +=\
     pluginmacros.h \
     log.h \
     any.h \
-    stable.h \
     ring.h \
     id.h
