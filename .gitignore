@@ -7,4 +7,4 @@ Makefile
 moc_*.*
 qrc_*.*
 ui_*.*
-
+*.pch
