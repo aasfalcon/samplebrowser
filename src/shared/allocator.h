@@ -28,15 +28,9 @@ public:
 
     virtual ~Allocator() {}
 
-    void addTag(const std::string& tag,
-        Constructor create, Destructor destroy = nullptr)
+    T* create(const std::string& tag)
     {
-        _records[tag] = { create, destroy };
-    }
-
-    virtual T* create(const std::string& tag)
-    {
-        auto& record = _records.at(tag);
+        const Record& record = this->record(tag);
         T* object = (*record.create)();
         _allocated[object] = std::shared_ptr<T>(object, record.destroy);
         return object;
@@ -57,7 +51,16 @@ public:
     }
 
 protected:
-    std::map<std::string, Record> _records;
+    void addTag(const std::string& tag,
+        Constructor create, Destructor destroy = nullptr)
+    {
+        _records[tag] = { create, destroy };
+    }
+
+    const Record &record(const std::string &tag)
+    {
+        return _records.at(tag);
+    }
 
     std::list<std::string> tags() const
     {
@@ -72,6 +75,7 @@ protected:
 
 private:
     std::map<T*, std::shared_ptr<T> > _allocated;
+    std::map<std::string, Record> _records;
 };
 
 #endif // ALLOCATOR_H

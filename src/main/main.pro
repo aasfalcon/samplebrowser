@@ -1,6 +1,6 @@
 QT += core gui widgets
 
-TARGET = samplebrowser
+TARGET = ../samplebrowser
 TEMPLATE = app
 CONFIG += c++11 precompile_header
 PRECOMPILED_HEADER = stable.h

@@ -29,6 +29,20 @@ public:
         return reinterpret_cast<T>(_value.vPointer);
     }
 
+    template <typename T>
+    void assign(T *pointer)
+    {
+        assert(typeid(T*) == *_type);
+        _value.vPointer = pointer;
+    }
+
+    template <typename T>
+    void assign(const T *pointer)
+    {
+        assert(typeid(const T*) == *_type);
+        _value.vConstPointer = pointer;
+    }
+
     void assign(RealtimeAny that)
     {
         assert(*_type == *that._type);
@@ -56,12 +70,14 @@ private:
         double vDouble;
         int vInt;
         void* vPointer;
+        const void *vConstPointer;
         unsigned vUnsigned;
     } _value;
 
     template <typename T>
     void assign(T value);
 };
+
 }
 
 #include "realtimeany.tcc"

@@ -24,7 +24,7 @@ void Root<T>::commandInit()
     std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
 
-    auto &info = this->runtime();
+    auto& info = this->runtime();
     if (!info.channelsInput && !info.channelsOutput) {
         LOGIC_ERROR("Both input and output channels count is zero");
     }
@@ -38,12 +38,12 @@ void Root<T>::commandInit()
     }
 
     if (info.channelsInput) {
-        auto &in = this->input();
+        auto& in = this->input();
         in.reallocate(info.channelsInput, info.frames);
     }
 
     if (info.channelsOutput) {
-        auto &out = this->output();
+        auto& out = this->output();
         out.reallocate(info.channelsOutput, info.frames);
     }
 
@@ -58,19 +58,25 @@ Buffer<T>& Root<T>::input()
 }
 
 template <typename T>
+void Root<T>::process()
+{
+}
+
+template <typename T>
 void Root<T>::processPre()
 {
-    auto &info = this->runtime();
+    auto& info = this->runtime();
     info.bus->realtimeDispatchParameters();
 
     if (info.rawInput) {
-        auto &in = this->input();
+        auto& in = this->input();
 
         if (TypeInt24E != info.sampleFormat) {
-            auto frame = ConstFrame<T>(info.channelsInput, info.rawInput);
-            in->copy(frame, frame + info.frames);
+            auto samplePtr = reinterpret_cast<const Sample<T>*>(info.rawInput);
+            auto frame = ConstFrame<T>(info.channelsInput, samplePtr);
+            in.copy(frame, frame + int(info.frames));
         } else {
-            in->fromInt24(info.rawInput);
+            in.fromInt24(info.rawInput);
         }
     }
 
@@ -82,16 +88,19 @@ void Root<T>::processPost()
 {
     Processor<T>::processPost();
 
-    auto &info = this->runtime();
+    auto& info = this->runtime();
 
     if (info.rawOutput) {
-        auto &out = this->output();
+        auto& out = this->output();
 
         if (TypeInt24E != info.sampleFormat) {
-            auto frame = Frame<T>(info.channelsInput, info.rawOutput);
-            out->copyTo(frame, frame + info->frames);
+            auto samplePtr = reinterpret_cast<Sample<T>*>(info.rawOutput);
+            auto frame = Frame<T>(info.channelsInput, samplePtr);
+            out.copyTo(frame, frame + int(info.frames));
         } else {
-            out->toInt24(info.rawOutput);
+            out.toInt24(info.rawOutput);
         }
     }
 }
+
+INSTANTIATE;

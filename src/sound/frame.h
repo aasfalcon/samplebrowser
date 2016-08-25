@@ -12,6 +12,12 @@ class ConstFrame;
 template <typename T>
 class Frame : public Object<T> {
 public:
+    Frame()
+        : _channels(0)
+        , _data(nullptr)
+    {
+    }
+
     Frame(unsigned channels, Sample<T>* ptr)
         : _channels(channels)
         , _data(ptr)

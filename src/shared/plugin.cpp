@@ -18,6 +18,16 @@ Plugin::~Plugin()
     }
 }
 
+Interface *Plugin::create(const char *interfaceName)
+{
+    return Allocator<Interface>::create(interfaceName);
+}
+
+void Plugin::destroy(Interface *object)
+{
+    Allocator<Interface>::destroy(object);
+}
+
 const IPlugin::Info *Plugin::info()
 {
     if (!_info.interfaces) {

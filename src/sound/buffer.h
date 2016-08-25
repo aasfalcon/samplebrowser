@@ -111,27 +111,32 @@ public:
         return dit;
     }
 
-    template <typename S>
-    Frame<T> copyTo(Frame<S> dbeg, Frame<S> dend)
+    template <typename D>
+    Frame<D> copyTo(Frame<D> dbeg, Frame<D> dend)
     {
         int count = dend - dbeg;
         assert(count >= 0);
-        assert(int(_frames) < count);
 
-        ConstFrame<T> sit = cbegin();
+        if (int(_frames) < count) {
+            count = _frames;
+        }
 
-        if (this->type() == dbeg.type() && _channels == dbeg.channels()) {
-            std::memcpy(dbeg.data(), sit.data(), count * _channels * sizeof(T));
-            sit += count;
+        Frame<D> dit = dbeg;
+
+        if (this->type() == dit.type() && _channels == dit.channels()) {
+            std::memcpy(dit.data(), this->data(), count * _channels * sizeof(T));
+            dit += count;
         } else {
-            while (sit != dend) {
-                sit = sit;
-                ++sit;
+            ConstFrame<T> sit = cbegin();
+
+            while (dit != dend) {
+                dit = sit;
+                ++dit;
                 ++sit;
             }
         }
 
-        return sit;
+        return dit;
     }
 
     Sample<T>* data()
