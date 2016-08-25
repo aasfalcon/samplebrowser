@@ -48,14 +48,13 @@ namespace Processor {
         void setProperty(Property::ID id, const Any& value);
 
     protected:
-        typedef void (Base::*Handler)();
-
         Base();
 
         bool hasInternalBuffer();
         virtual void commandInit();
+        void initVectors(Command::ID nCommands, Parameter::ID nParameters,
+            Property::ID nProperties);
         void send(Signal::ID id, RealtimeAny value);
-
         Base* parent() const;
         virtual void process() = 0;
         virtual void processChildrenParallel() = 0;
@@ -66,23 +65,23 @@ namespace Processor {
         const RuntimeInfo& runtime();
 
         template <typename D>
-        static void addCommand(Command::ID id, void (D::*handler)())
+        void addCommand(Command::ID id, void (D::*handler)())
         {
-            unsigned index = id.toUInt();
-            _handlers[index] = static_cast<Handler>(handler);
+            addCommand(id, static_cast<Handler>(handler));
         }
 
-        void setParameterCount(unsigned count);
-
     private:
-        static std::vector<Allocator<Base> > _allocators;
-        static std::vector<Handler> _handlers;
+        typedef void (Base::*Handler)();
+
+        std::vector<Handler> _commands;
         unsigned _id;
         bool _isInitialized;
         static unsigned _nextId;
         std::vector<Any> _properties;
         std::vector<RealtimeAny> _parameters;
         Base* _parent;
+
+        void addCommand(Command::ID id, Handler handler);
     };
 }
 }

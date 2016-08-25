@@ -10,7 +10,8 @@ using namespace Sound::Processor;
 template <typename T>
 Player<T>::Player()
 {
-    USE_PARAMETERS;
+    INITIALIZE;
+
     COMMAND(Play);
 
     PROPERTY(std::string, Path, "");

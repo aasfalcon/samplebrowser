@@ -2,7 +2,7 @@
 #define SOUND_PROCESSOR_SHORTCUTS_H
 
 #ifndef PROCESSOR
-#error PROCESSOR not defined
+#error "PROCESSOR identifier is not defined"
 #endif
 
 #define PROPERTY(a_type, a_name, a_value) \
@@ -17,7 +17,10 @@
 #define INSTANTIATE \
     SOUND_INSTANTIATE(Sound::Processor::PROCESSOR)
 
-#define USE_PARAMETERS \
-    this->setParameterCount(unsigned(Parameter::PROCESSOR::_End));
+#define INITIALIZE                  \
+    this->initVectors(              \
+        Command::PROCESSOR::_End,   \
+        Property::PROCESSOR::_End,  \
+        Parameter::PROCESSOR::_End);
 
 #endif // SOUND_PROCESSOR_SHORTCUTS_H

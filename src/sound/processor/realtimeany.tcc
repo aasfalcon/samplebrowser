@@ -9,9 +9,9 @@ inline void RealtimeAny::assign<bool>(bool value)
 }
 
 template <>
-inline void RealtimeAny::assign<double>(double value)
+inline void RealtimeAny::assign<float>(float value)
 {
-    _value.vDouble = value;
+    _value.vFloat = value;
 }
 
 template <>
@@ -23,13 +23,13 @@ inline void RealtimeAny::assign<int>(int value)
 template <>
 inline void RealtimeAny::assign<void*>(void* value)
 {
-    _value.vPointer = value;
+    _value.vPtr = value;
 }
 
 template <>
 inline void RealtimeAny::assign<unsigned>(unsigned value)
 {
-    _value.vUnsigned = value;
+    _value.vUInt = value;
 }
 
 template <>
@@ -40,10 +40,10 @@ inline bool RealtimeAny::as<bool>() const
 }
 
 template <>
-inline double RealtimeAny::as<double>() const
+inline float RealtimeAny::as<float>() const
 {
-    assert(&typeid(double) == _type);
-    return _value.vDouble;
+    assert(&typeid(float) == _type);
+    return _value.vFloat;
 }
 
 template <>
@@ -57,13 +57,13 @@ template <>
 inline void* RealtimeAny::as<void*>() const
 {
     assert(&typeid(void*) == _type);
-    return _value.vPointer;
+    return _value.vPtr;
 }
 
 template <>
 inline unsigned RealtimeAny::as<unsigned>() const
 {
     assert(&typeid(unsigned) == _type);
-    return _value.vUnsigned;
+    return _value.vUInt;
 }
 }

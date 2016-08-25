@@ -23,17 +23,16 @@
             Constructor create; \
             Destructor destroy;
 
-#define PLUGIN_PROVIDES(__interface, __provider) \
+#define PLUGIN_PROVIDES(a_interface, a_provider) \
             create = []() -> Interface * { \
-                LOG(TRACE, "Allocating " << #__provider << " [" << #__interface << ']'); \
-                return new __provider; \
+                LOG(TRACE, "Allocating " << #a_provider << " [" << #a_interface << ']'); \
+                return new a_provider; \
             }; \
             destroy = [](Interface *ptr) { \
-                LOG(TRACE, "Freeing " << #__provider << " [" << #__interface << ']'); \
-                auto object = dynamic_cast<__provider *>(ptr); \
-                delete object; \
+                LOG(TRACE, "Freeing " << #a_provider << " [" << #a_interface << ']'); \
+                delete ptr; \
             }; \
-            addTag(#__interface, create, destroy);
+            addTag(#a_interface, create, destroy);
 
 #define PLUGIN_END \
         } \
@@ -42,15 +41,15 @@
     extern "C" void PLUGIN_DESTROY(IPlugin *plugin) { delete plugin; };
 
 #ifndef PLUGIN_NAME
-#error Define PLUGIN_NAME before including this file
+#error "Define PLUGIN_NAME before including this file"
 #endif
 
 #ifndef PLUGIN_DESCRIPTION
-#error Define PLUGIN_DESCRIPTION string before including this file
+#error "Define PLUGIN_DESCRIPTION string before including this file"
 #endif
 
 #ifndef PLUGIN_VERSION
-#error PLUGIN_VERSION not defined, check your compiler flags
+#error "PLUGIN_VERSION not defined, check your compiler flags"
 #endif
 
 #endif // PLUGINMACROS_H

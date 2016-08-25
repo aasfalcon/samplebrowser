@@ -9,7 +9,8 @@ SUBDIRS = \
     sound \
     widgets \
     bundle \
-    plugins
+    plugins \
+    tests
 
 engine.subdir = src/engine
 widgets.subdir = src/widgets

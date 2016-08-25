@@ -6,7 +6,6 @@
 using namespace Sound;
 using namespace Sound::Processor;
 
-std::vector<Base::Handler> Base::_handlers;
 unsigned Base::_nextId = 0;
 
 Base::Base()
@@ -22,7 +21,7 @@ Base::~Base()
 
 void Base::perform(Command::ID id)
 {
-    auto handler = this->_handlers.at(id.toUInt());
+    auto handler = this->_commands.at(id.toUInt());
     (this->*handler)();
 }
 
@@ -38,6 +37,13 @@ void Base::commandInit()
     }
 
     _isInitialized = true;
+}
+
+void Base::initVectors(Command::ID nCommands, Parameter::ID nParameters, Property::ID nProperties)
+{
+    _commands.resize(nCommands.toUInt());
+    _parameters.resize(nParameters.toUInt());
+    _properties.resize(nProperties.toUInt());
 }
 
 void Base::send(Signal::ID id, RealtimeAny value)
@@ -118,9 +124,11 @@ bool Base::hasInternalBuffer()
         || bool(_parent->get(Parameter::Processor::ChildrenParallel));
 }
 
-void Base::setParameterCount(unsigned count)
+void Base::addCommand(Command::ID id, Base::Handler handler)
 {
-    _parameters.resize(count);
+    unsigned index = id.toUInt();
+    assert(index < _commands.size());
+    _commands[index] = static_cast<Handler>(handler);
 }
 
 unsigned Base::id() const
@@ -140,6 +148,7 @@ void Base::setProperty(Property::ID id, const Any& value)
         LOGIC_ERROR("Setting invalid property type");
     }
 
+    assert(index < _properties.size());
     _properties[index] = value;
 }
 
@@ -153,5 +162,5 @@ void Base::set(Parameter::ID id, RealtimeAny value)
 {
     unsigned index = id.toUInt();
     assert(index < _parameters.size());
-    _parameters.at(index).assign(value);
+    _parameters.at(index) = value;
 }

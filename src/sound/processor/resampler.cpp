@@ -15,13 +15,14 @@ template <typename T>
 Resampler<T>::Resampler()
     : _resampler(PLUGIN_FACTORY(IResampler))
 {
+    INITIALIZE;
+
     COMMAND(Start);
     COMMAND(Stop);
 
     PROPERTY(FeedFunc, Feed, nullptr);
     PROPERTY(ResamplerLibrary, Library, LibraryDefault);
 
-    USE_PARAMETERS;
     PARAMETER(IResampler::Quality, Quality, IResampler::QualityRealtime);
     PARAMETER(unsigned, SourceChannels, 0);
     PARAMETER(unsigned, SourceSampleRate, 0);

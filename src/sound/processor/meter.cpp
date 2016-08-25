@@ -12,7 +12,7 @@ template <typename T>
 Meter<T>::Meter()
     : _counter(0)
 {
-    USE_PARAMETERS;
+    INITIALIZE;
     PARAMETER(unsigned, PassFrames, SOUND_PROCESSOR_METER_PASS_FRAMES);
 }
 

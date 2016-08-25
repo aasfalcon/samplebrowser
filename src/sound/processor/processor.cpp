@@ -11,12 +11,13 @@ using namespace Sound::Processor;
 template <typename T>
 Processor<T>::Processor()
 {
+    INITIALIZE;
+
     COMMAND(Init);
 
     PROPERTY(std::string, Name, "Processor");
     PROPERTY(Version, Version, "1.0.0");
 
-    USE_PARAMETERS;
     PARAMETER(bool, Bypass, false);
     PARAMETER(bool, ChildrenParallel, false);
     PARAMETER(bool, ChildrenAfter, false);

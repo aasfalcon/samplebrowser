@@ -6,9 +6,13 @@
 
 namespace Sound {
 
+SOUND_PROCESSOR_COMMANDS(Meter, Processor, _Void);
+
 SOUND_PROCESSOR_PARAMETERS(Meter, Processor,
     PassFrames // unsigned
     );
+
+SOUND_PROCESSOR_PROPERTIES(Meter, Processor, _Void);
 
 SOUND_PROCESSOR_SIGNALS(Meter, Processor,
     PeaksInput, // ConstFrame<double> *

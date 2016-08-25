@@ -16,3 +16,6 @@
 [submodule "vendor/audiowaveform"]
 	path = vendor/audiowaveform
 	url = https://github.com/bbcrd/audiowaveform
+[submodule "vendor/googletest"]
+	path = vendor/googletest
+	url = https://github.com/google/googletest

@@ -9,9 +9,9 @@ using namespace Sound::Processor;
 template <typename T>
 Leveler<T>::Leveler()
 {
-    USE_PARAMETERS;
-    PARAMETER(double, Balance, 0);
-    PARAMETER(double, Level, 1);
+    INITIALIZE;
+    PARAMETER(float, Balance, 0);
+    PARAMETER(float, Level, 1);
 }
 
 template <typename T>
@@ -23,8 +23,8 @@ template <typename T>
 void Leveler<T>::process()
 {
     auto& out = this->output();
-    double balance = this->get(Parameter::Leveler::Balance);
-    double level = this->get(Parameter::Leveler::Level);
+    float balance = this->get(Parameter::Leveler::Balance);
+    float level = this->get(Parameter::Leveler::Level);
     unsigned channels = out.channels();
 
     for (auto frame = out.begin(); frame != out.end(); ++frame) {

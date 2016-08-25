@@ -8,7 +8,11 @@ namespace Sound {
 
 class RealtimeAny {
 public:
-    RealtimeAny() {}
+    RealtimeAny()
+        : _type(nullptr)
+    {
+    }
+
     RealtimeAny(const RealtimeAny& that)
         : _type(that._type)
         , _value(that._value)
@@ -26,34 +30,7 @@ public:
     T as() const
     {
         assert(typeid(void*) == *_type);
-        return reinterpret_cast<T>(_value.vPointer);
-    }
-
-    template <typename T>
-    void assign(T *pointer)
-    {
-        assert(typeid(T*) == *_type);
-        _value.vPointer = pointer;
-    }
-
-    template <typename T>
-    void assign(const T *pointer)
-    {
-        assert(typeid(const T*) == *_type);
-        _value.vConstPointer = pointer;
-    }
-
-    void assign(RealtimeAny that)
-    {
-        assert(*_type == *that._type);
-        _value = that._value;
-    }
-
-    template <typename T>
-    void put(T value)
-    {
-        assert(typeid(T) == *_type);
-        assign(value);
+        return reinterpret_cast<T>(_value.vPtr);
     }
 
     template <typename T>
@@ -63,21 +40,50 @@ public:
         return as<T>();
     }
 
+    bool operator !() const
+    {
+        return !_value.vPtr;
+    }
+
 private:
     const std::type_info* _type;
     union Data {
+        Data()
+            : vPtr(nullptr)
+        {
+        }
+
         bool vBool;
-        double vDouble;
+        float vFloat;
         int vInt;
-        void* vPointer;
-        const void *vConstPointer;
-        unsigned vUnsigned;
+        void* vPtr;
+        const void* vCPtr;
+        unsigned vUInt;
     } _value;
 
     template <typename T>
-    void assign(T value);
-};
+    inline void assign(T value);
 
+    template <typename T>
+    void assign(T* pointer)
+    {
+        assert(typeid(T*) == *_type);
+        _value.vPtr = pointer;
+    }
+
+    template <typename T>
+    void assign(const T* pointer)
+    {
+        assert(typeid(const T*) == *_type);
+        _value.vCPtr = pointer;
+    }
+
+    void assign(RealtimeAny that)
+    {
+        assert(*_type == *that._type);
+        _value = that._value;
+    }
+};
 }
 
 #include "realtimeany.tcc"
