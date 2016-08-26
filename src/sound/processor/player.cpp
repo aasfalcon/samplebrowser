@@ -28,14 +28,14 @@ Player<T>::~Player()
 template <typename T>
 void Player<T>::commandPlay()
 {
-    const char* path = this->get(Property::Player::Path);
+    const std::string &path = this->property(Property::Player::Path);
 
     _stream = std::make_shared<InputStream>(path);
     BasicStream::Info info;
     *_stream >> info;
     _readBuffer.reallocate(info.channels, this->feedFrames(info.sampleRate));
 
-    auto feed = [this](ConstFrame<T>& begRef, ConstFrame<T>& endRef) -> bool {
+    typename Resampler<T>::FeedFunc feed = [this](ConstFrame<T>& begRef, ConstFrame<T>& endRef) -> bool {
         bool isStopping = false;
 
         try {

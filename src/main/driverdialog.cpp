@@ -191,21 +191,24 @@ void DriverDialog::modelApply()
         _driver->connect(_model);
         _latency = double(_driver->latency()) * 1000 / _model.sampleRate;
 
-//        auto player = std::make_shared<Sound::Player<Sound::Int16> >();
-//        auto processor = std::static_pointer_cast<Sound::Processor<Sound::Int16> >(player);
-//        _driver->init(processor);
-
         std::string path = testFilePath().toStdString();
 
         if (!path.empty()) {
-//            Sound::ProcessorManager manager(_driver);
-//            unsigned playerId = manager->add(0, "Player");
-//            manager->set(playerId, Sound::Player::PropertyFilename, path);
-//            manager->command(playerId, Sound::Player::CommandPlay);
-//            player->play(path);
+            std::shared_ptr<Sound::Processor::Base> player(
+                Sound::Processor::Factory::Player::create(_driver->sampleType()));
+            _driver->start();
+            _driver->root()->push_back(player);
+            _driver->root()->perform(Sound::Command::Processor::Init);
+            player->setProperty(Sound::Property::Player::Path, path);
+            player->perform(Sound::Command::Player::Play);
+            //            Sound::ProcessorManager manager(_driver);
+            //            unsigned playerId = manager->add(0, "Player");
+            //            manager->set(playerId, Sound::Player::PropertyFilename, path);
+            //            manager->command(playerId, Sound::Player::CommandPlay);
+            //            player->play(path);
         }
 
-        _driver->start();
+        //_driver->start();
         //_driver->disconnect();
         _model.isTested = true;
         updateStatus();

@@ -53,7 +53,6 @@ void Base::send(Signal::ID id, Value value)
 
 Base* Base::parent() const
 {
-    assert(_isInitialized);
     return _parent;
 }
 
@@ -74,6 +73,11 @@ void Base::processEntryPoint()
     } catch (...) {
         this->send(Signal::Processor::Error, "Unknown exception");
     }
+}
+
+Any Base::property(Property::ID id) const
+{
+    return _properties.at(id.toUInt());
 }
 
 void Base::processPost()
@@ -118,7 +122,6 @@ void Base::processPre()
 
 bool Base::hasInternalBuffer()
 {
-    assert(_isInitialized);
     return !_parent
         || !this->empty()
         || bool(_parent->get(Parameter::Processor::ChildrenParallel));
@@ -141,7 +144,7 @@ void Base::setProperty(Property::ID id, const Any& value)
     unsigned index = id.toUInt();
 
     if (!_properties[index].like(value)) {
-        LOG(INFO, "Initialized with "
+        LOG(DEBUG, "Initialized with "
                 << _properties[index].type_info().name()
                 << " but attempted to replace with "
                 << value.type_info().name());

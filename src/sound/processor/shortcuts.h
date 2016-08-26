@@ -20,7 +20,7 @@
 #define INITIALIZE                  \
     this->initVectors(              \
         Command::PROCESSOR::_End,   \
-        Property::PROCESSOR::_End,  \
-        Parameter::PROCESSOR::_End);
+        Parameter::PROCESSOR::_End,  \
+        Property::PROCESSOR::_End);
 
 #endif // SOUND_PROCESSOR_SHORTCUTS_H

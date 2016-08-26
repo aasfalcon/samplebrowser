@@ -54,7 +54,11 @@ public:
     T as() const
     {
         if (typeid(T) != type()) {
-            BAD_CAST("Assigning value with wrong type");
+            LOG(DEBUG, "Value type is "
+                    << type().name()
+                    << ", but attempting to access "
+                    << typeid(T).name());
+            BAD_CAST("Trying to get wrong type from value");
         }
 
         return *((const T*)&_data.pv);

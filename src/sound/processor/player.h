@@ -18,7 +18,7 @@ SOUND_PROCESSOR_COMMANDS(Player, Resampler,
     SkipToStart,
     Stop);
 
-SOUND_PROCESSOR_PARAMETERS(Player, Processor,
+SOUND_PROCESSOR_PARAMETERS(Player, Resampler,
     Loop, // bool
     Repeat // bool
     );

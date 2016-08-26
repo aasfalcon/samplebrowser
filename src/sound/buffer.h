@@ -91,7 +91,7 @@ public:
     {
         int count = send - sbeg;
         assert(count >= 0);
-        assert(int(_frames) < count);
+        assert(int(_frames) <= count);
 
         Frame<T> dit = begin();
 

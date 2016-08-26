@@ -10,7 +10,7 @@ using namespace Sound::Processor;
 template <typename T>
 Root<T>::Root()
 {
-    this->setProperty(Property::Processor::Name, "Root");
+    this->setProperty(Property::Processor::Name, std::string("Root"));
 }
 
 template <typename T>
@@ -95,7 +95,7 @@ void Root<T>::processPost()
 
         if (TypeInt24E != info.sampleFormat) {
             auto samplePtr = reinterpret_cast<Sample<T>*>(info.rawOutput);
-            auto frame = Frame<T>(info.channelsInput, samplePtr);
+            auto frame = Frame<T>(info.channelsOutput, samplePtr);
             out.copyTo(frame, frame + int(info.frames));
         } else {
             out.toInt24(info.rawOutput);

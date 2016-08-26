@@ -15,7 +15,7 @@
 #include "plugin.h"
 #include "ring.h"
 #include "server.h"
-//#include "value.h"
+#include "value.h"
 #include "version.h"
 #endif
 
