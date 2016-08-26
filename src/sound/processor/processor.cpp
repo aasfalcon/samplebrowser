@@ -21,7 +21,7 @@ Processor<T>::Processor()
     PARAMETER(bool, Bypass, false);
     PARAMETER(bool, ChildrenParallel, false);
     PARAMETER(bool, ChildrenAfter, false);
-    PARAMETER(RuntimeInfo*, Runtime, nullptr);
+    PARAMETER(const RuntimeInfo*, Runtime, nullptr);
 }
 
 template <typename T>

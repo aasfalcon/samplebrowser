@@ -14,7 +14,8 @@ SOURCES +=\
     version.cpp \
     server.cpp \
     plugin.cpp \
-    interface.cpp
+    interface.cpp \
+    value.tcc
 
 HEADERS +=\
     version.h \
@@ -31,4 +32,5 @@ HEADERS +=\
     log.h \
     any.h \
     ring.h \
-    id.h
+    id.h \
+    value.h

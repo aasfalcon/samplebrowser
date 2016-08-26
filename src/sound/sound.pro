@@ -17,7 +17,6 @@ SOURCES += \
     processor/meter.cpp \
     processor/player.cpp \
     processor/processor.cpp \
-    processor/realtimeany.tcc \
     processor/resampler.cpp \
     processor/ringbuffer.cpp \
     processor/ringfeeder.tcc \
@@ -41,7 +40,6 @@ HEADERS += \
     processor/player.h \
     processor/processor.h \
     processor/processormacros.h \
-    processor/realtimeany.h \
     processor/resampler.h \
     processor/ringbuffer.h \
     processor/ringfeeder.h \

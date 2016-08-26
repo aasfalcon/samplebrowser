@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "object.h"
-#include "realtimeany.h"
+#include "shared/value.h"
 #include "shared/allocator.h"
 #include "shared/any.h"
 #include "shared/id.h"
@@ -40,11 +40,11 @@ namespace Processor {
         virtual ~Base();
 
         void perform(Command::ID id);
-        RealtimeAny get(Parameter::ID id) const;
+        Value get(Parameter::ID id) const;
         unsigned id() const;
         void processEntryPoint();
         Any property(Property::ID id) const;
-        void set(Parameter::ID id, RealtimeAny value);
+        void set(Parameter::ID id, Value value);
         void setProperty(Property::ID id, const Any& value);
 
     protected:
@@ -54,7 +54,7 @@ namespace Processor {
         virtual void commandInit();
         void initVectors(Command::ID nCommands, Parameter::ID nParameters,
             Property::ID nProperties);
-        void send(Signal::ID id, RealtimeAny value);
+        void send(Signal::ID id, Value value);
         Base* parent() const;
         virtual void process() = 0;
         virtual void processChildrenParallel() = 0;
@@ -78,7 +78,7 @@ namespace Processor {
         bool _isInitialized;
         static unsigned _nextId;
         std::vector<Any> _properties;
-        std::vector<RealtimeAny> _parameters;
+        std::vector<Value> _parameters;
         Base* _parent;
 
         void addCommand(Command::ID id, Handler handler);

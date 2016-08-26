@@ -46,7 +46,7 @@ void Base::initVectors(Command::ID nCommands, Parameter::ID nParameters, Propert
     _properties.resize(nProperties.toUInt());
 }
 
-void Base::send(Signal::ID id, RealtimeAny value)
+void Base::send(Signal::ID id, Value value)
 {
     this->runtime().bus->realtimeEmitSignal(this->id(), id, value);
 }
@@ -95,7 +95,7 @@ void Base::processPost()
 
 const RuntimeInfo& Base::runtime()
 {
-    RuntimeInfo* result = get(Parameter::Processor::Runtime);
+    const RuntimeInfo* result = get(Parameter::Processor::Runtime);
     return *result;
 }
 
@@ -152,13 +152,13 @@ void Base::setProperty(Property::ID id, const Any& value)
     _properties[index] = value;
 }
 
-RealtimeAny Base::get(Parameter::ID id) const
+Value Base::get(Parameter::ID id) const
 {
     unsigned index = id.toUInt();
     return _parameters.at(index);
 }
 
-void Base::set(Parameter::ID id, RealtimeAny value)
+void Base::set(Parameter::ID id, Value value)
 {
     unsigned index = id.toUInt();
     assert(index < _parameters.size());

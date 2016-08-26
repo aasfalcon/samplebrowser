@@ -5,7 +5,7 @@
 #include <map>
 
 #include "base.h"
-#include "realtimeany.h"
+#include "shared/value.h"
 #include "shared/ring.h"
 
 namespace Sound {
@@ -13,7 +13,7 @@ namespace Processor {
 
     class MessageBus {
     public:
-        typedef void (*Watcher)(unsigned processorId, Signal::ID signal, RealtimeAny value);
+        typedef void (*Watcher)(unsigned processorId, Signal::ID signal, Value value);
 
         MessageBus();
         ~MessageBus();
@@ -27,9 +27,9 @@ namespace Processor {
         void dispatchSignals();
         unsigned lostSignals() const;
         void lostClear();
-        void passParameter(unsigned processorId, Parameter::ID parameter, RealtimeAny value);
+        void passParameter(unsigned processorId, Parameter::ID parameter, Value value);
 
-        void realtimeEmitSignal(unsigned processorId, Signal::ID signal, RealtimeAny value);
+        void realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value);
         void realtimeDispatchParameters();
 
         void removeProcessor(unsigned processorId);
@@ -39,13 +39,13 @@ namespace Processor {
         struct IncomingMessage {
             unsigned processor;
             Parameter::ID parameter;
-            RealtimeAny value;
+            Value value;
         };
 
         struct OutgoingMessage {
             unsigned processor;
             Signal::ID signal;
-            RealtimeAny value;
+            Value value;
         };
 
         struct WatcherRecord {

@@ -87,7 +87,7 @@ void MessageBus::lostClear()
 }
 
 void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
-    RealtimeAny value)
+    Value value)
 {
     IncomingMessage message = {
         processorId,
@@ -105,7 +105,7 @@ void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
     _parameters.push(message);
 }
 
-void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, RealtimeAny value)
+void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
 {
     OutgoingMessage message = {
         processorId,

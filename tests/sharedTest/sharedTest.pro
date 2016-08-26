@@ -11,7 +11,8 @@ INCLUDEPATH += ../../src/shared ../../src
 PRECOMPILED_HEADER = stable.h
 
 SOURCES += \
-    ring_test.cpp
+    ring_test.cpp \
+    value_test.cpp
 
 LIBS += -lpthread
 LIBS += -L../gtest_main -lgtest_main

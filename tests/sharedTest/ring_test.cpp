@@ -491,20 +491,43 @@ TEST(SharedRingTest, space)
 
 TEST(SharedRingTest, clear)
 {
-    Ring<const char *> ring(7);
+    // 2(1) items
+    Ring<double> ring(2);
+    ring.push(1);
+    EXPECT_EQ(1, ring.loaded());
+    ring.clear();
+    EXPECT_EQ(0, ring.loaded());
 
-    ring.push("this");
-    ring.push("is");
-    ring.push("a");
-    ring.push("test");
+    // 3(2) items
+    ring = Ring<double>(3);
+    ring.push(1);
+    ring.push(2);
+    EXPECT_EQ(2, ring.loaded());
+    ring.clear();
+    EXPECT_EQ(0, ring.loaded());
+
+    // 4(3) items
+    ring = Ring<double>(4);
+    ring.push(1);
+    ring.push(2);
+    ring.push(3);
+    EXPECT_EQ(3, ring.loaded());
+    ring.clear();
+    EXPECT_EQ(0, ring.loaded());
+
+    // 10 (9) iitems
+    ring = Ring<double>(10);
+
+    for (unsigned i = 1; i < ring.count(); i++) {
+        ring.push(i);
+    }
 
     ring.clear();
-
-    EXPECT_EQ(7, ring.count());
     EXPECT_EQ(0, ring.loaded());
-    EXPECT_EQ(6, ring.space());
+
+    // some additional checks
+    EXPECT_EQ(10, ring.count());
     EXPECT_TRUE(ring.isEmpty());
-    EXPECT_FALSE(ring.isHalfFull());
     EXPECT_FALSE(ring.isFull());
-    EXPECT_ANY_THROW(ring.pop());
+    EXPECT_FALSE(ring.isHalfFull());
 }

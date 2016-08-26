@@ -78,7 +78,9 @@ void Driver::init()
 
     _root = std::shared_ptr<Processor::Base>(
         Processor::Factory::Root::create(_runtime.sampleFormat));
-    _root->set(Parameter::Processor::Runtime, &_runtime);
+
+    const Processor::RuntimeInfo *cruntime = &_runtime;
+    _root->set(Parameter::Processor::Runtime, cruntime);
 
     _provider->setProcess(&Driver::process, this);
     LOG(TRACE, "Driver initialized");

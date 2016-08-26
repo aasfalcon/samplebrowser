@@ -25,6 +25,13 @@
 #define OVERFLOW_ERROR(a_message) \
     LOG_ERROR_AND_THROW(a_message, overflow_error);
 
+#define BAD_CAST(a_message) \
+    LOG(ERROR, a_message); \
+    throw std::bad_cast();
+
+#define ERROR_IF(a_expression, a_error, a_message) \
+    if (a_expression) { a_error(a_message); }
+
 #define QTR(a_text) \
     QObject::tr(a_text).toStdString()
 
