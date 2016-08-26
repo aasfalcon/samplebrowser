@@ -5,8 +5,8 @@
 #include <map>
 
 #include "base.h"
+#include "shared/bus.h"
 #include "shared/value.h"
-#include "shared/ring.h"
 
 namespace Sound {
 namespace Processor {
@@ -19,23 +19,27 @@ namespace Processor {
         ~MessageBus();
 
         void addProcessor(Base* processor);
-        void addWatcher(unsigned processorId, Signal::ID signal, Watcher watcher);
-        void addWatcherGlobal(Watcher watcher);
-        void addWatcherProcessor(unsigned processorId, Watcher watcher);
-        void addWatcherSignal(Signal::ID signal, Watcher watcher);
+        void addWatcher(Watcher watcher);
+        void addWatcher(Watcher watcher, unsigned processorId);
+        void addWatcher(Watcher watcher, unsigned processorId, Signal::ID signal);
+        void addWatcher(Watcher watcher, Signal::ID signal);
         void clear();
-        void dispatchSignals();
-        unsigned lostSignals() const;
-        void lostClear();
+        void dispatch();
         void passParameter(unsigned processorId, Parameter::ID parameter, Value value);
+        void requireCommand(unsigned processorId, Command::ID command);
 
-        void realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value);
-        void realtimeDispatchParameters();
+        bool realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value);
+        void realtimeDispatch();
 
         void removeProcessor(unsigned processorId);
         void removeWatcher(Watcher watcher);
 
     private:
+        struct CommandMessage {
+            unsigned processor;
+            Command::ID command;
+        };
+
         struct IncomingMessage {
             unsigned processor;
             Parameter::ID parameter;
@@ -62,15 +66,14 @@ namespace Processor {
             Watcher watcher;
         };
 
-        Ring<IncomingMessage> _parameters;
+        Bus<CommandMessage> _commands;
+        Bus<IncomingMessage> _parameters;
         std::map<unsigned, Base*> _processors;
-        Ring<OutgoingMessage> _signals;
-        Ring<OutgoingMessage> _signalsHeld;
-        unsigned _signalsLost;
+        Bus<OutgoingMessage> _signals;
         std::list<WatcherRecord> _watchers;
 
-        void addWatcherRecord(unsigned processorId, WatcherRecord::Scope scope,
-            Signal::ID signal, Watcher watcher);
+        void addWatcherRecord(WatcherRecord::Scope scope, Watcher watcher,
+            unsigned processorId, Signal::ID signal);
     };
 }
 }

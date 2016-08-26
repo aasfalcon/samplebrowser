@@ -29,9 +29,9 @@ public:
     {
     }
 
-    ~Ring() {}
+    virtual ~Ring() {}
 
-    void clear()
+    virtual void clear()
     {
         _begin = _end;
     }

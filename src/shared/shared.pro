@@ -33,4 +33,5 @@ HEADERS +=\
     any.h \
     ring.h \
     id.h \
-    value.h
+    value.h \
+    bus.h

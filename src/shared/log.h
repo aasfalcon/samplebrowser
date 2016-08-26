@@ -32,6 +32,9 @@
 #define ERROR_IF(a_expression, a_error, a_message) \
     if (a_expression) { a_error(a_message); }
 
+#define LOG_IF(a_expression, a_severity, a_logEvent) \
+    if (a_expression) { LOG(a_severity, a_logEvent); }
+
 #define QTR(a_text) \
     QObject::tr(a_text).toStdString()
 

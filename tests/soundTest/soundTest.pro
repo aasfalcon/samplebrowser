@@ -6,16 +6,18 @@ CONFIG -= qt
 QMAKE_CXXFLAGS += -Wall -Wno-sign-compare
 
 INCLUDEPATH += ../../vendor/googletest/googletest/include
-INCLUDEPATH += ../../src/shared ../../src
+INCLUDEPATH += ../../src/sound ../../src
 
 PRECOMPILED_HEADER = stable.h
 
 SOURCES += \
-    ring_test.cpp \
-    value_test.cpp \
-    bus_test.cpp
+    processor/messagebus_test.cpp
 
 LIBS += -lpthread
 LIBS += -L../gtest_main -lgtest_main
 LIBS += -L../gtest -lgtest
 LIBS += -llog4cplus
+LIBS += -L../../src/sound -lsound
+
+HEADERS += \
+    stable.h

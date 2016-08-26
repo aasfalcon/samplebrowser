@@ -7,9 +7,10 @@ using namespace Sound;
 using namespace Sound::Processor;
 
 MessageBus::MessageBus()
-    : _parameters(SOUND_PROCESSOR_PARAMETER_BUS_SIZE)
+    : _commands(SOUND_PROCESSOR_COMMAND_BUS_SIZE)
+    , _parameters(SOUND_PROCESSOR_PARAMETER_BUS_SIZE)
     , _signals(SOUND_PROCESSOR_SIGNAL_BUS_SIZE)
-    , _signalsHeld(SOUND_PROCESSOR_SIGNAL_BUS_HOLDED_SIZE)
+
 {
 }
 
@@ -22,37 +23,36 @@ void MessageBus::addProcessor(Base* processor)
     _processors[processor->id()] = processor;
 }
 
-void MessageBus::addWatcher(unsigned processorId, Signal::ID signal, MessageBus::Watcher watcher)
+void MessageBus::addWatcher(MessageBus::Watcher watcher)
 {
-    addWatcherRecord(processorId, WatcherRecord::ProcessorSignal, signal, watcher);
+    addWatcherRecord(WatcherRecord::Global, watcher, 0, Signal::ID());
 }
 
-void MessageBus::addWatcherGlobal(MessageBus::Watcher watcher)
+void MessageBus::addWatcher(MessageBus::Watcher watcher, unsigned processorId)
 {
-    addWatcherRecord(0, WatcherRecord::Global, Signal::ID(), watcher);
+    addWatcherRecord(WatcherRecord::Processor, watcher, processorId, Signal::ID());
 }
 
-void MessageBus::addWatcherProcessor(unsigned processorId, MessageBus::Watcher watcher)
+void MessageBus::addWatcher(MessageBus::Watcher watcher, unsigned processorId, Signal::ID signal)
 {
-    addWatcherRecord(processorId, WatcherRecord::Processor, Signal::ID(), watcher);
+    addWatcherRecord(WatcherRecord::ProcessorSignal, watcher, processorId, signal);
 }
 
-void MessageBus::addWatcherSignal(Signal::ID signal, MessageBus::Watcher watcher)
+void MessageBus::addWatcher(MessageBus::Watcher watcher, Signal::ID signal)
 {
-    addWatcherRecord(0, WatcherRecord::Global, signal, watcher);
+    addWatcherRecord(WatcherRecord::Signal, watcher, 0, signal);
 }
 
 void MessageBus::clear()
 {
+    _commands.clear();
     _parameters.clear();
     _signals.clear();
-    _signalsHeld.clear();
-    _signalsLost = 0;
 }
 
-void MessageBus::dispatchSignals()
+void MessageBus::dispatch()
 {
-    if (_signalsLost) {
+    if (_signals.lost()) {
         OVERFLOW_ERROR("Signals stack overflow");
     }
 
@@ -76,16 +76,6 @@ void MessageBus::dispatchSignals()
     }
 }
 
-unsigned MessageBus::lostSignals() const
-{
-    return _signalsLost;
-}
-
-void MessageBus::lostClear()
-{
-    _signalsLost = 0;
-}
-
 void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
     Value value)
 {
@@ -105,7 +95,7 @@ void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
     _parameters.push(message);
 }
 
-void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
+bool MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
 {
     OutgoingMessage message = {
         processorId,
@@ -116,30 +106,29 @@ void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Val
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex, std::try_to_lock);
 
-    if (lock.owns_lock() && !_signals.isFull()) {
+    if (lock.owns_lock()) {
         _signals.push(message);
-
-        while (!_signals.isFull() && !_signalsHeld.isEmpty()) {
-            _signals.push(_signalsHeld.pop());
-        }
-    } else {
-        if (_signalsHeld.isFull()) { // overflow
-            _signalsHeld.pop();
-            ++_signalsLost;
-        }
-
-        _signalsHeld.push(message);
+        return true;
     }
+
+    return false;
 }
 
-void MessageBus::realtimeDispatchParameters()
+void MessageBus::realtimeDispatch()
 {
-    while (!_parameters.isEmpty()) {
-        const IncomingMessage& message = _parameters.pop();
-        auto it = _processors.find(message.processor);
+    std::mutex mutex;
+    std::unique_lock<std::mutex> lock(mutex, std::try_to_lock);
 
-        if (it != _processors.end()) {
-            it->second->set(message.parameter, message.value);
+    if (lock.owns_lock()) {
+        _parameters.flush();
+
+        while (!_parameters.isEmpty()) {
+            const IncomingMessage& message = _parameters.pop();
+            auto it = _processors.find(message.processor);
+
+            if (it != _processors.end()) {
+                it->second->set(message.parameter, message.value);
+            }
         }
     }
 }
@@ -154,14 +143,12 @@ void MessageBus::removeWatcher(MessageBus::Watcher watcher)
     for (auto it = _watchers.begin(); it != _watchers.end(); ++it) {
         if (it->watcher == watcher) {
             _watchers.erase(it);
-            break;
         }
     }
 }
 
-void MessageBus::addWatcherRecord(unsigned processorId,
-    MessageBus::WatcherRecord::Scope scope, Signal::ID signal,
-    MessageBus::Watcher watcher)
+void MessageBus::addWatcherRecord(MessageBus::WatcherRecord::Scope scope, Watcher watcher,
+    unsigned processorId, Signal::ID signal)
 {
     WatcherRecord record = {
         processorId,

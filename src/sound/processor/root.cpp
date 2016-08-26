@@ -66,7 +66,7 @@ template <typename T>
 void Root<T>::processPre()
 {
     auto& info = this->runtime();
-    info.bus->realtimeDispatchParameters();
+    info.bus->realtimeDispatch();
 
     if (info.rawInput) {
         auto& in = this->input();
