@@ -24,11 +24,12 @@ namespace Processor {
         void addWatcher(Watcher watcher, unsigned processorId, Signal::ID signal);
         void addWatcher(Watcher watcher, Signal::ID signal);
         void clear();
+        void clearOverflows();
         void dispatch();
         void passParameter(unsigned processorId, Parameter::ID parameter, Value value);
         void requireCommand(unsigned processorId, Command::ID command);
 
-        bool realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value);
+        void realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value);
         void realtimeDispatch();
 
         void removeProcessor(unsigned processorId);

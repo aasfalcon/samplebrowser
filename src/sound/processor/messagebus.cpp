@@ -20,6 +20,7 @@ MessageBus::~MessageBus()
 
 void MessageBus::addProcessor(Base* processor)
 {
+    ERROR_IF(!processor, RUNTIME_ERROR, "Processor is null");
     _processors[processor->id()] = processor;
 }
 
@@ -50,18 +51,47 @@ void MessageBus::clear()
     _signals.clear();
 }
 
+void MessageBus::clearOverflows()
+{
+    _commands.clearLost();
+    _parameters.clearLost();
+    _signals.clearLost();
+}
+
 void MessageBus::dispatch()
 {
+    if (_commands.lost()) {
+        OVERFLOW_ERROR("Command bus overflow");
+    }
+
+    if (_parameters.lost()) {
+        OVERFLOW_ERROR("Parameter bus overflow");
+    }
+
     if (_signals.lost()) {
-        OVERFLOW_ERROR("Signals stack overflow");
+        OVERFLOW_ERROR("Signal bus overflow");
     }
 
     std::mutex mutex;
 
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        _commands.flush();
+        _parameters.flush();
+        _signals.flush();
+    } catch (...) {
+        throw;
+    }
+
     while (!_signals.isEmpty()) {
-        mutex.lock();
-        auto& message = _signals.pop();
-        mutex.unlock();
+        OutgoingMessage message;
+
+        try {
+            std::lock_guard<std::mutex> lock(mutex);
+            message = _signals.pop();
+        } catch (...) {
+            throw;
+        }
 
         for (auto it = _watchers.begin(); it != _watchers.end(); ++it) {
             bool isHandler = it->scope == WatcherRecord::Global
@@ -87,15 +117,22 @@ void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
 
     std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
-
-    if (_parameters.isFull()) {
-        OVERFLOW_ERROR("Parameters stack overflow");
-    }
-
     _parameters.push(message);
 }
 
-bool MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
+void MessageBus::requireCommand(unsigned processorId, Command::ID command)
+{
+    CommandMessage message = {
+        processorId,
+        command,
+    };
+
+    std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+    _commands.push(message);
+}
+
+void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
 {
     OutgoingMessage message = {
         processorId,
@@ -103,53 +140,78 @@ bool MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Val
         value,
     };
 
-    std::mutex mutex;
-    std::unique_lock<std::mutex> lock(mutex, std::try_to_lock);
-
-    if (lock.owns_lock()) {
-        _signals.push(message);
-        return true;
-    }
-
-    return false;
+    _signals.push(message);
 }
 
 void MessageBus::realtimeDispatch()
 {
-    std::mutex mutex;
-    std::unique_lock<std::mutex> lock(mutex, std::try_to_lock);
+    while (!_parameters.isEmpty()) {
+        const IncomingMessage& message = _parameters.pop();
+        auto it = _processors.find(message.processor);
 
-    if (lock.owns_lock()) {
-        _parameters.flush();
+        if (it != _processors.end()) {
+            it->second->set(message.parameter, message.value);
+        } else {
+            LOG(ERROR, "Parameter reciever processor ID "
+                    << message.processor
+                    << " is not registered");
+            RUNTIME_ERROR("No such processor");
+        }
+    }
 
-        while (!_parameters.isEmpty()) {
-            const IncomingMessage& message = _parameters.pop();
-            auto it = _processors.find(message.processor);
+    while (!_commands.isEmpty()) {
+        const CommandMessage& message = _commands.pop();
 
-            if (it != _processors.end()) {
-                it->second->set(message.parameter, message.value);
-            }
+        auto it = _processors.find(message.processor);
+
+        if (it != _processors.end()) {
+            it->second->perform(message.command);
+        } else {
+            LOG(ERROR, "Command reciever processor ID "
+                    << message.processor
+                    << " is not registered, command is: "
+                    << message.command.toUInt());
+            RUNTIME_ERROR("No such processor");
         }
     }
 }
 
 void MessageBus::removeProcessor(unsigned processorId)
 {
+    auto it = _processors.find(processorId);
+
+    if (it == _processors.end()) {
+        LOG(ERROR, "Attempt to remove non-attached processor "
+                << processorId << " from bus");
+        RUNTIME_ERROR("No such processor");
+    }
+
     _processors.erase(processorId);
 }
 
 void MessageBus::removeWatcher(MessageBus::Watcher watcher)
 {
+    bool isFound = false;
+
     for (auto it = _watchers.begin(); it != _watchers.end(); ++it) {
         if (it->watcher == watcher) {
-            _watchers.erase(it);
+            auto del = it;
+            ++it;
+            _watchers.erase(del);
+            isFound = true;
         }
+    }
+
+    if (!isFound) {
+        RUNTIME_ERROR("No such watcher");
     }
 }
 
 void MessageBus::addWatcherRecord(MessageBus::WatcherRecord::Scope scope, Watcher watcher,
     unsigned processorId, Signal::ID signal)
 {
+    ERROR_IF(!watcher, RUNTIME_ERROR, "Watcher is null");
+
     WatcherRecord record = {
         processorId,
         scope,

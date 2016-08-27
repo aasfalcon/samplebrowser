@@ -13,11 +13,12 @@ PRECOMPILED_HEADER = stable.h
 SOURCES += \
     processor/messagebus_test.cpp
 
-LIBS += -lpthread
+LIBS += -lpthread -lltdl
 LIBS += -L../gtest_main -lgtest_main
 LIBS += -L../gtest -lgtest
 LIBS += -llog4cplus
 LIBS += -L../../src/sound -lsound
+LIBS += -L../../src/shared -lweplsh
 
 HEADERS += \
     stable.h
