@@ -8,7 +8,7 @@ INCLUDEPATH += ../../src/main
 
 PRECOMPILED_HEADER = stable.h
 
-SOURCES += mainTest.cpp
+SOURCES += main_test.cpp
 
 LIBS += -lpthread
 LIBS += -L../gtest_main -lgtest_main

@@ -112,7 +112,7 @@ void AudioFileMPG123::open(const char* filename, IAudioFile::Mode mode)
     _info.chunkFlags = 0;
     _info.seekable = true;
     _info.sampleRate = unsigned(fi.rate);
-    _info.sampleType = Sound::TypeFloat32;
+    _info.sampleType = Sound::Type::Float32;
 }
 
 unsigned AudioFileMPG123::read(void* buffer, Sound::Type type, unsigned frames)

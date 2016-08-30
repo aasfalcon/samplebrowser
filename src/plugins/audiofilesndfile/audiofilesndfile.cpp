@@ -186,6 +186,14 @@ void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
     };
 
     SF_INFO sfinfo;
+    sfinfo.channels = int(_info.channels);
+    sfinfo.format = formatConvert(_info.format);
+    LOG(DEBUG, "File format before opening: " << sfinfo.format);
+    sfinfo.frames = _info.frames;
+    sfinfo.samplerate = int(_info.sampleRate);
+    sfinfo.seekable = true;
+    sfinfo.sections = 0;
+
     auto psndfile = sf_open(filename, sfmode[mode], &sfinfo);
     auto deleter = [](SNDFILE* handle) { sf_close(handle); };
     _handle = std::shared_ptr<SNDFILE>(psndfile, deleter);
@@ -195,7 +203,9 @@ void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
         SNDFILE_ERROR(errorNumber, "Error opening file handle");
     }
 
-    if (mode == ModeWrite) {
+    _mode = mode;
+
+    if (_mode == ModeWrite) {
         return;
     }
 
@@ -209,7 +219,7 @@ void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
     case MinorDPCM_8:
     case MinorPCM_S8:
     case MinorPCM_U8:
-        _info.sampleType = Sound::TypeInt8;
+        _info.sampleType = Sound::Type::Int8;
         break;
 
     case MinorALAC_20:
@@ -220,7 +230,7 @@ void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
 
     case MinorALAC_32:
     case MinorPCM_32:
-        _info.sampleType = Sound::TypeInt32;
+        _info.sampleType = Sound::Type::Int32;
         break;
 
     case MinorDWVW_N:
@@ -239,15 +249,15 @@ void AudioFileSndfile::open(const char* filename, IAudioFile::Mode mode)
     case MinorMPEG2_5_JointStereo:
     case MinorMPEG2_5_Mono:
     case MinorMPEG2_5_Stereo:
-        _info.sampleType = Sound::TypeFloat32;
+        _info.sampleType = Sound::Type::Float32;
         break;
 
     case MinorDouble:
-        _info.sampleType = Sound::TypeFloat64;
+        _info.sampleType = Sound::Type::Float64;
         break;
 
     default:
-        _info.sampleType = Sound::TypeInt16;
+        _info.sampleType = Sound::Type::Int16;
     }
 
     // unknown chunks
@@ -473,19 +483,19 @@ unsigned AudioFileSndfile::read(void* buffer, Sound::Type type, unsigned frames)
     sf_count_t count;
 
     switch (type) {
-    case Sound::TypeFloat32:
+    case Sound::Type::Float32:
         count = sf_readf_float(_handle.get(), static_cast<Sound::Float32*>(buffer), frames);
         break;
-    case Sound::TypeFloat64:
+    case Sound::Type::Float64:
         count = sf_readf_double(_handle.get(), static_cast<Sound::Float64*>(buffer), frames);
         break;
-    case Sound::TypeInt8:
+    case Sound::Type::Int8:
         count = sf_read_raw(_handle.get(), buffer, frames * _info.channels);
         break;
-    case Sound::TypeInt16:
+    case Sound::Type::Int16:
         count = sf_readf_short(_handle.get(), static_cast<Sound::Int16*>(buffer), frames);
         break;
-    case Sound::TypeInt32:
+    case Sound::Type::Int32:
         count = sf_readf_int(_handle.get(), static_cast<Sound::Int32*>(buffer), frames);
         break;
     default:
@@ -534,31 +544,32 @@ unsigned AudioFileSndfile::seek(int pos, IAudioFile::SeekWhence sw,
 
 void AudioFileSndfile::write(const void* buffer, unsigned frames)
 {
-    if (!_handle || _mode != ModeWrite || _mode != ModeReadWrite) {
+    if (!_handle || (_mode != ModeWrite && _mode != ModeReadWrite)) {
         RUNTIME_ERROR("Attempt to write file not opened for writing.");
     }
 
     flushChunks();
     sf_count_t count;
 
-    switch (int(_info.sampleType)) {
-    case Sound::TypeFloat32:
+    switch (_info.sampleType) {
+    case Sound::Type::Float32:
+    case Sound::Type::Int24E:
         count = sf_writef_float(_handle.get(), static_cast<const Sound::Float32*>(buffer), frames);
         break;
-    case Sound::TypeFloat64:
+    case Sound::Type::Float64:
         count = sf_writef_double(_handle.get(), static_cast<const Sound::Float64*>(buffer), frames);
         break;
-    case Sound::TypeInt8:
+    case Sound::Type::Int8:
         count = sf_write_raw(_handle.get(), buffer, frames * _info.channels);
         break;
-    case Sound::TypeInt16:
+    case Sound::Type::Int16:
         count = sf_writef_short(_handle.get(), static_cast<const Sound::Int16*>(buffer), frames);
         break;
-    case Sound::TypeInt32:
+    case Sound::Type::Int32:
         count = sf_writef_int(_handle.get(), static_cast<const Sound::Int32*>(buffer), frames);
         break;
-    default:
-        RUNTIME_ERROR("Unsupported sample type");
+    case Sound::Type::Precise:
+        RUNTIME_ERROR("Writing for this sample format is not supported");
     }
 }
 

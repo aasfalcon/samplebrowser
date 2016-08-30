@@ -64,9 +64,9 @@ void Meter<T>::process()
             }
 
             if (++counter >= passFrames) {
-                _peaksOutputExposed.copy(_peaksOutput.cbegin(), _peaksOutput.cend());
+                _peaksOutputExposed.copyFrom(_peaksOutput.cbegin(), _peaksOutput.cend());
                 const auto *cpeaks = &_peaksOutputFrame;
-                this->send(Signal::Meter::PeaksOutput, cpeaks);
+                this->emitSignal(Signal::Meter::PeaksOutput, cpeaks);
                 counter = 0;
             }
         }
@@ -91,9 +91,9 @@ void Meter<T>::process()
             }
 
             if (++counter >= passFrames) {
-                _peaksInputExposed.copy(_peaksInput.cbegin(), _peaksInput.cend());
+                _peaksInputExposed.copyFrom(_peaksInput.cbegin(), _peaksInput.cend());
                 const auto *cpeaks = &_peaksInputFrame;
-                this->send(Signal::Meter::PeaksInput, cpeaks);
+                this->emitSignal(Signal::Meter::PeaksInput, cpeaks);
                 counter = 0;
             }
         }

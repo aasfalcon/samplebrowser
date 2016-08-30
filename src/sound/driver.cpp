@@ -36,12 +36,12 @@ void Driver::connect(const IDriver::ConnectOptions& options)
     _bufferFrames = _provider->connect(options);
 
     std::map<unsigned, Type> formatsMap = {
-        { IDriver::SampleFloat32, TypeFloat32 },
-        { IDriver::SampleFloat64, TypeFloat64 },
-        { IDriver::SampleInt8, TypeInt8 },
-        { IDriver::SampleInt16, TypeInt16 },
-        { IDriver::SampleInt24, TypeInt24E },
-        { IDriver::SampleInt32, TypeInt32 },
+        { IDriver::SampleFloat32, Type::Float32 },
+        { IDriver::SampleFloat64, Type::Float64 },
+        { IDriver::SampleInt8, Type::Int8 },
+        { IDriver::SampleInt16, Type::Int16 },
+        { IDriver::SampleInt24, Type::Int24E },
+        { IDriver::SampleInt32, Type::Int32 },
     };
 
     _sampleType = formatsMap.at(options.sampleFormat);
@@ -72,8 +72,8 @@ void Driver::init()
 
     _runtime.rawSampleFormat = _runtime.sampleFormat = sampleType();
 
-    if (TypeInt24E == _runtime.sampleFormat) {
-        _runtime.sampleFormat = TypeFloat32;
+    if (Type::Int24E == _runtime.sampleFormat) {
+        _runtime.sampleFormat = Type::Float32;
     }
 
     _root = std::shared_ptr<Processor::Base>(

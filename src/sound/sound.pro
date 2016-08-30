@@ -24,7 +24,12 @@ SOURCES += \
     processor/silence.cpp \
     sample.cpp \
     stream/basicstream.cpp \
-    stream/chunk.cpp
+    stream/chunk.cpp \
+    processor/event.cpp \
+    processor/model.cpp \
+    object.tcc \
+    dither.cpp \
+    sample.tcc
 
 HEADERS += \
     buffer.h \
@@ -52,6 +57,10 @@ HEADERS += \
     stream/inputstream.h \
     stream/iostream.h \
     stream/outputstream.h \
-    processor/shortcuts.h
+    processor/shortcuts.h \
+    processor/event.h \
+    processor/model.h \
+    processor/watcher.h \
+    dither.h
 
 INCLUDEPATH += .. ../../vendor

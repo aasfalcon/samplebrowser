@@ -47,7 +47,7 @@ void Resampler<T>::process()
     ConstFrame<Float32> sbeg(source.channels(), sptr);
 
     auto& out = this->output();
-    auto silenceBegin = out.copy(sbeg, sbeg + int(count));
+    auto silenceBegin = out.copyFrom(sbeg, sbeg + int(count));
     out.silence(silenceBegin, out.end());
 }
 

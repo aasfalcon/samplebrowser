@@ -263,5 +263,6 @@ void BasicOutputStream::outputStart()
 {
     _isOutputStarted = true;
     _provider->setFileInfo(&_fi);
+    _provider->open(_path.c_str(), IAudioFile::ModeWrite);
     _provider->setRawChunks(_rawChunks.data(), _rawChunks.size());
 }

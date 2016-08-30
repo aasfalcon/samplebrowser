@@ -3,21 +3,21 @@
 
 #include "shared/id.h"
 
-#define ONE_SOUND_PROCESSOR_FACTORY(a_type, a_class)                \
-    []() -> ::Sound::Processor::Base* {                             \
-        return new ::Sound::Processor::a_class< ::Sound::a_type>(); \
+#define ONE_SOUND_PROCESSOR_FACTORY(a_type, a_class)    \
+    []() -> Base* {                                     \
+        return new Sound::Processor::a_class<a_type>(); \
     },
 
 #define SOUND_PROCESSOR_FACTORY(a_class)                                   \
     SOUND_INSTANTIATION_DECLARE(a_class);                                  \
     namespace Factory {                                                    \
     struct a_class {                                                       \
-        static ::Sound::Processor::Base* create(Type type)                 \
+        static Base* create(Type type)                                     \
         {                                                                  \
-            static ::Sound::Processor::Base* (*ctors[TYPE_COUNT])() = {    \
+            static Base* (*ctors[unsigned(Type::Count)])() = {             \
                 SOUND_ENUMERATE_TYPE(ONE_SOUND_PROCESSOR_FACTORY, a_class) \
             };                                                             \
-            return (*ctors[type])();                                       \
+            return (*ctors[unsigned(type)])();                             \
         }                                                                  \
     };                                                                     \
     }

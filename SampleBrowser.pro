@@ -20,3 +20,4 @@ shared.subdir = src/shared
 sound.subdir = src/sound
 
 main.depends = shared engine widgets bundle plugins sound
+tests.depends = main

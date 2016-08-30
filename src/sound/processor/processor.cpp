@@ -52,7 +52,7 @@ void Processor<T>::processChildrenParallel()
 
     for (auto it = beg; it != end; ++it) {
         auto child = static_cast<Processor<T>*>((*it).get());
-        child->_output.copy(_output.cbegin(), _output.cend());
+        child->_output.copyFrom(_output.cbegin(), _output.cend());
         child->processEntryPoint();
     }
 
@@ -74,7 +74,7 @@ void Processor<T>::processChildrenSerial()
         auto child = static_cast<Processor<T>*>((*it).get());
 
         if (child->hasInternalBuffer()) {
-            child->_output.copy(prev->cbegin(), prev->cend());
+            child->_output.copyFrom(prev->cbegin(), prev->cend());
             child->processEntryPoint();
             prev = &child->_output;
         } else {
@@ -83,7 +83,7 @@ void Processor<T>::processChildrenSerial()
     }
 
     if (prev != &this->_output) {
-        this->_output.copy(prev->cbegin(), prev->cend());
+        this->_output.copyFrom(prev->cbegin(), prev->cend());
     }
 }
 

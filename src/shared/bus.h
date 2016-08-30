@@ -8,9 +8,9 @@
 template <typename T>
 class Bus : public Ring<T> {
 public:
-    Bus(unsigned ringSize, unsigned heldFactor = 10)
+    Bus(unsigned ringSize, unsigned holdFactor = 10)
         : Ring<T>(ringSize)
-        , _held(ringSize * heldFactor)
+        , _held(ringSize * holdFactor)
         , _lost(0)
     {
     }
@@ -21,7 +21,7 @@ public:
     {
         Ring<T>::clear();
         _held.clear();
-        _lost = 0;
+        clearLost();
     }
 
     void clearLost()
@@ -34,7 +34,7 @@ public:
         return _held.loaded();
     }
 
-    void flush()
+    void load()
     {
         unsigned count = std::min(held(), this->space());
 
@@ -48,11 +48,6 @@ public:
         return _lost;
     }
 
-    const T &pop() override
-    {
-        return Ring<T>::pop();
-    }
-
     void push(const T &item) override
     {
         if (this->space()) {
@@ -61,9 +56,7 @@ public:
             _held.push(item);
         } else {
             ++_lost;
-#ifndef NDEBUG
-            LOG_IF(1 == _lost, ERROR, "Bus held buffer overflow");
-#endif
+            OVERFLOW_ERROR("Bus buffer overflow");
         }
     }
 

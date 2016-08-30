@@ -99,7 +99,7 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
     unsigned dframes = unsigned(double(sframes) * ratio);
     auto resampler = PLUGIN_FACTORY(IResampler);
 
-    if (this->type() == TypeFloat32) {
+    if (this->type() == Type::Float32) {
         Buffer<Float32> dtemp(channels, dframes);
         Buffer<Float32> stemp(sbeg, send);
         resampler->simple(dtemp.begin().ptr(), dframes,

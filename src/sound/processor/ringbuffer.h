@@ -17,7 +17,7 @@ public:
     void push(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
         Buffer<T>& dest = this->_items[this->_end];
-        auto last = dest.copy(sbeg, send);
+        auto last = dest.copyFrom(sbeg, send);
         dest.silence(last, dest.end());
 
         ++this->_end %= this->_count;

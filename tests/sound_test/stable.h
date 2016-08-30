@@ -13,7 +13,7 @@
 #include <cstring>
 #include <cstdint>
 
-#include "gtest/gtest.h"
+#include "common_test.h"
 #include "shared/log.h"
 #endif
 

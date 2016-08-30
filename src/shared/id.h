@@ -6,7 +6,10 @@
 struct Index;
 
 struct ID {
-    ID() {}
+    ID()
+        : _value(0)
+    {
+    }
 
     template <typename E>
     ID(E value)
@@ -59,8 +62,8 @@ struct Index : public ID {
             _Begin,                  \
             _End = _Begin,           \
         };                           \
-        typedef ::ID ID;        \
-        typedef ::Index Index;  \
+        typedef ::ID ID;             \
+        typedef ::Index Index;       \
     }
 
 #define ID_ENUM(a_ns, a_scope, a_base, ...)  \

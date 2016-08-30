@@ -8,8 +8,9 @@ namespace Sound {
 
 class OutputStream : virtual public BasicOutputStream {
 public:
-    OutputStream(const std::string& path)
+    OutputStream(const std::string& path, const IAudioFile::FileInfo &info)
     {
+        _provider->setFileInfo(&info);
         open(path, IAudioFile::ModeWrite);
     }
 

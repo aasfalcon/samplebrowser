@@ -16,7 +16,7 @@
  * 2. Value type is set on creation or initial assignment, and can't be changed
  * later. Exception is for NullType, which means uninitialized.
  * 3. Strict typing.
- * 4. Only 32-bit values accepted, so use float instead of double.
+ * 4. Only 32-bit values accepted, used float instead of double.
  */
 class Value {
 public:
@@ -30,9 +30,8 @@ public:
     {
     }
 
-    Value(const Value& that)
-        : _data(that._data)
-        , _type(that._type)
+    Value(NullType)
+        : Value()
     {
     }
 
@@ -43,17 +42,42 @@ public:
     {
     }
 
+    Value(std::nullptr_t)
+        : _data(NULL)
+        , _type(&typeid(const void*))
+    {
+    }
+
     template <typename T>
     Value(const T& t)
-        : _data(t)
-        , _type(&typeid(T))
     {
+        if (std::is_integral<T>::value) {
+            if (typeid(bool) == typeid(T)) {
+                _type = &typeid(bool);
+            } else {
+                _type = &typeid(int);
+            }
+
+            _data = Data(static_cast<int>(t));
+        } else if (std::is_enum<T>::value) {
+            _type = &typeid(T);
+            _data = Data(static_cast<int>(t));
+        } else if (std::is_floating_point<T>::value) {
+            _type = &typeid(float);
+            _data = Data(static_cast<float>(t));
+        } else {
+            BAD_CAST("Given value type is not supported");
+        }
     }
 
     template <typename T>
     T as() const
     {
-        if (typeid(T) != type()) {
+        bool isValidType = typeid(T) == type()
+            || (std::is_integral<T>::value && type() == typeid(int))
+            || (std::is_floating_point<T>::value && type() == typeid(float));
+
+        if (!isValidType) {
             LOG(DEBUG, "Value type is "
                     << type().name()
                     << ", but attempting to access "
@@ -61,18 +85,12 @@ public:
             BAD_CAST("Trying to get wrong type from value");
         }
 
-        return *((const T*)&_data.pv);
+        return *reinterpret_cast<const T*>(&_data);
     }
 
     const std::type_info& type() const
     {
         return *_type;
-    }
-
-    Value& operator=(NullType)
-    {
-        _data.uv = 0;
-        return *this;
     }
 
     template <typename T>
@@ -81,14 +99,20 @@ public:
         return as<T>();
     }
 
-    Value& operator=(const Value& v)
+    Value& operator=(NullType)
     {
-        if (typeid(NullType) != type() && v.type() != type()) {
-            BAD_CAST("Assigning value with wrong type");
+        _data.intVal = 0;
+        return *this;
+    }
+
+    Value& operator=(const Value& that)
+    {
+        if (type() != that.type() && type() != typeid(NullType)) {
+            BAD_CAST("Can't assign from another value without exact type match.");
         }
 
-        _type = v._type;
-        _data = v._data;
+        _type = that._type;
+        _data = that._data;
         return *this;
     }
 
@@ -98,10 +122,10 @@ public:
         if (typeid(NullType) == type()) {
             _data = Data(p);
             _type = &typeid(const T*);
-        } else if (typeid(const void*) == type() || typeid(const T*) == type()) {
-            _data.pv = p;
+        } else if (typeid(const T*) == type()) {
+            _data.ptrVal = p;
         } else {
-            BAD_CAST("Assigning value with wrong type");
+            BAD_CAST("Assigning value of wrong type");
         }
 
         return *this;
@@ -109,65 +133,49 @@ public:
 
 private:
     union Data {
-        Data()
-            : uv(0)
-        {
-        }
-
+        Data() {}
         Data(NullType)
-            : uv(0)
+            : intVal(0)
         {
         }
 
         Data(const Data& that)
-            : uv(that.uv)
-        {
-        }
-
-        Data(bool source)
-            : bv(source)
+            : intVal(that.intVal)
         {
         }
 
         Data(float source)
-            : fv(source)
+            : floatVal(source)
         {
         }
 
         Data(int source)
-            : iv(source)
+            : intVal(source)
         {
         }
 
         Data(const void* source)
-            : pv(source)
-        {
-        }
-
-        Data(unsigned source)
-            : uv(source)
+            : ptrVal(source)
         {
         }
 
         template <typename T>
         Data(const T* source)
+            : ptrVal(reinterpret_cast<const void*>(source))
         {
-            pv = reinterpret_cast<const void*>(source);
         }
 
         template <typename T>
         Data(const T& source)
+            : intVal(static_cast<int>(source))
         {
             static_assert(std::is_enum<T>::value,
-                "Given value type is not allowed");
-            uv = unsigned(source);
+                "Value type is not allowed");
         }
 
-        bool bv;
-        float fv;
-        int iv;
-        const void* pv;
-        unsigned uv;
+        float floatVal;
+        int intVal;
+        const void* ptrVal;
     } _data;
 
     const std::type_info* _type;

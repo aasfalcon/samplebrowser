@@ -47,7 +47,7 @@ void Root<T>::commandInit()
         out.reallocate(info.channelsOutput, info.frames);
     }
 
-    this->runtime().bus->clear();
+    this->runtime().bus->clearBus();
     Processor<T>::commandInit();
 }
 
@@ -71,10 +71,10 @@ void Root<T>::processPre()
     if (info.rawInput) {
         auto& in = this->input();
 
-        if (TypeInt24E != info.sampleFormat) {
+        if (Type::Int24E != info.sampleFormat) {
             auto samplePtr = reinterpret_cast<const Sample<T>*>(info.rawInput);
             auto frame = ConstFrame<T>(info.channelsInput, samplePtr);
-            in.copy(frame, frame + int(info.frames));
+            in.copyFrom(frame, frame + int(info.frames));
         } else {
             in.fromInt24(info.rawInput);
         }
@@ -93,7 +93,7 @@ void Root<T>::processPost()
     if (info.rawOutput) {
         auto& out = this->output();
 
-        if (TypeInt24E != info.sampleFormat) {
+        if (Type::Int24E != info.sampleFormat) {
             auto samplePtr = reinterpret_cast<Sample<T>*>(info.rawOutput);
             auto frame = Frame<T>(info.channelsOutput, samplePtr);
             out.copyTo(frame, frame + int(info.frames));

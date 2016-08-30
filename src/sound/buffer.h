@@ -10,6 +10,7 @@
 #include "object.h"
 #include "sample.h"
 #include "shared/iresampler.h"
+#include "shared/log.h"
 
 namespace Sound {
 
@@ -35,13 +36,14 @@ public:
         , _frames(frames)
         , _samples(channels * frames)
     {
+        ERROR_IF(!channels || !frames, "Wrong buffer constructor parameters");
     }
 
     template <typename S>
     Buffer(ConstFrame<S> sbeg, ConstFrame<S> send)
         : Buffer<T>(sbeg.channels(), send - sbeg)
     {
-        copy(sbeg, send);
+        copyFrom(sbeg, send);
     }
 
     template <typename S>
@@ -63,7 +65,7 @@ public:
     {
         assert(send - sbeg >= 0);
         reallocate(sbeg.channels(), send - sbeg);
-        copy(sbeg, send);
+        copyFrom(sbeg, send);
     }
 
     Frame<T> begin()
@@ -87,7 +89,7 @@ public:
     }
 
     template <typename S>
-    Frame<T> copy(ConstFrame<S> sbeg, ConstFrame<S> send)
+    Frame<T> copyFrom(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
         int count = send - sbeg;
         assert(count >= 0);

@@ -5,10 +5,10 @@
 #include <vector>
 
 #include "object.h"
-#include "shared/value.h"
 #include "shared/allocator.h"
 #include "shared/any.h"
 #include "shared/id.h"
+#include "shared/value.h"
 
 namespace Sound {
 
@@ -51,10 +51,13 @@ namespace Processor {
         Base();
 
         bool hasInternalBuffer();
+
         virtual void commandInit();
+        virtual void commandExposeParameters();
+
         void initVectors(Command::ID nCommands, Parameter::ID nParameters,
             Property::ID nProperties);
-        void send(Signal::ID id, Value value);
+        void emitSignal(Signal::ID signalId, Value value = Value::Null);
         Base* parent() const;
         virtual void process() = 0;
         virtual void processChildrenParallel() = 0;
@@ -70,6 +73,7 @@ namespace Processor {
             addCommand(id, static_cast<Handler>(handler));
         }
 
+        void emitParamteter(Parameter::ID parameterId, Value value);
     private:
         typedef void (Base::*Handler)();
 
@@ -80,6 +84,7 @@ namespace Processor {
         std::vector<Any> _properties;
         std::vector<Value> _parameters;
         Base* _parent;
+        RuntimeInfo* _runtime;
 
         void addCommand(Command::ID id, Handler handler);
     };

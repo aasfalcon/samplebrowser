@@ -10,16 +10,20 @@
 namespace Sound {
 
 SOUND_PROCESSOR_COMMANDS(Processor, Base,
+    ExposeParameters,
     Init);
 
 SOUND_PROCESSOR_SIGNALS(Processor, Base,
-    Error // const char *
+    Error, // const char *
+    ParameterCount, // unsigned
+    ParametersSent // void
     );
 
 SOUND_PROCESSOR_PARAMETERS(Processor, Base,
     Bypass, // bool
     ChildrenParallel, // bool
     ChildrenAfter, // bool
+    Command, // Sound::Processor::Command::ID (last command on read)
     Runtime // Driver::RuntimeInfo *
     );
 

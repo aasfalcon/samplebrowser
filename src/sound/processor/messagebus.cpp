@@ -1,16 +1,16 @@
+#include <algorithm>
 #include <mutex>
 
 #include "config.h"
 #include "messagebus.h"
+#include "processor.h"
 
 using namespace Sound;
 using namespace Sound::Processor;
 
 MessageBus::MessageBus()
-    : _commands(SOUND_PROCESSOR_COMMAND_BUS_SIZE)
-    , _parameters(SOUND_PROCESSOR_PARAMETER_BUS_SIZE)
-    , _signals(SOUND_PROCESSOR_SIGNAL_BUS_SIZE)
-
+    : _fromRealtime(SOUND_PROCESSOR_BUS_SIZE, SOUND_PROCESSOR_BUS_HOLD_FACTOR)
+    , _toRealtime(SOUND_PROCESSOR_BUS_SIZE, SOUND_PROCESSOR_BUS_HOLD_FACTOR)
 {
 }
 
@@ -18,160 +18,151 @@ MessageBus::~MessageBus()
 {
 }
 
-void MessageBus::addProcessor(Base* processor)
+void MessageBus::addProcessor(Base& processor)
 {
-    ERROR_IF(!processor, RUNTIME_ERROR, "Processor is null");
-    _processors[processor->id()] = processor;
+    unsigned id = processor.id();
+    ERROR_IF(_processors.find(id) != _processors.end(),
+        RUNTIME_ERROR, "Processor already present");
+    _processors[id] = &processor;
 }
 
-void MessageBus::addWatcher(MessageBus::Watcher watcher)
+void MessageBus::addWatcher(Watcher& watcher, unsigned processorId)
 {
-    addWatcherRecord(WatcherRecord::Global, watcher, 0, Signal::ID());
+    WatcherRecord record = { processorId, &watcher };
+
+    auto it = std::find_if(_watchers.begin(), _watchers.end(),
+        [record](const WatcherRecord& check) -> bool {
+            return check.processor == record.processor
+                && check.watcher == record.watcher;
+        });
+
+    ERROR_IF(it != _watchers.end(), RUNTIME_ERROR, "Watcher already present");
+    _watchers.push_back(record);
 }
 
-void MessageBus::addWatcher(MessageBus::Watcher watcher, unsigned processorId)
+void MessageBus::clearBus()
 {
-    addWatcherRecord(WatcherRecord::Processor, watcher, processorId, Signal::ID());
-}
-
-void MessageBus::addWatcher(MessageBus::Watcher watcher, unsigned processorId, Signal::ID signal)
-{
-    addWatcherRecord(WatcherRecord::ProcessorSignal, watcher, processorId, signal);
-}
-
-void MessageBus::addWatcher(MessageBus::Watcher watcher, Signal::ID signal)
-{
-    addWatcherRecord(WatcherRecord::Signal, watcher, 0, signal);
-}
-
-void MessageBus::clear()
-{
-    _commands.clear();
-    _parameters.clear();
-    _signals.clear();
-}
-
-void MessageBus::clearOverflows()
-{
-    _commands.clearLost();
-    _parameters.clearLost();
-    _signals.clearLost();
+    _fromRealtime.clear();
+    _toRealtime.clear();
 }
 
 void MessageBus::dispatch()
 {
-    if (_commands.lost()) {
-        OVERFLOW_ERROR("Command bus overflow");
-    }
-
-    if (_parameters.lost()) {
-        OVERFLOW_ERROR("Parameter bus overflow");
-    }
-
-    if (_signals.lost()) {
-        OVERFLOW_ERROR("Signal bus overflow");
-    }
-
     std::mutex mutex;
 
     try {
         std::lock_guard<std::mutex> lock(mutex);
-        _commands.flush();
-        _parameters.flush();
-        _signals.flush();
+
+        if (_fromRealtime.lost()) {
+            stressOffload();
+        } else {
+            _fromRealtime.load();
+            _toRealtime.load();
+        }
     } catch (...) {
         throw;
     }
 
-    while (!_signals.isEmpty()) {
-        OutgoingMessage message;
+    while (!_fromRealtime.isEmpty()) {
+        Event event;
 
         try {
             std::lock_guard<std::mutex> lock(mutex);
-            message = _signals.pop();
+            event = _fromRealtime.pop();
         } catch (...) {
             throw;
         }
 
         for (auto it = _watchers.begin(); it != _watchers.end(); ++it) {
-            bool isHandler = it->scope == WatcherRecord::Global
-                || (it->scope == WatcherRecord::Processor && it->processor == message.processor)
-                || (it->scope == WatcherRecord::Signal && it->signal == message.signal)
-                || (it->processor == message.processor && it->signal == message.signal);
-
-            if (isHandler) {
-                (*it->watcher)(message.processor, message.signal, message.value);
+            if (!it->processor || (it->processor == event.processor)) {
+                it->watcher->watch(event);
             }
         }
     }
 }
 
-void MessageBus::passParameter(unsigned processorId, Parameter::ID parameter,
-    Value value)
+bool MessageBus::hasProcessor(unsigned processorId) const
 {
-    IncomingMessage message = {
-        processorId,
-        parameter,
-        value,
-    };
-
-    std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-    _parameters.push(message);
+    return _processors.find(processorId) != _processors.end();
 }
 
-void MessageBus::requireCommand(unsigned processorId, Command::ID command)
+bool MessageBus::hasWatcher(Watcher& watcher) const
 {
-    CommandMessage message = {
-        processorId,
-        command,
-    };
+    return std::find_if(_watchers.begin(), _watchers.end(),
+               [&watcher](const WatcherRecord& check) {
+                   return check.watcher == &watcher;
+               })
+        != _watchers.end();
+}
+
+void MessageBus::send(Event::Kind kind, unsigned processorId, ID id, Value value)
+{
+    Event event;
+
+    event.id = id;
+    event.kind = kind;
+    event.processor = processorId;
+    event.value = value;
 
     std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
-    _commands.push(message);
+
+    try {
+        _toRealtime.push(event);
+    } catch (std::overflow_error) {
+        stressOffload();
+        _toRealtime.push(event);
+    }
+}
+
+void MessageBus::sendCommand(unsigned processorId, Command::ID command)
+{
+    send(Event::ParameterToProcessor, processorId,
+         Parameter::Processor::Command, command.toUInt());
+}
+
+void MessageBus::sendParameter(unsigned processorId, Parameter::ID parameter, Value value)
+{
+    send(Event::ParameterToProcessor, processorId, parameter, value);
+}
+
+void MessageBus::realtimeEmit(Event::Kind kind, unsigned processorId, ID id, Value value)
+{
+    Event event;
+    event.id = id;
+    event.kind = kind;
+    event.processor = processorId;
+    event.value = value;
+    _fromRealtime.push(event);
+}
+
+void MessageBus::realtimeEmitParameter(unsigned processorId, Parameter::ID parameter, Value value)
+{
+    realtimeEmit(Event::ParameterFromProcessor, processorId, parameter, value);
 }
 
 void MessageBus::realtimeEmitSignal(unsigned processorId, Signal::ID signal, Value value)
 {
-    OutgoingMessage message = {
-        processorId,
-        signal,
-        value,
-    };
-
-    _signals.push(message);
+    realtimeEmit(Event::SignalFromProcessor, processorId, signal, value);
 }
 
 void MessageBus::realtimeDispatch()
 {
-    while (!_parameters.isEmpty()) {
-        const IncomingMessage& message = _parameters.pop();
-        auto it = _processors.find(message.processor);
+    while (!_toRealtime.isEmpty()) {
+        const Event& event = _toRealtime.pop();
+        auto it = _processors.find(event.processor);
 
         if (it != _processors.end()) {
-            it->second->set(message.parameter, message.value);
-        } else {
-            LOG(ERROR, "Parameter reciever processor ID "
-                    << message.processor
-                    << " is not registered");
-            RUNTIME_ERROR("No such processor");
-        }
-    }
+            auto processor = it->second;
 
-    while (!_commands.isEmpty()) {
-        const CommandMessage& message = _commands.pop();
+            if (Event::ParameterToProcessor == event.kind) {
+                processor->set(event.id, event.value);
 
-        auto it = _processors.find(message.processor);
-
-        if (it != _processors.end()) {
-            it->second->perform(message.command);
-        } else {
-            LOG(ERROR, "Command reciever processor ID "
-                    << message.processor
-                    << " is not registered, command is: "
-                    << message.command.toUInt());
-            RUNTIME_ERROR("No such processor");
+                if (Parameter::Processor::Command == event.value) {
+                    auto command = static_cast<Command::Processor>(event.value.as<unsigned>());
+                    processor->perform(command);
+                }
+            }
         }
     }
 }
@@ -179,45 +170,39 @@ void MessageBus::realtimeDispatch()
 void MessageBus::removeProcessor(unsigned processorId)
 {
     auto it = _processors.find(processorId);
-
-    if (it == _processors.end()) {
-        LOG(ERROR, "Attempt to remove non-attached processor "
-                << processorId << " from bus");
-        RUNTIME_ERROR("No such processor");
-    }
-
-    _processors.erase(processorId);
+    ERROR_IF(it == _processors.end(), RUNTIME_ERROR, "No such processor");
+    _processors.erase(it);
 }
 
-void MessageBus::removeWatcher(MessageBus::Watcher watcher)
+void MessageBus::removeWatcher(Watcher* watcher)
 {
     bool isFound = false;
+    auto it = _watchers.begin();
 
-    for (auto it = _watchers.begin(); it != _watchers.end(); ++it) {
-        if (it->watcher == watcher) {
-            auto del = it;
-            ++it;
-            _watchers.erase(del);
+    do {
+        it = std::find_if(it, _watchers.end(),
+            [watcher](const WatcherRecord& check) -> bool {
+                return check.watcher == watcher;
+            });
+
+        if (it != _watchers.end()) {
             isFound = true;
+            it = _watchers.erase(it);
         }
-    }
+    } while (it != _watchers.end());
 
-    if (!isFound) {
-        RUNTIME_ERROR("No such watcher");
-    }
+    ERROR_IF(!isFound, RUNTIME_ERROR, "No such watcher");
 }
 
-void MessageBus::addWatcherRecord(MessageBus::WatcherRecord::Scope scope, Watcher watcher,
-    unsigned processorId, Signal::ID signal)
+void MessageBus::stressOffload()
 {
-    ERROR_IF(!watcher, RUNTIME_ERROR, "Watcher is null");
+    _fromRealtime.clearLost();
+    _toRealtime.clearLost();
 
-    WatcherRecord record = {
-        processorId,
-        scope,
-        signal,
-        watcher,
-    };
+    while (_fromRealtime.held() || _toRealtime.held()) {
+        realtimeDispatch();
+        dispatch();
+    }
 
-    _watchers.push_back(record);
+    realtimeDispatch();
 }
