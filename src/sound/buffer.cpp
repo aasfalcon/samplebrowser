@@ -17,20 +17,21 @@ union Int32Parts {
     std::uint8_t i8[4];
 };
 
-inline bool isBigEndian() {
+inline bool isBigEndian()
+{
     static const Int32Parts endiannessCheck = { 0x01020304 };
     return 0x01 == endiannessCheck.i8[3];
 }
 
 template <typename T>
-void Buffer<T>::fromInt24(const void *source)
+void Buffer<T>::fromInt24(const void* source)
 {
     auto int24source = reinterpret_cast<const Int24Parts*>(source);
     auto ptr = _samples.data();
     unsigned offset = unsigned(!isBigEndian());
 
     for (unsigned i = 0; i < size(); i++) {
-        const Int24Parts &s = int24source[i];
+        const Int24Parts& s = int24source[i];
         Int32Parts d = { 0 };
         d.i8[0 + offset] = s[0];
         d.i8[1 + offset] = s[1];
@@ -48,7 +49,7 @@ void Buffer<T>::toInt24(void* dest) const
 
     for (unsigned i = 0; i < size(); i++) {
         Sample<Int32> i32 = ptr[i];
-        Int32Parts s = { i32 };
+        Int32Parts s = { i32.value() };
         Int24Parts& d = int24dest[i];
         d[0] = s.i8[0 + offset];
         d[1] = s.i8[1 + offset];
@@ -102,8 +103,8 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
     if (this->type() == Type::Float32) {
         Buffer<Float32> dtemp(channels, dframes);
         Buffer<Float32> stemp(sbeg, send);
-        resampler->simple(dtemp.begin().ptr(), dframes,
-            stemp.begin().ptr(), sframes,
+        resampler->simple(dtemp.begin().data(), dframes,
+            stemp.begin().data(), sframes,
             channels, ratio, quality);
         assign(dtemp.cbegin(), dtemp.cend());
     }
@@ -112,12 +113,11 @@ void Buffer<T>::resample(ConstFrame<T> sbeg, ConstFrame<T> send,
 template <typename T>
 void Buffer<T>::silence(Frame<T> dbeg, Frame<T> dend)
 {
-    assert(end() - dend >= 0);
-    assert(dbeg - begin() >= 0);
-
     if (dbeg != dend) {
-        std::size_t count = unsigned(dend - dbeg) * dbeg.channels() * sizeof(T);
-        std::memset(dbeg.ptr(), 0, count);
+        int frames = dend - dbeg;
+        ERROR_IF(frames < 0, RUNTIME_ERROR, "Invalid silence parameters");
+        std::size_t count = unsigned(frames) * dbeg.channels() * sizeof(T);
+        std::memset(dbeg.data(), 0, count);
     }
 }
 

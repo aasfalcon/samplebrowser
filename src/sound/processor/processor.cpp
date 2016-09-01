@@ -1,5 +1,6 @@
 #include "processor.h"
 #include "driver.h"
+#include "mixer.h"
 #include "shared/version.h"
 
 #define PROCESSOR Processor
@@ -18,10 +19,11 @@ Processor<T>::Processor()
     PROPERTY(std::string, Name, "Processor");
     PROPERTY(Version, Version, "1.0.0");
 
+    PARAMETER(const RuntimeInfo*, Runtime, nullptr);
+
     PARAMETER(bool, Bypass, false);
     PARAMETER(bool, ChildrenParallel, false);
     PARAMETER(bool, ChildrenAfter, false);
-    PARAMETER(const RuntimeInfo*, Runtime, nullptr);
 }
 
 template <typename T>
@@ -39,6 +41,10 @@ void Processor<T>::commandInit()
             auto& info = this->runtime();
             _output.reallocate(info.channelsOutput, info.frames);
         }
+
+        if (this->size()) {
+            _mixer = std::make_shared<Mixer<T> >();
+        }
     }
 
     Base::commandInit();
@@ -53,16 +59,17 @@ void Processor<T>::processChildrenParallel()
     for (auto it = beg; it != end; ++it) {
         auto child = static_cast<Processor<T>*>((*it).get());
         child->_output.copyFrom(_output.cbegin(), _output.cend());
-        child->processEntryPoint();
+        child->processStart();
     }
 
-    _output.silence();
-    double level = 1.0 / double(this->size());
+    _mixer->clear();
 
     for (auto it = beg; it != end; ++it) {
         auto child = static_cast<Processor<T>*>((*it).get());
-        _output.mix(child->_output.cbegin(), child->_output.cend(), level);
+        _mixer->add(child->_output.cbegin(), child->_output.cend());
     }
+
+    _mixer->mixTo(_output.begin(), _output.end());
 }
 
 template <typename T>
@@ -75,10 +82,10 @@ void Processor<T>::processChildrenSerial()
 
         if (child->hasInternalBuffer()) {
             child->_output.copyFrom(prev->cbegin(), prev->cend());
-            child->processEntryPoint();
+            child->processStart();
             prev = &child->_output;
         } else {
-            child->processEntryPoint();
+            child->processStart();
         }
     }
 

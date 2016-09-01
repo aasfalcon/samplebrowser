@@ -568,7 +568,9 @@ void AudioFileSndfile::write(const void* buffer, unsigned frames)
     case Sound::Type::Int32:
         count = sf_writef_int(_handle.get(), static_cast<const Sound::Int32*>(buffer), frames);
         break;
+    case Sound::Type::Int64:
     case Sound::Type::Precise:
+    case Sound::Type::Count:
         RUNTIME_ERROR("Writing for this sample format is not supported");
     }
 }

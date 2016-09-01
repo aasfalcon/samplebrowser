@@ -42,7 +42,7 @@ void Resampler<T>::process()
 
     auto& source = _ring->pop();
 
-    unsigned count = _resampler->process(source.cbegin().ptr(), source.frames());
+    unsigned count = _resampler->process(source.cbegin().data(), source.frames());
     auto sptr = reinterpret_cast<const Sample<Float32>*>(_resampler->output());
     ConstFrame<Float32> sbeg(source.channels(), sptr);
 

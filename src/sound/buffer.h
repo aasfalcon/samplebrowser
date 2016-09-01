@@ -1,14 +1,10 @@
 #ifndef SOUND_BUFFER_H
 #define SOUND_BUFFER_H
 
-#include <cassert>
-#include <cstring>
 #include <vector>
 
 #include "constframe.h"
 #include "frame.h"
-#include "object.h"
-#include "sample.h"
 #include "shared/iresampler.h"
 #include "shared/log.h"
 
@@ -20,7 +16,6 @@ public:
     Buffer()
         : _channels(0)
         , _frames(0)
-        , _samples()
     {
     }
 
@@ -36,7 +31,14 @@ public:
         , _frames(frames)
         , _samples(channels * frames)
     {
-        ERROR_IF(!channels || !frames, "Wrong buffer constructor parameters");
+        ERROR_IF(!channels || !frames, RUNTIME_ERROR,
+            "Invalid buffer constructor parameters");
+    }
+
+    template <typename S>
+    Buffer(const Buffer<S>& that)
+        : Buffer(that.cbegin(), that.cend())
+    {
     }
 
     template <typename S>
@@ -51,7 +53,7 @@ public:
         : Buffer<T>(channels, frames)
     {
         auto sbeg = ConstFrame<S>(channels, psample);
-        assign(sbeg, sbeg + frames);
+        copyFrom(sbeg, sbeg + frames);
     }
 
     template <typename S>
@@ -63,7 +65,6 @@ public:
     template <typename S>
     void assign(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
-        assert(send - sbeg >= 0);
         reallocate(sbeg.channels(), send - sbeg);
         copyFrom(sbeg, send);
     }
@@ -91,54 +92,13 @@ public:
     template <typename S>
     Frame<T> copyFrom(ConstFrame<S> sbeg, ConstFrame<S> send)
     {
-        int count = send - sbeg;
-        assert(count >= 0);
-        assert(int(_frames) <= count);
-
-        Frame<T> dit = begin();
-
-        if (this->type() == sbeg.type() && _channels == sbeg.channels()) {
-            std::memcpy(this->data(), sbeg.data(), count * _channels * sizeof(T));
-            dit += count;
-        } else {
-            ConstFrame<S> sit = sbeg;
-
-            while (sit != send) {
-                dit = sit;
-                ++dit;
-                ++sit;
-            }
-        }
-
-        return dit;
+        return copy(begin(), end(), sbeg, send);
     }
 
     template <typename D>
     Frame<D> copyTo(Frame<D> dbeg, Frame<D> dend)
     {
-        int count = dend - dbeg;
-        assert(count >= 0);
-
-        if (int(_frames) < count) {
-            count = _frames;
-        }
-
-        Frame<D> dit = dbeg;
-
-        if (this->type() == dit.type() && _channels == dit.channels()) {
-            std::memcpy(dit.data(), this->data(), count * _channels * sizeof(T));
-            dit += count;
-        } else {
-            ConstFrame<T> sit = cbegin();
-
-            while (dit != dend) {
-                dit = sit;
-                ++dit;
-                ++sit;
-            }
-        }
-
-        return dit;
+        return copy(dbeg, dend, cbegin(), cend());
     }
 
     Sample<T>* data()
@@ -168,27 +128,17 @@ public:
         return _frames == 0;
     }
 
-    template <typename S>
-    Frame<T> mix(ConstFrame<S> sbeg, ConstFrame<S> send, double level)
-    {
-        int count = send - sbeg;
-        assert(count >= 0);
-        assert(int(_frames) < count);
-
-        Frame<T> dframe = begin();
-        ConstFrame<S> sframe = sbeg;
-
-        while (sframe != send) {
-            dframe.mix(sframe, level);
-            ++dframe;
-            ++sframe;
-        }
-
-        return dframe;
-    }
-
     void toInt24(void* dest) const;
     void reallocate(unsigned channels, unsigned frames);
+
+    void reshape(unsigned channels, unsigned frames)
+    {
+        ERROR_IF(channels * frames != _channels * _frames, RUNTIME_ERROR,
+            "Invalid buffer reshaping options");
+        _channels = channels;
+        _frames = frames;
+    }
+
     Buffer<T> resample(unsigned destRate, unsigned sourceRate,
         IResampler::Quality quality = IResampler::QualityBest);
     void resize(unsigned frames);
@@ -201,20 +151,26 @@ public:
         silence(begin(), end());
     }
 
-    void silence(Frame<T> dbeg, Frame<T> dend);
+    static void silence(Frame<T> dbeg, Frame<T> dend);
 
     unsigned size() const
     {
-        return _samples.size();
+        return _channels * _frames;
     }
 
 private:
     unsigned _channels;
     unsigned _frames;
     std::vector<Sample<T> > _samples;
+
+    template <typename S>
+    static Frame<T> copy(Frame<T> dit, Frame<T> dend,
+        ConstFrame<S> sit, ConstFrame<S> send);
 };
 
 SOUND_INSTANTIATION_DECLARE(Buffer);
 }
+
+#include "buffer.tcc"
 
 #endif // SOUND_BUFFER_H

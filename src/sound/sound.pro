@@ -29,7 +29,9 @@ SOURCES += \
     processor/model.cpp \
     object.tcc \
     dither.cpp \
-    sample.tcc
+    sample.tcc \
+    buffer.tcc \
+    mixer.cpp
 
 HEADERS += \
     buffer.h \
@@ -61,6 +63,7 @@ HEADERS += \
     processor/event.h \
     processor/model.h \
     processor/watcher.h \
-    dither.h
+    dither.h \
+    mixer.h
 
 INCLUDEPATH += .. ../../vendor

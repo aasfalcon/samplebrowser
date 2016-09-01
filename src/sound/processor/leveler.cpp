@@ -38,7 +38,7 @@ void Leveler<T>::process()
                 }
             }
 
-            frame[i] = T(double(T(frame[i])) * level);
+            frame[i] = T(frame[i].value() * level);
         }
     }
 }

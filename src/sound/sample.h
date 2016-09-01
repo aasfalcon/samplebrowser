@@ -1,34 +1,39 @@
 #ifndef SOUND_SAMPLE_H
 #define SOUND_SAMPLE_H
 
-#include "object.h"
 #include "dither.h"
+#include "object.h"
 
 namespace Sound {
 
 template <typename T>
 class Sample : public Object<T> {
 public:
-    inline Sample() {}
+    Sample() {}
 
-    inline Sample(T value)
+    Sample(T value)
         : _value(value)
     {
     }
 
-    inline Sample(const Sample<T>& that)
+    Sample(const Sample<T>& that)
         : _value(that._value)
     {
     }
 
     template <typename S>
-    inline Sample(const Sample<S>& that)
+    Sample(const Sample<S>& that)
         : _value(convert(that))
     {
     }
 
-    inline const T& value() const { return _value; }
-    inline operator const T&() const { return _value; }
+    void silence()
+    {
+        _value = this->nil();
+    }
+
+    T& value() { return _value; }
+    const T& value() const { return _value; }
 
 private:
     T _value;
@@ -37,7 +42,7 @@ private:
     static T convert(const Sample<S>& sample);
 
     template <typename S>
-    inline constexpr static Precise ratio(bool isNegative, bool isDithering = false);
+    constexpr static Precise ratio(bool isNegative, bool isDithering = false);
 };
 
 SOUND_INSTANTIATION_DECLARE(Sample);

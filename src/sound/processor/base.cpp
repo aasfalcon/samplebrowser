@@ -101,7 +101,7 @@ void Base::perform(Command::ID id)
     (this->*handler)();
 }
 
-void Base::processEntryPoint()
+void Base::processStart()
 {
     assert(_isInitialized);
 

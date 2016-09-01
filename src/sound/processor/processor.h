@@ -32,6 +32,9 @@ SOUND_PROCESSOR_PROPERTIES(Processor, Base,
     Version // Version
     );
 
+template <typename T>
+class Mixer;
+
 namespace Processor {
 
     template <typename T>
@@ -53,6 +56,7 @@ namespace Processor {
         Processor<T>* parent() const;
 
     private:
+        std::shared_ptr<Mixer<T> > _mixer;
         Buffer<T> _output;
     };
 

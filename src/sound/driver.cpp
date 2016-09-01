@@ -72,10 +72,6 @@ void Driver::init()
 
     _runtime.rawSampleFormat = _runtime.sampleFormat = sampleType();
 
-    if (Type::Int24E == _runtime.sampleFormat) {
-        _runtime.sampleFormat = Type::Float32;
-    }
-
     _root = std::shared_ptr<Processor::Base>(
         Processor::Factory::Root::create(_runtime.sampleFormat));
 
@@ -102,7 +98,7 @@ IDriver::Control Driver::process(const IDriver::ProcessParams& data)
     driver->_runtime.rawOutput = data.output;
     driver->_runtime.status = data.status;
     driver->_runtime.time = data.time;
-    driver->_root->processEntryPoint();
+    driver->_root->processStart();
     return IDriver::ControlContinue;
 }
 

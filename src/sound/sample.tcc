@@ -29,14 +29,14 @@ T Sample<T>::convert(const Sample<S>& sample)
     if (Sample<T>::isFloat()) {
         if (Sample<S>::isFloat()) {
             return T(value);
-        } else {
-            return T(Precise(value) * ratio<S>(value < 0));
         }
+
+        return T(Precise(value) * ratio<S>(value < 0));
     }
 
     Precise precise;
 
-    if (Sample<T>::type() < Sample<S>::type()) {
+    if (sizeof(T) < sizeof(S)) {
         precise = Dither::dither(Precise(value) * ratio<S>(value < 0, true));
     } else {
         precise = Precise(value) * ratio<S>(value < 0);

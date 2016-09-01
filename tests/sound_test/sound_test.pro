@@ -14,7 +14,8 @@ SOURCES += \
     processor/messagebus_test.cpp \
     buffer_test.cpp \
     sample_test.cpp \
-    dither_test.cpp
+    dither_test.cpp \
+    frame_test.cpp
 
 LIBS += -lpthread -lltdl
 LIBS += -L../gtest_main -lgtest_main
@@ -33,4 +34,5 @@ LIBS += \
 
 HEADERS += \
     stable.h \
-    common_test.h
+    common_test.h \
+    generator_test.h

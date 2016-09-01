@@ -42,7 +42,7 @@ namespace Processor {
         void perform(Command::ID id);
         Value get(Parameter::ID id) const;
         unsigned id() const;
-        void processEntryPoint();
+        void processStart();
         Any property(Property::ID id) const;
         void set(Parameter::ID id, Value value);
         void setProperty(Property::ID id, const Any& value);

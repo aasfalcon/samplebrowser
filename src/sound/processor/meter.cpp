@@ -52,14 +52,14 @@ void Meter<T>::process()
 
         for (auto frame = out.begin(); frame != out.end(); ++frame) {
             for (unsigned i = 0; i < info.channelsOutput; i++) {
-                T value = frame.at(i);
+                T value = frame.at(i).value();
 
-                if (value < 0) {
-                    value = -value;
+                if (value  < 0) {
+                    value  = -value ;
                 }
 
-                if (peaksFrame.at(i) < value) {
-                    peaksFrame[i] = value;
+                if (peaksFrame.at(i).value() < value ) {
+                    peaksFrame[i] = T(value);
                 }
             }
 
@@ -79,13 +79,13 @@ void Meter<T>::process()
 
         for (auto frame = in.begin(); frame != in.end(); ++frame) {
             for (unsigned i = 0; i < info.channelsInput; i++) {
-                T value = frame.at(i);
+                T value = frame.at(i).value();
 
                 if (value < 0) {
                     value = -value;
                 }
 
-                if (peaksFrame.at(i) < value) {
+                if (peaksFrame.at(i).value() < value) {
                     peaksFrame[i] = value;
                 }
             }

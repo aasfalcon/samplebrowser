@@ -1,6 +1,8 @@
 #ifndef SOUND_FRAME_H
 #define SOUND_FRAME_H
 
+#include <cstring>
+
 #include "object.h"
 #include "sample.h"
 
@@ -14,27 +16,33 @@ class Frame : public Object<T> {
 public:
     Frame()
         : _channels(0)
-        , _data(nullptr)
+        , _samples(nullptr)
     {
     }
 
-    Frame(unsigned channels, Sample<T>* ptr)
+    Frame(unsigned channels, Sample<T>* samples)
         : _channels(channels)
-        , _data(ptr)
+        , _samples(samples)
+    {
+    }
+
+    Frame(unsigned channels, T* ptr)
+        : _channels(channels)
+        , _samples(reinterpret_cast<Sample<T>*>(ptr))
     {
     }
 
     Frame(const Frame& source)
         : _channels(source._channels)
-        , _data(source._data)
+        , _samples(source._samples)
     {
     }
 
     ~Frame() {}
 
-    Sample<T> at(unsigned channel) const
+    const Sample<T>& at(unsigned channel) const
     {
-        return _data[channel];
+        return _samples[channel];
     }
 
     unsigned channels() const
@@ -42,49 +50,24 @@ public:
         return _channels;
     }
 
-    const Sample<T>* data() const
+    const T* data() const
     {
-        return _data;
+        return reinterpret_cast<const T*>(_samples);
     }
 
-    Sample<T>* data()
+    T* data()
     {
-        return _data;
+        return reinterpret_cast<T*>(_samples);
     }
 
-    template <typename S>
-    void mix(ConstFrame<S> rht, double level)
+    const Sample<T>* samples() const
     {
-        unsigned rchannels = rht.channels();
-
-        if (_channels <= rchannels) {
-            for (unsigned i = 0; i < _channels; i++) {
-                _data[i] = rht[i] * level;
-            }
-        } else if (_channels == 2) {
-            _data[1] = _data[0] = rht[0] * level;
-        } else {
-            unsigned i = 0;
-
-            while (i < rchannels) {
-                _data[i] = rht[i] * level;
-                ++i;
-            }
-
-            while(i < _channels) {
-                _data[i++] = 0;
-            }
-        }
+        return _samples;
     }
 
-    const T* ptr() const
+    Sample<T>* samples()
     {
-        return reinterpret_cast<const T*>(_data);
-    }
-
-    T* ptr()
-    {
-        return reinterpret_cast<T*>(_data);
+        return _samples;
     }
 
     unsigned size() const
@@ -104,23 +87,23 @@ public:
 
     int operator-(Frame<T> rht) const
     {
-        return (_data - rht._data) / int(_channels);
+        return (_samples - rht._samples) / int(_channels);
     }
 
     Frame<T> operator+(int rht) const
     {
-        return Frame<T>(_channels, _data + rht * int(_channels));
+        return Frame<T>(_channels, _samples + rht * int(_channels));
+    }
+
+    Frame<T>& operator+=(int rht)
+    {
+        _samples += (rht * int(_channels));
+        return *this;
     }
 
     Frame<T> operator-(int rht) const
     {
         return operator+(-rht);
-    }
-
-    Frame<T>& operator+=(int rht)
-    {
-        _data += (rht * int(_channels));
-        return *this;
     }
 
     Frame<T>& operator-=(int rht)
@@ -130,59 +113,60 @@ public:
 
     bool operator==(const ConstFrame<T>& rht) const
     {
-        return rht.data() == _data;
+        return rht.samples() == _samples;
     }
 
     bool operator!=(const ConstFrame<T>& rht) const
     {
-        return rht.data() != _data;
+        return !operator==(rht);
     }
 
-    Sample<T> operator[](unsigned channel) const
+    const Sample<T>& operator[](unsigned channel) const
     {
-        return at(channel);
+        return _samples[channel];
     }
 
     Sample<T>& operator[](unsigned channel)
     {
-        return _data[channel];
+        return _samples[channel];
     }
 
     void put(unsigned channel, Sample<T> value)
     {
-        _data[channel] = value;
+        _samples[channel] = value;
     }
 
     template <typename S>
-    Frame<T>& operator=(ConstFrame<S> rht)
+    void put(Frame<S> source)
     {
-        unsigned rchannels = rht.channels();
+        put(ConstFrame<S>(source));
+    }
 
-        if (_channels <= rchannels) {
-            for (unsigned i = 0; i < _channels; i++) {
-                _data[i] = rht[i];
-            }
-        } else if (_channels == 2) {
-            _data[1] = _data[0] = rht[0];
+    template <typename S>
+    void put(ConstFrame<S> source)
+    {
+        if (1 == _channels && 1 < source.channels()) {
+            Sample<Precise> left = source[0];
+            Sample<Precise> right = source[1];
+            _samples[0] = Sample<Precise>((left.value() + right.value()) / 2);
+        } else if (1 == source.channels() && 1 < _channels) {
+            _samples[0] = _samples[1] = source[0];
         } else {
-            unsigned i = 0;
+            unsigned c = 0;
 
-            while (i < rchannels) {
-                _data[i] = rht[i];
-                ++i;
+            for (; c < std::min(_channels, source.channels()); c++) {
+                _samples[c] = source[c];
             }
 
-            while(i < _channels) {
-                _data[i++] = 0;
+            for (; c < _channels; c++) {
+                _samples[c] = this->nil();
             }
         }
-
-        return *this;
     }
 
 private:
     unsigned _channels;
-    Sample<T>* _data;
+    Sample<T>* _samples;
 };
 
 SOUND_INSTANTIATION_DECLARE(Frame);
